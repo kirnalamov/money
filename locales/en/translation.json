@@ -1,0 +1,89 @@
+{
+  "common": {
+    "overview": "Overview",
+    "transactions": "Transactions",
+    "portfolio": "Portfolio",
+    "savings": "Savings",
+    "limits": "Limits",
+    "settings": "Settings",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "sign_out": "Sign Out"
+  },
+  "dashboard": {
+    "title": "Overview",
+    "net_worth_total": "Total Net Worth",
+    "vs_last_month": "vs last month",
+    "kpi": {
+      "cash_balance": "Cash Balance",
+      "invested_value": "Invested Value",
+      "available_spend": "Available to Spend",
+      "planned_savings": "Planned Savings",
+      "updated_now": "Updated just now",
+      "all_time": "all time",
+      "budget_left": "of budget left",
+      "target": "Target"
+    },
+    "charts": {
+      "net_worth_title": "Net Worth Over Time",
+      "net_worth_subtitle": "Last 7 months",
+      "expenses_title": "Expenses by Category",
+      "monthly_limits": "Monthly Limits"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "add_button": "Add Transaction",
+    "add_dialog_title": "Add New Transaction",
+    "add_dialog_desc": "Enter the details of your transaction here.",
+    "type": "Type",
+    "amount": "Amount",
+    "account": "Account",
+    "from_account": "From Account",
+    "to_account": "To Account",
+    "category": "Category",
+    "description": "Description",
+    "tags": "Tags",
+    "types": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer"
+    },
+    "placeholders": {
+      "select_type": "Select type",
+      "select_account": "Select account",
+      "destination_account": "Destination account",
+      "category": "e.g. Food, Rent",
+      "description": "e.g. Weekly groceries"
+    },
+    "empty_state": "No transactions yet. Add one to get started.",
+    "save_changes": "Save changes"
+  },
+  "portfolio": {
+    "title": "Portfolio Analytics",
+    "total_value": "Total Value",
+    "day_pnl": "Day PnL",
+    "total_pnl": "Total PnL",
+    "ytd_return": "YTD Return",
+    "chart_placeholder": "Performance Chart Placeholder"
+  },
+  "savings": {
+    "title": "Savings & Goals",
+    "accounts_placeholder": "Accounts Carousel Placeholder",
+    "goals_placeholder": "Goals List Placeholder"
+  },
+  "limits": {
+    "title": "Spending Limits",
+    "editor_placeholder": "Limits Editor Table Placeholder"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme_mode": "Theme Mode",
+    "language": "Language",
+    "interface_language": "Interface Language"
+  }
+}

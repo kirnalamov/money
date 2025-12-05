@@ -1,0 +1,89 @@
+{
+  "common": {
+    "overview": "Обзор",
+    "transactions": "Операции",
+    "portfolio": "Портфель",
+    "savings": "Накопления",
+    "limits": "Лимиты",
+    "settings": "Настройки",
+    "add": "Добавить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "sign_out": "Выйти"
+  },
+  "dashboard": {
+    "title": "Обзор",
+    "net_worth_total": "Общий капитал",
+    "vs_last_month": "к прошл. месяцу",
+    "kpi": {
+      "cash_balance": "Баланс наличных",
+      "invested_value": "Инвестиции",
+      "available_spend": "Свободно",
+      "planned_savings": "План сбережений",
+      "updated_now": "Обновлено только что",
+      "all_time": "за всё время",
+      "budget_left": "бюджета осталось",
+      "target": "Цель"
+    },
+    "charts": {
+      "net_worth_title": "Динамика капитала",
+      "net_worth_subtitle": "Последние 7 месяцев",
+      "expenses_title": "Расходы по категориям",
+      "monthly_limits": "Месячные лимиты"
+    }
+  },
+  "transactions": {
+    "title": "Операции",
+    "add_button": "Добавить операцию",
+    "add_dialog_title": "Новая операция",
+    "add_dialog_desc": "Введите детали новой операции ниже.",
+    "type": "Тип",
+    "amount": "Сумма",
+    "account": "Счёт",
+    "from_account": "Списать со счёта",
+    "to_account": "Зачислить на счёт",
+    "category": "Категория",
+    "description": "Описание",
+    "tags": "Метки",
+    "types": {
+      "expense": "Расход",
+      "income": "Доход",
+      "transfer": "Перевод"
+    },
+    "placeholders": {
+      "select_type": "Выберите тип",
+      "select_account": "Выберите счёт",
+      "destination_account": "Счёт зачисления",
+      "category": "напр. Продукты",
+      "description": "напр. Закупка на неделю"
+    },
+    "empty_state": "Список операций пуст. Добавьте первую.",
+    "save_changes": "Сохранить"
+  },
+  "portfolio": {
+    "title": "Аналитика портфеля",
+    "total_value": "Стоимость портфеля",
+    "day_pnl": "PnL за день",
+    "total_pnl": "Общий PnL",
+    "ytd_return": "Доходность YTD",
+    "chart_placeholder": "Здесь будет график доходности"
+  },
+  "savings": {
+    "title": "Цели и Накопления",
+    "accounts_placeholder": "Карусель накопительных счетов",
+    "goals_placeholder": "Список финансовых целей"
+  },
+  "limits": {
+    "title": "Лимиты расходов",
+    "editor_placeholder": "Таблица управления лимитами"
+  },
+  "settings": {
+    "title": "Настройки",
+    "appearance": "Внешний вид",
+    "theme_mode": "Тема оформления",
+    "language": "Язык",
+    "interface_language": "Язык интерфейса"
+  }
+}
