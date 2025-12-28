@@ -4,10 +4,11 @@ import { AddTransactionDialog } from "@/components/transactions/add-transaction-
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { formatCurrency, convertCurrency } from "@/lib/utils";
 
 export default function TransactionsPage() {
   const { t } = useTranslation();
-  const { transactions, accounts } = useStore();
+  const { transactions, accounts, defaultCurrency } = useStore();
   
   const getAccountName = (id: string) => accounts.find(a => a.id === id)?.name || 'Unknown';
 
@@ -36,12 +37,23 @@ export default function TransactionsPage() {
                      </span>
                      {tx.description && <span className="text-xs text-muted-foreground">{tx.description}</span>}
                    </div>
-                   <div className={`font-bold ${
-                     tx.type === 'income' ? 'text-plutus-green' : 
-                     tx.type === 'expense' ? 'text-destructive' : 'text-foreground'
-                   }`}>
-                     {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
-                     {tx.currency} {tx.amount.toLocaleString()}
+                   <div className="flex flex-col items-end">
+                     <div className={`font-bold ${
+                       tx.type === 'income' ? 'text-plutus-green' : 
+                       tx.type === 'expense' ? 'text-destructive' : 'text-foreground'
+                     }`}>
+                       {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
+                       {formatCurrency(tx.amount, tx.currency)}
+                     </div>
+                     {tx.currency !== defaultCurrency && (
+                       <div className="text-xs text-muted-foreground mt-1">
+                         {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
+                         {formatCurrency(
+                           convertCurrency(tx.amount, tx.currency, defaultCurrency),
+                           defaultCurrency
+                         )}
+                       </div>
+                     )}
                    </div>
                  </div>
                ))}

@@ -24,6 +24,7 @@ import {
 import { TransactionType } from '@/types';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency, convertCurrency } from '@/lib/utils';
 
 export function AddTransactionDialog() {
   const { t } = useTranslation();
@@ -35,7 +36,7 @@ export function AddTransactionDialog() {
   const [toAccountId, setToAccountId] = useState('');
   const [category, setCategory] = useState('');
 
-  const { accounts, addTransaction } = useStore();
+  const { accounts, addTransaction, defaultCurrency } = useStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +48,7 @@ export function AddTransactionDialog() {
       id: Math.random().toString(36).substr(2, 9),
       type,
       amount: parseFloat(amount),
-      currency: 'USD',
+      currency: defaultCurrency,
       accountId,
       toAccountId: type === 'transfer' ? toAccountId : undefined,
       category: category || 'Uncategorized',
@@ -128,11 +129,15 @@ export function AddTransactionDialog() {
                   <SelectValue placeholder={t('transactions.placeholders.select_account')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name} ({acc.currency} {acc.balance.toLocaleString()})
-                    </SelectItem>
-                  ))}
+                  {accounts.map((acc) => {
+                    const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+                    return (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name} ({formatCurrency(acc.balance, acc.currency)}
+                        {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -151,11 +156,15 @@ export function AddTransactionDialog() {
                   <SelectContent>
                     {accounts
                       .filter(acc => acc.id !== accountId)
-                      .map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id}>
-                          {acc.name} ({acc.currency} {acc.balance.toLocaleString()})
-                        </SelectItem>
-                      ))}
+                      .map((acc) => {
+                        const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+                        return (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.name} ({formatCurrency(acc.balance, acc.currency)}
+                            {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>

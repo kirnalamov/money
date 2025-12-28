@@ -31,7 +31,13 @@
       "net_worth_title": "Динамика капитала",
       "net_worth_subtitle": "Последние 7 месяцев",
       "expenses_title": "Расходы по категориям",
-      "monthly_limits": "Месячные лимиты"
+      "monthly_limits": "Месячные лимиты",
+      "filter_accounts": "Фильтр",
+      "select_accounts": "Выбрать счета",
+      "display_mode": "Режим отображения",
+      "mode_combined": "Все вместе",
+      "mode_separate": "По отдельности",
+      "total": "Всего"
     }
   },
   "transactions": {
@@ -84,6 +90,8 @@
     "appearance": "Внешний вид",
     "theme_mode": "Тема оформления",
     "language": "Язык",
-    "interface_language": "Язык интерфейса"
+    "interface_language": "Язык интерфейса",
+    "currency": "Валюта",
+    "default_currency": "Валюта по умолчанию"
   }
 }

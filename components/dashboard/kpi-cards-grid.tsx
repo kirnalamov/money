@@ -3,45 +3,49 @@
 import { CreditCard, TrendingUp, Wallet, PiggyBank } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
+import { formatCurrency, convertCurrency } from "@/lib/utils";
 
 export function KpiCardsGrid() {
-  const { accounts } = useStore();
+  const { accounts, defaultCurrency } = useStore();
   const { t } = useTranslation();
 
-  // Calculate totals from store
+  // Calculate totals from store with currency conversion
   const totalCash = accounts
     .filter(a => a.type === 'bank' || a.type === 'cash')
-    .reduce((sum, acc) => sum + acc.balance, 0);
+    .reduce((sum, acc) => {
+      const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+      return sum + convertedBalance;
+    }, 0);
     
   const totalSavings = accounts
     .filter(a => a.type === 'savings')
-    .reduce((sum, acc) => sum + acc.balance, 0);
+    .reduce((sum, acc) => {
+      const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+      return sum + convertedBalance;
+    }, 0);
 
   const kpis = [
     {
       title: t("dashboard.kpi.cash_balance"),
-      value: `$${totalCash.toLocaleString()}`,
+      value: formatCurrency(totalCash, defaultCurrency),
       change: t("dashboard.kpi.updated_now"),
       icon: Wallet,
     },
     {
       title: t("dashboard.kpi.invested_value"),
-      value: "$85,300.00", // Placeholder for now
+      value: formatCurrency(85300, defaultCurrency), // Placeholder for now
       change: `+5.2% ${t("dashboard.kpi.all_time")}`,
       icon: TrendingUp,
     },
     {
-      title: t("dashboard.kpi.planned_savings"), // Corrected from Total Savings based on earlier context, but let's stick to 'Planned Savings' or 'Total Savings' logic. Earlier code used Total Savings. 
-      // Wait, earlier code had "Planned Savings" in first version but "Total Savings" in second version.
-      // Translation key is "planned_savings". Let's align with the translation key intent or update key. 
-      // The key is "planned_savings".
-      value: `$${totalSavings.toLocaleString()}`,
-      change: `${t("dashboard.kpi.target")}: $20,000`,
+      title: t("dashboard.kpi.planned_savings"),
+      value: formatCurrency(totalSavings, defaultCurrency),
+      change: `${t("dashboard.kpi.target")}: ${formatCurrency(20000, defaultCurrency)}`,
       icon: PiggyBank,
     },
     {
       title: t("dashboard.kpi.available_spend"),
-      value: "$2,100.00", // Placeholder
+      value: formatCurrency(2100, defaultCurrency), // Placeholder
       change: `65% ${t("dashboard.kpi.budget_left")}`,
       icon: CreditCard,
     },

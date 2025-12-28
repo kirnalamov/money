@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useStore } from "@/lib/store";
+import { formatCurrency } from "@/lib/utils";
 
 const limits = [
   { category: "Groceries", spent: 450, limit: 600, color: "bg-plutus-green" },
@@ -12,6 +14,7 @@ const limits = [
 
 export function LimitsSummary() {
   const { t } = useTranslation();
+  const { defaultCurrency } = useStore();
 
   return (
     <div className="rounded-xl border bg-card text-card-foreground shadow p-6">
@@ -32,7 +35,7 @@ export function LimitsSummary() {
                 />
               </div>
               <div className="mt-2 text-xs text-muted-foreground">
-                ${limit.spent} / ${limit.limit}
+                {formatCurrency(limit.spent, defaultCurrency)} / {formatCurrency(limit.limit, defaultCurrency)}
               </div>
             </div>
           );

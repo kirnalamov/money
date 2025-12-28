@@ -3,7 +3,8 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { useStore } from "@/lib/store";
 
 const data = [
   { name: "Housing", value: 1200, color: "#00C853" }, // Green
@@ -15,6 +16,7 @@ const data = [
 
 export function ExpensesDonut() {
   const { t } = useTranslation();
+  const { defaultCurrency } = useStore();
   const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -29,7 +31,7 @@ export function ExpensesDonut() {
         <div ref={containerRef} className="relative w-full h-full max-w-[300px] flex-1" style={{ minHeight: 200, minWidth: 200 }}>
              {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                 <span className="text-3xl font-bold">${total.toLocaleString()}</span>
+                 <span className="text-3xl font-bold">{formatCurrency(total, defaultCurrency)}</span>
                  <span className="text-xs text-muted-foreground">Total</span>
             </div>
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
@@ -75,7 +77,7 @@ export function ExpensesDonut() {
                             </div>
                             <div className="mt-1 flex items-baseline gap-1">
                                 <span className="text-lg font-bold">
-                                    ${Number(payload[0].value).toLocaleString()}
+                                    {formatCurrency(Number(payload[0].value), defaultCurrency)}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                     ({Math.round((Number(payload[0].value) / total) * 100)}%)

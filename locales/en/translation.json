@@ -31,7 +31,13 @@
       "net_worth_title": "Net Worth Over Time",
       "net_worth_subtitle": "Last 7 months",
       "expenses_title": "Expenses by Category",
-      "monthly_limits": "Monthly Limits"
+      "monthly_limits": "Monthly Limits",
+      "filter_accounts": "Filter",
+      "select_accounts": "Select Accounts",
+      "display_mode": "Display Mode",
+      "mode_combined": "Combined",
+      "mode_separate": "Separate",
+      "total": "Total"
     }
   },
   "transactions": {
@@ -84,6 +90,8 @@
     "appearance": "Appearance",
     "theme_mode": "Theme Mode",
     "language": "Language",
-    "interface_language": "Interface Language"
+    "interface_language": "Interface Language",
+    "currency": "Currency",
+    "default_currency": "Default Currency"
   }
 }
