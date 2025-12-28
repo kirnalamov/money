@@ -264,7 +264,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
         </div>
       </div>
       <div className="flex-1 w-full min-h-[200px] pb-4 px-2">
-        <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
           <AreaChart data={data}>
             <defs>
               {displayMode === 'combined' ? (

@@ -34,7 +34,7 @@ export function ExpensesDonut() {
                  <span className="text-3xl font-bold">{formatCurrency(total, defaultCurrency)}</span>
                  <span className="text-xs text-muted-foreground">{t("dashboard.charts.total")}</span>
             </div>
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={200}>
             <PieChart>
                 <Pie
                 data={data}
