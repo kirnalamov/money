@@ -4,8 +4,14 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianG
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format, subDays } from "date-fns";
+import { ru, enUS, type Locale } from "date-fns/locale";
 import { useEffect, useState, useMemo } from "react";
 import { useStore } from "@/lib/store";
+
+const localeMap: Record<string, Locale> = {
+  ru: ru,
+  en: enUS,
+};
 import { formatCurrencyCompact, convertCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Filter, Layers } from "lucide-react";
@@ -27,8 +33,9 @@ interface NetWorthChartProps {
 }
 
 export function NetWorthChart({ dateRange }: NetWorthChartProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { accounts, defaultCurrency } = useStore();
+  const locale = localeMap[i18n.language] || enUS;
   const [data, setData] = useState<any[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
   
@@ -82,8 +89,16 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
     [accounts]
   );
 
+  // Стабильные значения дат для зависимостей
+  const dateRangeKey = useMemo(() => {
+    const from = dateRange?.from?.getTime() ?? null;
+    const to = dateRange?.to?.getTime() ?? null;
+    return `${from}-${to}`;
+  }, [dateRange?.from?.getTime(), dateRange?.to?.getTime()]);
+
   useEffect(() => {
     // Пересоздаем filteredAccounts внутри useEffect для избежания проблем с зависимостями
+    // accountsDataKey гарантирует, что accounts актуален
     const selectedIdsArray = filteredAccountIds.split(',').filter(Boolean);
     const currentFilteredAccounts = accounts.filter(acc => selectedIdsArray.includes(acc.id));
     
@@ -117,11 +132,11 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
         // Небольшие случайные колебания для визуализации
         currentTotal += (Math.random() - 0.4) * (currentTotal * 0.02);
         
-        const point: any = {
-          date: format(date, isLargeRange ? 'MMM d' : 'd MMM'),
-          fullDate: date.toISOString(),
-          total: Math.round(currentTotal),
-        };
+          const point: any = {
+            date: format(date, 'dd.MM', { locale }),
+            fullDate: date.toISOString(),
+            total: Math.round(currentTotal),
+          };
         
         points.push(point);
       }
@@ -147,10 +162,10 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       // Создаем точки данных
       for (let i = count; i >= 0; i--) {
         const date = subDays(endDate, i * step);
-        const point: any = {
-          date: format(date, isLargeRange ? 'MMM d' : 'd MMM'),
-          fullDate: date.toISOString(),
-        };
+          const point: any = {
+            date: format(date, 'dd.MM', { locale }),
+            fullDate: date.toISOString(),
+          };
         
         currentFilteredAccounts.forEach(acc => {
           point[acc.id] = accountData[acc.id][count - i];
@@ -161,7 +176,9 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       
       setData(points);
     }
-  }, [dateRange?.from?.getTime(), dateRange?.to?.getTime(), displayMode, filteredAccountIds, defaultCurrency, accountsDataKey]);
+    // accountsDataKey отслеживает изменения accounts, поэтому accounts можно использовать внутри без добавления в зависимости
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey]);
 
   const toggleAccount = (accountId: string) => {
     setSelectedAccountIds(prev => {
@@ -192,50 +209,55 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
             <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.charts.net_worth_title")}</h3>
             <p className="text-sm text-muted-foreground mt-1">
               {dateRange?.from ? 
-                `${format(dateRange.from, 'MMM d, yyyy')} - ${dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : '...'}` 
+                `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}` 
                 : t("dashboard.charts.net_worth_subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  <Filter className="h-4 w-4 mr-2" />
-                  {t("dashboard.charts.filter_accounts")}
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <Filter className="h-4 w-4" />
+                  <span className="sr-only">{t("dashboard.charts.filter_accounts")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>{t("dashboard.charts.select_accounts")}</DropdownMenuLabel>
+                <DropdownMenuLabel className="px-2 py-1.5">{t("dashboard.charts.select_accounts")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {accounts.map((acc) => (
-                  <DropdownMenuCheckboxItem
-                    key={acc.id}
-                    checked={selectedAccountIds.has(acc.id)}
-                    onCheckedChange={() => toggleAccount(acc.id)}
-                  >
-                    {acc.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                <div className="p-1">
+                  {accounts.map((acc) => (
+                    <DropdownMenuCheckboxItem
+                      key={acc.id}
+                      checked={selectedAccountIds.has(acc.id)}
+                      onCheckedChange={() => toggleAccount(acc.id)}
+                      className="pl-8 pr-2 py-1.5"
+                    >
+                      {acc.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  <Layers className="h-4 w-4 mr-2" />
-                  {displayMode === 'combined' ? t("dashboard.charts.mode_combined") : t("dashboard.charts.mode_separate")}
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <Layers className="h-4 w-4" />
+                  <span className="sr-only">{displayMode === 'combined' ? t("dashboard.charts.mode_combined") : t("dashboard.charts.mode_separate")}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{t("dashboard.charts.display_mode")}</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="px-2 py-1.5">{t("dashboard.charts.display_mode")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={displayMode} onValueChange={(value) => setDisplayMode(value as DisplayMode)}>
-                  <DropdownMenuRadioItem value="combined">
-                    {t("dashboard.charts.mode_combined")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="separate">
-                    {t("dashboard.charts.mode_separate")}
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
+                <div className="p-1">
+                  <DropdownMenuRadioGroup value={displayMode} onValueChange={(value) => setDisplayMode(value as DisplayMode)}>
+                    <DropdownMenuRadioItem value="combined" className="pl-8 pr-2 py-1.5">
+                      {t("dashboard.charts.mode_combined")}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="separate" className="pl-8 pr-2 py-1.5">
+                      {t("dashboard.charts.mode_separate")}
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

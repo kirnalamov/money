@@ -5,13 +5,16 @@
     "portfolio": "Portfolio",
     "savings": "Savings",
     "limits": "Limits",
+    "accounts": "Accounts",
     "settings": "Settings",
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
-    "sign_out": "Sign Out"
+    "sign_out": "Sign Out",
+    "actions": "Actions",
+    "pick_date": "Pick a date"
   },
   "dashboard": {
     "title": "Overview",
@@ -38,6 +41,24 @@
       "mode_combined": "Combined",
       "mode_separate": "Separate",
       "total": "Total"
+    },
+    "date_filters": {
+      "7d": "7D",
+      "1m": "1M",
+      "3m": "3M",
+      "6m": "6M",
+      "1y": "1Y",
+      "all": "All"
+    },
+    "categories": {
+      "housing": "Housing",
+      "food": "Food",
+      "transport": "Transport",
+      "shopping": "Shopping",
+      "utilities": "Utilities",
+      "groceries": "Groceries",
+      "dining_out": "Dining Out",
+      "entertainment": "Entertainment"
     }
   },
   "transactions": {
@@ -83,7 +104,39 @@
   },
   "limits": {
     "title": "Spending Limits",
-    "editor_placeholder": "Limits Editor Table Placeholder"
+    "editor_placeholder": "Limits Editor Table Placeholder",
+    "category": "Category",
+    "limit": "Limit",
+    "spent": "Spent",
+    "period": "Period",
+    "currency": "Currency",
+    "add_limit": "Add Limit",
+    "edit_limit": "Edit Limit",
+    "delete_limit": "Delete Limit",
+    "no_limits": "No limits set. Add one to get started.",
+    "periods": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "add_account": "Add Account",
+    "edit_account": "Edit Account",
+    "delete_account": "Delete Account",
+    "account_name": "Account Name",
+    "account_type": "Account Type",
+    "balance": "Balance",
+    "currency": "Currency",
+    "provider": "Provider",
+    "no_accounts": "No accounts yet. Add one to get started.",
+    "types": {
+      "bank": "Bank Account",
+      "savings": "Savings Account",
+      "cash": "Cash",
+      "brokerage": "Brokerage Account"
+    }
   },
   "settings": {
     "title": "Settings",

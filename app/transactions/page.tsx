@@ -3,11 +3,18 @@
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
+import { ru, enUS, type Locale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 
+const localeMap: Record<string, Locale> = {
+  ru: ru,
+  en: enUS,
+};
+
 export default function TransactionsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = localeMap[i18n.language] || enUS;
   const { transactions, accounts, defaultCurrency } = useStore();
   
   const getAccountName = (id: string) => accounts.find(a => a.id === id)?.name || 'Unknown';
@@ -32,7 +39,7 @@ export default function TransactionsPage() {
                    <div className="flex flex-col">
                      <span className="font-medium">{tx.category}</span>
                      <span className="text-xs text-muted-foreground">
-                       {format(new Date(tx.date), 'MMM d, yyyy')} • {getAccountName(tx.accountId)} 
+                       {format(new Date(tx.date), 'dd.MM.yyyy', { locale })} • {getAccountName(tx.accountId)} 
                        {tx.type === 'transfer' && ` → ${getAccountName(tx.toAccountId!)}`}
                      </span>
                      {tx.description && <span className="text-xs text-muted-foreground">{tx.description}</span>}

@@ -5,13 +5,16 @@
     "portfolio": "Портфель",
     "savings": "Накопления",
     "limits": "Лимиты",
+    "accounts": "Счета",
     "settings": "Настройки",
     "add": "Добавить",
     "save": "Сохранить",
     "cancel": "Отмена",
     "edit": "Изменить",
     "delete": "Удалить",
-    "sign_out": "Выйти"
+    "sign_out": "Выйти",
+    "actions": "Действия",
+    "pick_date": "Выберите дату"
   },
   "dashboard": {
     "title": "Обзор",
@@ -38,6 +41,24 @@
       "mode_combined": "Все вместе",
       "mode_separate": "По отдельности",
       "total": "Всего"
+    },
+    "date_filters": {
+      "7d": "7Д",
+      "1m": "1М",
+      "3m": "3М",
+      "6m": "6М",
+      "1y": "1Г",
+      "all": "Все"
+    },
+    "categories": {
+      "housing": "Жильё",
+      "food": "Еда",
+      "transport": "Транспорт",
+      "shopping": "Покупки",
+      "utilities": "Коммунальные",
+      "groceries": "Продукты",
+      "dining_out": "Рестораны",
+      "entertainment": "Развлечения"
     }
   },
   "transactions": {
@@ -83,7 +104,39 @@
   },
   "limits": {
     "title": "Лимиты расходов",
-    "editor_placeholder": "Таблица управления лимитами"
+    "editor_placeholder": "Таблица управления лимитами",
+    "category": "Категория",
+    "limit": "Лимит",
+    "spent": "Потрачено",
+    "period": "Период",
+    "currency": "Валюта",
+    "add_limit": "Добавить лимит",
+    "edit_limit": "Изменить лимит",
+    "delete_limit": "Удалить лимит",
+    "no_limits": "Лимиты не установлены. Добавьте первый.",
+    "periods": {
+      "daily": "Дневной",
+      "weekly": "Недельный",
+      "monthly": "Месячный"
+    }
+  },
+  "accounts": {
+    "title": "Счета",
+    "add_account": "Добавить счёт",
+    "edit_account": "Изменить счёт",
+    "delete_account": "Удалить счёт",
+    "account_name": "Название счёта",
+    "account_type": "Тип счёта",
+    "balance": "Баланс",
+    "currency": "Валюта",
+    "provider": "Банк/Провайдер",
+    "no_accounts": "Счета не добавлены. Добавьте первый.",
+    "types": {
+      "bank": "Банковский счёт",
+      "savings": "Накопительный счёт",
+      "cash": "Наличные",
+      "brokerage": "Брокерский счёт"
+    }
   },
   "settings": {
     "title": "Настройки",

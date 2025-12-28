@@ -7,11 +7,11 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 const data = [
-  { name: "Housing", value: 1200, color: "#00C853" }, // Green
-  { name: "Food", value: 450, color: "#2979FF" },    // Blue
-  { name: "Transport", value: 200, color: "#FFB300" }, // Amber
-  { name: "Shopping", value: 300, color: "#F44336" },  // Red
-  { name: "Utilities", value: 150, color: "#AB47BC" }, // Purple
+  { nameKey: "dashboard.categories.housing", value: 1200, color: "#00C853" }, // Green
+  { nameKey: "dashboard.categories.food", value: 450, color: "#2979FF" },    // Blue
+  { nameKey: "dashboard.categories.transport", value: 200, color: "#FFB300" }, // Amber
+  { nameKey: "dashboard.categories.shopping", value: 300, color: "#F44336" },  // Red
+  { nameKey: "dashboard.categories.utilities", value: 150, color: "#AB47BC" }, // Purple
 ];
 
 export function ExpensesDonut() {
@@ -32,7 +32,7 @@ export function ExpensesDonut() {
              {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
                  <span className="text-3xl font-bold">{formatCurrency(total, defaultCurrency)}</span>
-                 <span className="text-xs text-muted-foreground">Total</span>
+                 <span className="text-xs text-muted-foreground">{t("dashboard.charts.total")}</span>
             </div>
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
             <PieChart>
@@ -73,7 +73,7 @@ export function ExpensesDonut() {
                                     className="h-2 w-2 rounded-full" 
                                     style={{ backgroundColor: payload[0].payload.color }}
                                 />
-                                <span className="text-sm font-medium">{payload[0].name}</span>
+                                <span className="text-sm font-medium">{t(payload[0].payload.nameKey)}</span>
                             </div>
                             <div className="mt-1 flex items-baseline gap-1">
                                 <span className="text-lg font-bold">
@@ -102,7 +102,7 @@ export function ExpensesDonut() {
 
                 return (
                     <div 
-                        key={item.name}
+                        key={item.nameKey}
                         className={cn(
                             "flex items-center justify-between p-2 rounded-lg transition-all cursor-pointer border border-transparent",
                             isHovered ? "bg-accent border-border" : "hover:bg-accent/50",
@@ -113,7 +113,7 @@ export function ExpensesDonut() {
                     >
                         <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-sm font-medium">{item.name}</span>
+                            <span className="text-sm font-medium">{t(item.nameKey)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground font-medium">
                             {percentage}%

@@ -3,11 +3,18 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
+import { useTranslation } from "react-i18next"
+import { ru, enUS, type Locale } from "date-fns/locale"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+const localeMap: Record<string, Locale> = {
+  ru: ru,
+  en: enUS,
+}
 
 function Calendar({
   className,
@@ -15,8 +22,12 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const { i18n } = useTranslation()
+  const locale = localeMap[i18n.language] || enUS
+
   return (
     <DayPicker
+      locale={locale}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       captionLayout="dropdown"
