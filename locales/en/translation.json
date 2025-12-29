@@ -40,7 +40,13 @@
       "display_mode": "Display Mode",
       "mode_combined": "Combined",
       "mode_separate": "Separate",
-      "total": "Total"
+      "total": "Total",
+      "chart_style": "Chart Style",
+      "chart_types": {
+        "area": "Area",
+        "bar": "Bar",
+        "line": "Line"
+      }
     },
     "date_filters": {
       "7d": "7D",
@@ -95,7 +101,32 @@
     "day_pnl": "Day PnL",
     "total_pnl": "Total PnL",
     "ytd_return": "YTD Return",
-    "chart_placeholder": "Performance Chart Placeholder"
+    "chart_placeholder": "Performance Chart Placeholder",
+    "add_position": "Add Position",
+    "edit_position": "Edit Position",
+    "add_position_desc": "Enter the details of your new position",
+    "edit_position_desc": "Edit the position details",
+    "delete_position": "Delete position",
+    "account": "Account",
+    "select_account": "Select account",
+    "symbol": "Symbol",
+    "name": "Name",
+    "asset_class": "Asset Class",
+    "asset_classes": {
+      "stock": "Stock",
+      "crypto": "Crypto",
+      "etf": "ETF",
+      "bond": "Bond",
+      "cash": "Cash"
+    },
+    "quantity": "Quantity",
+    "avg_price": "Avg Price",
+    "current_price": "Current Price",
+    "currency": "Currency",
+    "value": "Value",
+    "pnl": "P&L",
+    "no_positions": "No positions yet. Add one to get started.",
+    "no_brokerage_accounts": "No brokerage accounts. Add a brokerage account in the Accounts section."
   },
   "savings": {
     "title": "Savings & Goals",

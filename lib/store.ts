@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Account, Transaction, Currency, LimitRule } from '@/types';
+import { Account, Transaction, Currency, LimitRule, Position } from '@/types';
 
 interface AppState {
   accounts: Account[];
   transactions: Transaction[];
   limits: LimitRule[];
+  positions: Position[];
   defaultCurrency: Currency;
   setDefaultCurrency: (currency: Currency) => void;
   addTransaction: (transaction: Transaction) => void;
@@ -15,6 +16,9 @@ interface AppState {
   addLimit: (limit: LimitRule) => void;
   updateLimit: (id: string, limit: Partial<LimitRule>) => void;
   deleteLimit: (id: string) => void;
+  addPosition: (position: Position) => void;
+  updatePosition: (symbol: string, accountId: string, position: Partial<Position>) => void;
+  deletePosition: (symbol: string, accountId: string) => void;
 }
 
 // Mock initial data
@@ -37,12 +41,19 @@ const initialLimits: LimitRule[] = [
   { id: '5', category: 'dashboard.categories.shopping', period: 'monthly', amount: 300, currency: 'USD', spent: 320 },
 ];
 
+const initialPositions: Position[] = [
+  { symbol: 'AAPL', name: 'Apple Inc.', quantity: 10, avgPrice: 150.00, currentPrice: 175.50, currency: 'USD', accountId: '1', assetClass: 'stock' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', quantity: 5, avgPrice: 120.00, currentPrice: 140.25, currency: 'USD', accountId: '1', assetClass: 'stock' },
+  { symbol: 'BTC', name: 'Bitcoin', quantity: 0.5, avgPrice: 40000.00, currentPrice: 45000.00, currency: 'USD', accountId: '1', assetClass: 'crypto' },
+];
+
 export const useStore = create<AppState>()(
   persist(
     (set) => ({
       accounts: initialAccounts,
       transactions: [],
       limits: initialLimits,
+      positions: initialPositions,
       defaultCurrency: 'USD',
       setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
       addAccount: (account) =>
@@ -64,6 +75,36 @@ export const useStore = create<AppState>()(
       deleteLimit: (id) =>
         set((state) => ({
           limits: state.limits.filter(limit => limit.id !== id)
+        })),
+      addPosition: (position) =>
+        set((state) => {
+          // Check if position already exists for this symbol and account
+          const existingIndex = state.positions.findIndex(
+            p => p.symbol === position.symbol && p.accountId === position.accountId
+          );
+          if (existingIndex >= 0) {
+            // Update existing position
+            return {
+              positions: state.positions.map((p, idx) => 
+                idx === existingIndex ? { ...p, ...position } : p
+              )
+            };
+          }
+          return { positions: [...state.positions, position] };
+        }),
+      updatePosition: (symbol, accountId, updates) =>
+        set((state) => ({
+          positions: state.positions.map(p => 
+            p.symbol === symbol && p.accountId === accountId 
+              ? { ...p, ...updates } 
+              : p
+          )
+        })),
+      deletePosition: (symbol, accountId) =>
+        set((state) => ({
+          positions: state.positions.filter(
+            p => !(p.symbol === symbol && p.accountId === accountId)
+          )
         })),
       addTransaction: (transaction) =>
         set((state) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { Area, AreaChart, Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format, subDays } from "date-fns";
@@ -14,7 +14,7 @@ const localeMap: Record<string, Locale> = {
 };
 import { formatCurrencyCompact, convertCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Filter, Layers } from "lucide-react";
+import { Filter, Layers, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type DisplayMode = 'combined' | 'separate';
+type ChartType = 'area' | 'bar' | 'line';
 
 interface NetWorthChartProps {
   dateRange: DateRange | undefined;
@@ -38,6 +39,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   const locale = localeMap[i18n.language] || enUS;
   const [data, setData] = useState<any[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
+  const [chartType, setChartType] = useState<ChartType>('area');
   
   // Получаем стабильный список ID счетов
   const accountIds = useMemo(() => accounts.map(acc => acc.id), [accounts]);
@@ -260,108 +262,309 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">{t("dashboard.charts.chart_style")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="px-2 py-1.5">{t("dashboard.charts.chart_style")}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-1">
+                  <DropdownMenuRadioGroup value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
+                    <DropdownMenuRadioItem value="area" className="pl-8 pr-2 py-1.5">
+                      {t("dashboard.charts.chart_types.area")}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="bar" className="pl-8 pr-2 py-1.5">
+                      {t("dashboard.charts.chart_types.bar")}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="line" className="pl-8 pr-2 py-1.5">
+                      {t("dashboard.charts.chart_types.line")}
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
       <div className="flex-1 w-full min-h-[200px] pb-4 px-2">
         <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
-          <AreaChart data={data}>
-            <defs>
-              {displayMode === 'combined' ? (
-                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-              ) : (
-                filteredAccounts.map((acc, index) => {
-                  const color = accountColors[index % accountColors.length];
-                  const gradientId = `color-${acc.id}`;
-                  return (
-                    <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0} />
-                    </linearGradient>
-                  );
-                })
-              )}
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              stroke="hsl(var(--muted-foreground))" 
-              fontSize={12} 
-              tickLine={false} 
-              axisLine={false}
-              minTickGap={30}
-            />
-            <YAxis 
-              stroke="hsl(var(--muted-foreground))" 
-              fontSize={12} 
-              tickLine={false} 
-              axisLine={false}
-              tickFormatter={(value) => {
-                const currencySymbols: Record<string, string> = {
-                  'USD': '$',
-                  'EUR': '€',
-                  'GBP': '£',
-                  'RUB': '₽',
-                };
-                const symbol = currencySymbols[defaultCurrency] || '$';
-                const isAfter = defaultCurrency === 'RUB';
-                const formattedValue = (value / 1000).toFixed(0);
-                return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
-              }}
-              width={40}
-            />
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-              itemStyle={{ color: 'hsl(var(--foreground))' }}
-              formatter={(value: number, name: string) => {
-                if (displayMode === 'combined') {
-                  return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
-                } else {
-                  const account = accounts.find(acc => acc.id === name);
-                  return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
-                }
-              }}
-            />
-            {displayMode === 'combined' ? (
-              <Area 
-                type="monotone" 
-                dataKey="total" 
-                stroke="hsl(var(--primary))" 
-                fillOpacity={1} 
-                fill="url(#colorTotal)" 
-                animationDuration={1000}
+          {chartType === 'area' && (
+            <AreaChart data={data}>
+              <defs>
+                {displayMode === 'combined' ? (
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                ) : (
+                  filteredAccounts.map((acc, index) => {
+                    const color = accountColors[index % accountColors.length];
+                    const gradientId = `color-${acc.id}`;
+                    return (
+                      <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                      </linearGradient>
+                    );
+                  })
+                )}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                minTickGap={30}
               />
-            ) : (
-              <>
-                {filteredAccounts.map((acc, index) => {
-                  const color = accountColors[index % accountColors.length];
-                  const gradientId = `color-${acc.id}`;
-                  return (
-                    <Area 
-                      key={acc.id}
-                      type="monotone" 
-                      dataKey={acc.id} 
-                      stroke={color}
-                      fillOpacity={0.6}
-                      fill={`url(#${gradientId})`}
-                      animationDuration={1000}
-                      strokeWidth={2}
-                    />
-                  );
-                })}
-                <Legend 
-                  formatter={(value) => {
-                    const account = accounts.find(acc => acc.id === value);
-                    return account?.name || value;
-                  }}
-                  wrapperStyle={{ paddingTop: '20px' }}
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(value) => {
+                  const currencySymbols: Record<string, string> = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'RUB': '₽',
+                  };
+                  const symbol = currencySymbols[defaultCurrency] || '$';
+                  const isAfter = defaultCurrency === 'RUB';
+                  const formattedValue = (value / 1000).toFixed(0);
+                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
+                }}
+                width={40}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number, name: string) => {
+                  if (displayMode === 'combined') {
+                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                  } else {
+                    const account = accounts.find(acc => acc.id === name);
+                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                  }
+                }}
+              />
+              {displayMode === 'combined' ? (
+                <Area 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="hsl(var(--primary))" 
+                  fillOpacity={1} 
+                  fill="url(#colorTotal)" 
+                  animationDuration={1000}
                 />
-              </>
-            )}
-          </AreaChart>
+              ) : (
+                <>
+                  {filteredAccounts.map((acc, index) => {
+                    const color = accountColors[index % accountColors.length];
+                    const gradientId = `color-${acc.id}`;
+                    return (
+                      <Area 
+                        key={acc.id}
+                        type="monotone" 
+                        dataKey={acc.id} 
+                        stroke={color}
+                        fillOpacity={0.6}
+                        fill={`url(#${gradientId})`}
+                        animationDuration={1000}
+                        strokeWidth={2}
+                      />
+                    );
+                  })}
+                  <Legend 
+                    formatter={(value) => {
+                      const account = accounts.find(acc => acc.id === value);
+                      return account?.name || value;
+                    }}
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
+                </>
+              )}
+            </AreaChart>
+          )}
+          {chartType === 'bar' && (
+            <BarChart data={data}>
+              <defs>
+                {displayMode === 'combined' ? (
+                  <linearGradient id="barColorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                  </linearGradient>
+                ) : (
+                  filteredAccounts.map((acc, index) => {
+                    const color = accountColors[index % accountColors.length];
+                    const gradientId = `barColor-${acc.id}`;
+                    return (
+                      <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0.4} />
+                      </linearGradient>
+                    );
+                  })
+                )}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                minTickGap={30}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(value) => {
+                  const currencySymbols: Record<string, string> = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'RUB': '₽',
+                  };
+                  const symbol = currencySymbols[defaultCurrency] || '$';
+                  const isAfter = defaultCurrency === 'RUB';
+                  const formattedValue = (value / 1000).toFixed(0);
+                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
+                }}
+                width={40}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number, name: string) => {
+                  if (displayMode === 'combined') {
+                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                  } else {
+                    const account = accounts.find(acc => acc.id === name);
+                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                  }
+                }}
+              />
+              {displayMode === 'combined' ? (
+                <Bar 
+                  dataKey="total" 
+                  fill="url(#barColorTotal)" 
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={1000}
+                />
+              ) : (
+                <>
+                  {filteredAccounts.map((acc, index) => {
+                    const color = accountColors[index % accountColors.length];
+                    const gradientId = `barColor-${acc.id}`;
+                    return (
+                      <Bar 
+                        key={acc.id}
+                        dataKey={acc.id} 
+                        fill={`url(#${gradientId})`}
+                        radius={[4, 4, 0, 0]}
+                        animationDuration={1000}
+                      />
+                    );
+                  })}
+                  <Legend 
+                    formatter={(value) => {
+                      const account = accounts.find(acc => acc.id === value);
+                      return account?.name || value;
+                    }}
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
+                </>
+              )}
+            </BarChart>
+          )}
+          {chartType === 'line' && (
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                minTickGap={30}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(value) => {
+                  const currencySymbols: Record<string, string> = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'RUB': '₽',
+                  };
+                  const symbol = currencySymbols[defaultCurrency] || '$';
+                  const isAfter = defaultCurrency === 'RUB';
+                  const formattedValue = (value / 1000).toFixed(0);
+                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
+                }}
+                width={40}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number, name: string) => {
+                  if (displayMode === 'combined') {
+                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                  } else {
+                    const account = accounts.find(acc => acc.id === name);
+                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                  }
+                }}
+              />
+              {displayMode === 'combined' ? (
+                <Line 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                  activeDot={{ r: 6 }}
+                  animationDuration={1000}
+                />
+              ) : (
+                <>
+                  {filteredAccounts.map((acc, index) => {
+                    const color = accountColors[index % accountColors.length];
+                    return (
+                      <Line 
+                        key={acc.id}
+                        type="monotone" 
+                        dataKey={acc.id} 
+                        stroke={color}
+                        strokeWidth={2}
+                        dot={{ fill: color, r: 4 }}
+                        activeDot={{ r: 6 }}
+                        animationDuration={1000}
+                      />
+                    );
+                  })}
+                  <Legend 
+                    formatter={(value) => {
+                      const account = accounts.find(acc => acc.id === value);
+                      return account?.name || value;
+                    }}
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
+                </>
+              )}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
     </div>

@@ -40,7 +40,13 @@
       "display_mode": "Режим отображения",
       "mode_combined": "Все вместе",
       "mode_separate": "По отдельности",
-      "total": "Всего"
+      "total": "Всего",
+      "chart_style": "Стиль графика",
+      "chart_types": {
+        "area": "Область",
+        "bar": "Столбчатая",
+        "line": "Линейный"
+      }
     },
     "date_filters": {
       "7d": "7Д",
@@ -95,7 +101,32 @@
     "day_pnl": "PnL за день",
     "total_pnl": "Общий PnL",
     "ytd_return": "Доходность YTD",
-    "chart_placeholder": "Здесь будет график доходности"
+    "chart_placeholder": "Здесь будет график доходности",
+    "add_position": "Добавить позицию",
+    "edit_position": "Изменить позицию",
+    "add_position_desc": "Введите детали новой позиции",
+    "edit_position_desc": "Измените детали позиции",
+    "delete_position": "Удалить позицию",
+    "account": "Счёт",
+    "select_account": "Выберите счёт",
+    "symbol": "Символ",
+    "name": "Название",
+    "asset_class": "Класс актива",
+    "asset_classes": {
+      "stock": "Акции",
+      "crypto": "Криптовалюта",
+      "etf": "ETF",
+      "bond": "Облигации",
+      "cash": "Наличные"
+    },
+    "quantity": "Количество",
+    "avg_price": "Средняя цена",
+    "current_price": "Текущая цена",
+    "currency": "Валюта",
+    "value": "Стоимость",
+    "pnl": "Прибыль/Убыток",
+    "no_positions": "Позиции не добавлены. Добавьте первую.",
+    "no_brokerage_accounts": "Нет брокерских счетов. Добавьте брокерский счёт в разделе Счета."
   },
   "savings": {
     "title": "Цели и Накопления",

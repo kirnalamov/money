@@ -27,7 +27,10 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 border-t bg-card md:hidden pb-safe">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between h-16 border-t bg-card md:hidden px-0 shadow-lg"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (
@@ -35,15 +38,15 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center justify-center w-full h-full space-y-1",
+              "flex flex-col items-center justify-center flex-1 min-w-0 h-full space-y-0.5 px-0.5 active:opacity-70 transition-opacity touch-manipulation",
               isActive ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <item.icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium">{item.name}</span>
+            <item.icon className="w-5 h-5 flex-shrink-0" />
+            <span className="text-[9px] xs:text-[10px] font-medium leading-tight text-center max-w-full truncate px-0.5">{item.name}</span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

@@ -14,21 +14,23 @@ import {
 
 export function LanguageToggle() {
   const { i18n } = useTranslation()
+  const currentLang = i18n.language.toUpperCase()
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="outline" className="gap-2">
           <Globe className="h-[1.2rem] w-[1.2rem]" />
+          <span>{currentLang}</span>
           <span className="sr-only">Toggle language</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => i18n.changeLanguage("en")}>
-          English
+          English (EN)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => i18n.changeLanguage("ru")}>
-          Русский
+          Русский (RU)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

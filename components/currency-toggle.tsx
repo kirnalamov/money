@@ -33,12 +33,14 @@ export function CurrencyToggle() {
   const { defaultCurrency, setDefaultCurrency } = useStore()
   const isRussian = i18n.language === 'ru'
   const currencyList = isRussian ? currenciesRu : currencies
+  const currentCurrency = currencyList.find(c => c.code === defaultCurrency) || currencyList[0]
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="outline" className="gap-2">
           <DollarSign className="h-[1.2rem] w-[1.2rem]" />
+          <span>{currentCurrency.code}</span>
           <span className="sr-only">Toggle currency</span>
         </Button>
       </DropdownMenuTrigger>

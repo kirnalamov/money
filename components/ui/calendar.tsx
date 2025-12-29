@@ -17,6 +17,7 @@ import {
   eachYearOfInterval,
   getMonth,
   getYear,
+  format,
 } from "date-fns"
 
 import { cn } from "@/lib/utils"
@@ -41,6 +42,9 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
     dayPickerProps,
   } = useDayPicker()
 
+  const { i18n } = useTranslation()
+  const locale = localeMap[i18n.language] || enUS
+
   const navStart = dayPickerProps.startMonth
   const navEnd = dayPickerProps.endMonth
 
@@ -51,15 +55,18 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
       end: endOfYear(calendarMonth.date),
     })
 
-    return months.map((month) => ({
-      value: getMonth(month),
-      label: formatters.formatMonthDropdown(month),
-      disabled:
-        (navStart && month < startOfMonth(navStart)) ||
-        (navEnd && month > startOfMonth(navEnd)) ||
-        false,
-    }))
-  }, [calendarMonth.date, formatters, navStart, navEnd])
+    return months.map((month) => {
+      const monthName = format(month, "LLLL", { locale })
+      return {
+        value: getMonth(month),
+        label: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+        disabled:
+          (navStart && month < startOfMonth(navStart)) ||
+          (navEnd && month > startOfMonth(navEnd)) ||
+          false,
+      }
+    })
+  }, [calendarMonth.date, locale, navStart, navEnd])
 
   /* ---------- years ---------- */
   const yearOptions = React.useMemo(() => {
@@ -71,9 +78,9 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
       end: new Date(toYear, 11, 31),
     }).map((year) => ({
       value: getYear(year),
-      label: formatters.formatYearDropdown(year),
+      label: format(year, "yyyy", { locale }),
     }))
-  }, [dayPickerProps.fromYear, dayPickerProps.toYear, formatters])
+  }, [dayPickerProps.fromYear, dayPickerProps.toYear, locale])
 
   const onMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const date = new Date(calendarMonth.date)
