@@ -65,7 +65,8 @@
       "groceries": "Groceries",
       "dining_out": "Dining Out",
       "entertainment": "Entertainment"
-    }
+    },
+    "recent_transactions": "Recent Transactions"
   },
   "transactions": {
     "title": "Transactions",

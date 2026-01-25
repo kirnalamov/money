@@ -81,8 +81,8 @@ export default function AccountsPage() {
       updateAccount(editingAccount.id, accountData);
     } else {
       addAccount({
+        ...(accountData as Omit<Account, "id">),
         id: Math.random().toString(36).substr(2, 9),
-        ...accountData as Account,
       });
     }
 
@@ -220,7 +220,7 @@ export default function AccountsPage() {
             const convertedBalance = account.currency !== defaultCurrency
               ? formatCurrency(account.balance, account.currency)
               : null;
-            
+
             return (
               <div key={account.id} className="border rounded-xl p-6 bg-card">
                 <div className="flex items-start justify-between mb-4">

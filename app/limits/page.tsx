@@ -78,8 +78,8 @@ export default function LimitsPage() {
       updateLimit(editingLimit.id, limitData);
     } else {
       addLimit({
+        ...(limitData as Omit<LimitRule, "id">),
         id: Math.random().toString(36).substr(2, 9),
-        ...limitData as LimitRule,
       });
     }
 

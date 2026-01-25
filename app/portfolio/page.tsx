@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { Position, Currency, AccountType } from "@/types";
+import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-chart";
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
@@ -117,13 +118,13 @@ export default function PortfolioPage() {
     positions.forEach((position) => {
       const value = position.quantity * position.currentPrice;
       const cost = position.quantity * position.avgPrice;
-      
+
       const valueInDefault = convertCurrency(value, position.currency, defaultCurrency);
       const costInDefault = convertCurrency(cost, position.currency, defaultCurrency);
-      
+
       totalValue += valueInDefault;
       totalCost += costInDefault;
-      
+
       // Assuming 2% daily change for demo (in real app, fetch from API)
       const dailyChange = value * 0.02;
       dayPnL += convertCurrency(dailyChange, position.currency, defaultCurrency);
@@ -227,8 +228,8 @@ export default function PortfolioPage() {
                 </Label>
                 <Select
                   value={formData.assetClass}
-                  onValueChange={(value: Position["assetClass"]) =>
-                    setFormData({ ...formData, assetClass: value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, assetClass: value as Position["assetClass"] })
                   }
                 >
                   <SelectTrigger className="col-span-3">
@@ -321,35 +322,45 @@ export default function PortfolioPage() {
       </div>
 
       {/* Portfolio Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="border rounded-xl p-6 bg-card">
-          <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_value")}</p>
-          <p className="text-2xl font-bold">{formatCurrency(portfolioMetrics.totalValue, defaultCurrency)}</p>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        {/* Main Metrics - Left Side */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_value")}</p>
+              <p className="text-3xl font-bold">{formatCurrency(portfolioMetrics.totalValue, defaultCurrency)}</p>
+            </div>
+            <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <p className="text-sm text-muted-foreground mb-2">{t("portfolio.day_pnl")}</p>
+              <p className={`text-3xl font-bold ${portfolioMetrics.dayPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {portfolioMetrics.dayPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.dayPnL, defaultCurrency)}
+              </p>
+            </div>
+            <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
+              <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {portfolioMetrics.totalPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.totalPnL, defaultCurrency)}
+              </p>
+            </div>
+            <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <p className="text-sm text-muted-foreground mb-2">{t("portfolio.ytd_return")}</p>
+              <p className={`text-3xl font-bold ${portfolioMetrics.ytdReturn >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {portfolioMetrics.ytdReturn >= 0 ? '+' : ''}{portfolioMetrics.ytdReturn.toFixed(2)}%
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="border rounded-xl p-6 bg-card">
-          <p className="text-sm text-muted-foreground mb-2">{t("portfolio.day_pnl")}</p>
-          <p className={`text-2xl font-bold ${portfolioMetrics.dayPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {portfolioMetrics.dayPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.dayPnL, defaultCurrency)}
-          </p>
-        </div>
-        <div className="border rounded-xl p-6 bg-card">
-          <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
-          <p className={`text-2xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {portfolioMetrics.totalPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.totalPnL, defaultCurrency)}
-          </p>
-        </div>
-        <div className="border rounded-xl p-6 bg-card">
-          <p className="text-sm text-muted-foreground mb-2">{t("portfolio.ytd_return")}</p>
-          <p className={`text-2xl font-bold ${portfolioMetrics.ytdReturn >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {portfolioMetrics.ytdReturn >= 0 ? '+' : ''}{portfolioMetrics.ytdReturn.toFixed(2)}%
-          </p>
+
+        {/* Asset Allocation Chart - Right Side */}
+        <div className="lg:col-span-3">
+          <AssetAllocationChart />
         </div>
       </div>
 
       {/* Positions List */}
       {positions.length === 0 ? (
         <div className="border rounded-xl p-6 flex items-center justify-center text-muted-foreground">
-          {brokerageAccounts.length === 0 
+          {brokerageAccounts.length === 0
             ? t("portfolio.no_brokerage_accounts")
             : t("portfolio.no_positions")}
         </div>

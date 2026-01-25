@@ -12,6 +12,15 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Plutus",
   description: "Multi-account personal finance & investment dashboard",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#00C853" },
+    { media: "(prefers-color-scheme: dark)", color: "#00C853" }
+  ],
 };
 
 export const viewport: Viewport = {

@@ -20,15 +20,15 @@ export function LimitsSummary() {
   const { limits, defaultCurrency } = useStore();
 
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow p-6">
-      <h3 className="font-semibold leading-none tracking-tight mb-4">{t("dashboard.charts.monthly_limits")}</h3>
-      <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+    <div className="rounded-xl border bg-card text-card-foreground shadow p-6 h-full">
+      <h3 className="font-semibold leading-none tracking-tight mb-6">{t("dashboard.charts.monthly_limits")}</h3>
+      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2 hide-scrollbar">
         {limits.filter(limit => limit.period === 'monthly').map((limit) => {
           const percentage = Math.min(100, (limit.spent / limit.amount) * 100);
           const convertedSpent = convertCurrency(limit.spent, limit.currency, defaultCurrency);
           const convertedLimit = convertCurrency(limit.amount, limit.currency, defaultCurrency);
           const color = colorMap[limit.category] || "bg-plutus-green";
-          
+
           return (
             <div key={limit.id} className="min-w-[200px] p-4 border rounded-lg bg-background">
               <div className="flex justify-between items-center mb-2">
@@ -36,9 +36,9 @@ export function LimitsSummary() {
                 <span className="text-xs text-muted-foreground">{Math.round(percentage)}%</span>
               </div>
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className={`h-full ${color}`} 
-                  style={{ width: `${percentage}%` }} 
+                <div
+                  className={`h-full ${color}`}
+                  style={{ width: `${percentage}%` }}
                 />
               </div>
               <div className="mt-2 text-xs text-muted-foreground">

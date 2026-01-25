@@ -33,6 +33,9 @@ export function Sidebar() {
     <div className="hidden border-r bg-card md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-50">
       <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-6 mb-8">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
+            <Wallet className="h-6 w-6 text-primary" />
+          </div>
           <h1 className="text-2xl font-bold text-primary">Plutus</h1>
         </div>
         <div className="flex flex-col flex-grow px-4 space-y-1">
@@ -43,15 +46,16 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all relative",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/10 text-primary before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary before:rounded-r"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <item.icon
                   className={cn(
-                    "mr-3 h-5 w-5 flex-shrink-0",
+                    "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
                     isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                   )}
                   aria-hidden="true"
@@ -62,10 +66,10 @@ export function Sidebar() {
           })}
         </div>
         <div className="p-4 mt-auto border-t">
-           <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground rounded-md hover:bg-muted hover:text-foreground transition-colors">
-             <LogOut className="w-5 h-5 mr-3" />
-             {t("common.sign_out")}
-           </button>
+          <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground rounded-md hover:bg-muted hover:text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
+            <LogOut className="w-5 h-5 mr-3" />
+            {t("common.sign_out")}
+          </button>
         </div>
       </div>
     </div>

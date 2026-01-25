@@ -65,7 +65,8 @@
       "groceries": "Продукты",
       "dining_out": "Рестораны",
       "entertainment": "Развлечения"
-    }
+    },
+    "recent_transactions": "Последние операции"
   },
   "transactions": {
     "title": "Операции",
