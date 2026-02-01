@@ -1,6 +1,10 @@
 
 
+
+
 "use client";
+
+import ProtectedRoute from "@/components/auth/protected-route";
 
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { useStore } from "@/lib/store";
@@ -83,36 +87,38 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6 container mx-auto pb-20 md:pb-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            {filteredTransactions.length} {t('common.transactions').toLowerCase()} found
-          </p>
+    <ProtectedRoute>
+      <div className="space-y-6 container mx-auto pb-20 md:pb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              {filteredTransactions.length} {t('common.transactions').toLowerCase()} found
+            </p>
+          </div>
+          <AddTransactionDialog />
         </div>
-        <AddTransactionDialog />
+
+        <TransactionSummary
+          income={stats.income}
+          expense={stats.expense}
+          net={stats.net}
+        />
+
+        <TransactionFilters
+          search={search}
+          setSearch={setSearch}
+          type={type}
+          setType={setType}
+          accountId={accountId}
+          setAccountId={setAccountId}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          resetFilters={resetFilters}
+        />
+
+        <TransactionList transactions={filteredTransactions} />
       </div>
-
-      <TransactionSummary
-        income={stats.income}
-        expense={stats.expense}
-        net={stats.net}
-      />
-
-      <TransactionFilters
-        search={search}
-        setSearch={setSearch}
-        type={type}
-        setType={setType}
-        accountId={accountId}
-        setAccountId={setAccountId}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        resetFilters={resetFilters}
-      />
-
-      <TransactionList transactions={filteredTransactions} />
-    </div>
+    </ProtectedRoute>
   );
 }

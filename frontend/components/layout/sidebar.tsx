@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import LogoutButton from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -10,7 +12,6 @@ import {
   PiggyBank,
   Gauge,
   Settings,
-  LogOut,
   Wallet,
   User
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { useTranslation } from "react-i18next";
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { user, isAuthenticated } = useAuth();
 
   const navItems = [
     { name: t("common.overview"), href: "/", icon: LayoutDashboard },
@@ -67,12 +69,22 @@ export function Sidebar() {
             );
           })}
         </div>
-        <div className="p-4 mt-auto border-t">
-          <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-muted-foreground rounded-md hover:bg-muted hover:text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
-            <LogOut className="w-5 h-5 mr-3" />
-            {t("common.sign_out")}
-          </button>
-        </div>
+
+        {/* User Info & Logout */}
+        {isAuthenticated && user && (
+          <div className="p-4 mt-auto border-t space-y-2">
+            <div className="px-3 pb-2">
+              <p className="text-sm font-medium truncate">{user.full_name || user.username}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              {user.is_superuser && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary mt-1">
+                  Admin
+                </span>
+              )}
+            </div>
+            <LogoutButton />
+          </div>
+        )}
       </div>
     </div>
   );

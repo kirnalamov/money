@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { formatCurrency, cn, getCurrencySymbol } from "@/lib/utils";
@@ -99,188 +100,190 @@ export default function SavingsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t("savings.title")}</h2>
-          <p className="text-muted-foreground mt-1">{t("savings.subtitle")}</p>
-        </div>
-        <Button onClick={() => handleOpenDialog()} className="md:w-auto w-full">
-          <Plus className="mr-2 h-4 w-4" />
-          {t("savings.add_goal")}
-        </Button>
-      </div>
-
-      {/* Goals Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {goals.map((goal) => {
-          const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
-          const isCompleted = progress >= 100;
-
-          return (
-            <div key={goal.id} className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
-                  <Target className="h-6 w-6" />
-                </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(goal)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(goal.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <h3 className="font-semibold text-lg mb-1">{goal.name}</h3>
-              <p className="text-muted-foreground text-sm mb-4 flex items-center gap-1">
-                {goal.deadline && (
-                  <>
-                    <Calendar className="h-3 w-3" />
-                    {new Date(goal.deadline).toLocaleDateString()}
-                  </>
-                )}
-              </p>
-
-              <div className="flex items-end justify-between mb-2">
-                <span className="text-2xl font-bold">{formatCurrency(goal.currentAmount, goal.currency)}</span>
-                <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatCurrency(goal.targetAmount, goal.currency)}</span>
-              </div>
-
-              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                <div
-                  className={cn("h-full transition-all duration-500 rounded-full", isCompleted ? "bg-green-500" : "bg-primary")}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <div className="mt-2 text-right text-sm font-medium text-muted-foreground">
-                {progress}%
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Add New Goal Placeholder Card */}
-        <button
-          onClick={() => handleOpenDialog()}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted bg-transparent p-6 hover:bg-muted/50 transition-colors h-full min-h-[220px]"
-        >
-          <div className="p-4 rounded-full bg-muted mb-4">
-            <Plus className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <span className="font-medium text-muted-foreground">{t("savings.create_new_card")}</span>
-        </button>
-      </div>
-
-      {/* Savings Calculator Section */}
-      <div className="rounded-xl border bg-card p-6 md:p-8 mt-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-            <TrendingUp className="h-6 w-6" />
-          </div>
+    <ProtectedRoute>
+      <div className="space-y-8 pb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold">{t("savings.calculator.title")}</h3>
-            <p className="text-sm text-muted-foreground">{t("savings.calculator.subtitle")}</p>
+            <h2 className="text-3xl font-bold tracking-tight">{t("savings.title")}</h2>
+            <p className="text-muted-foreground mt-1">{t("savings.subtitle")}</p>
+          </div>
+          <Button onClick={() => handleOpenDialog()} className="md:w-auto w-full">
+            <Plus className="mr-2 h-4 w-4" />
+            {t("savings.add_goal")}
+          </Button>
+        </div>
+
+        {/* Goals Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {goals.map((goal) => {
+            const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
+            const isCompleted = progress >= 100;
+
+            return (
+              <div key={goal.id} className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
+                    <Target className="h-6 w-6" />
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(goal)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(goal.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <h3 className="font-semibold text-lg mb-1">{goal.name}</h3>
+                <p className="text-muted-foreground text-sm mb-4 flex items-center gap-1">
+                  {goal.deadline && (
+                    <>
+                      <Calendar className="h-3 w-3" />
+                      {new Date(goal.deadline).toLocaleDateString()}
+                    </>
+                  )}
+                </p>
+
+                <div className="flex items-end justify-between mb-2">
+                  <span className="text-2xl font-bold">{formatCurrency(goal.currentAmount, goal.currency)}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatCurrency(goal.targetAmount, goal.currency)}</span>
+                </div>
+
+                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full transition-all duration-500 rounded-full", isCompleted ? "bg-green-500" : "bg-primary")}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="mt-2 text-right text-sm font-medium text-muted-foreground">
+                  {progress}%
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add New Goal Placeholder Card */}
+          <button
+            onClick={() => handleOpenDialog()}
+            className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted bg-transparent p-6 hover:bg-muted/50 transition-colors h-full min-h-[220px]"
+          >
+            <div className="p-4 rounded-full bg-muted mb-4">
+              <Plus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <span className="font-medium text-muted-foreground">{t("savings.create_new_card")}</span>
+          </button>
+        </div>
+
+        {/* Savings Calculator Section */}
+        <div className="rounded-xl border bg-card p-6 md:p-8 mt-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">{t("savings.calculator.title")}</h3>
+              <p className="text-sm text-muted-foreground">{t("savings.calculator.subtitle")}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label>{t("savings.calculator.monthly_contribution")}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
+                  <Input
+                    type="number"
+                    value={calcMonthly}
+                    onChange={(e) => setCalcMonthly(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>{t("savings.calculator.time_period")}</Label>
+                <Input
+                  type="number"
+                  value={calcYears}
+                  onChange={(e) => setCalcYears(e.target.value)}
+                  max={50}
+                />
+                <div className="flex justify-between text-xs text-muted-foreground px-1">
+                  <span>{t("savings.calculator.year_1")}</span>
+                  <span>{t("savings.calculator.year_50")}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={calcYears}
+                  onChange={(e) => setCalcYears(e.target.value)}
+                  className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>{t("savings.calculator.interest_rate")}</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={calcInterest}
+                    onChange={(e) => setCalcInterest(e.target.value)}
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-2.5 text-muted-foreground">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-center items-center bg-secondary/20 rounded-xl p-6 text-center">
+              <span className="text-sm text-muted-foreground mb-2">{t("savings.calculator.projected_total", { years: calcYears })}</span>
+              <span className="text-4xl md:text-5xl font-bold text-primary mb-2">
+                {formatCurrency(calculateSavings(), defaultCurrency)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {t("savings.calculator.total_contributed")}: {formatCurrency(parseFloat(calcMonthly) * 12 * parseFloat(calcYears), defaultCurrency)}
+              </span>
+              <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
+                +{formatCurrency(calculateSavings() - (parseFloat(calcMonthly) * 12 * parseFloat(calcYears)), defaultCurrency)} {t("savings.calculator.interest_earned")}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label>{t("savings.calculator.monthly_contribution")}</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
-                <Input
-                  type="number"
-                  value={calcMonthly}
-                  onChange={(e) => setCalcMonthly(e.target.value)}
-                  className="pl-8"
-                />
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingGoal ? t("savings.dialog.edit_title") : t("savings.dialog.create_title")}</DialogTitle>
+              <DialogDescription>{t("savings.dialog.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">{t("savings.dialog.name_label")}</Label>
+                <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t("savings.dialog.name_placeholder")} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="target">{t("savings.dialog.target_label")}</Label>
+                  <Input id="target" type="number" value={formData.targetAmount} onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="current">{t("savings.dialog.current_label")}</Label>
+                  <Input id="current" type="number" value={formData.currentAmount} onChange={(e) => setFormData({ ...formData, currentAmount: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="deadline">{t("savings.dialog.date_label")}</Label>
+                <Input id="deadline" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label>{t("savings.calculator.time_period")}</Label>
-              <Input
-                type="number"
-                value={calcYears}
-                onChange={(e) => setCalcYears(e.target.value)}
-                max={50}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                <span>{t("savings.calculator.year_1")}</span>
-                <span>{t("savings.calculator.year_50")}</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                value={calcYears}
-                onChange={(e) => setCalcYears(e.target.value)}
-                className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>{t("savings.calculator.interest_rate")}</Label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  value={calcInterest}
-                  onChange={(e) => setCalcInterest(e.target.value)}
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-2.5 text-muted-foreground">%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-center items-center bg-secondary/20 rounded-xl p-6 text-center">
-            <span className="text-sm text-muted-foreground mb-2">{t("savings.calculator.projected_total", { years: calcYears })}</span>
-            <span className="text-4xl md:text-5xl font-bold text-primary mb-2">
-              {formatCurrency(calculateSavings(), defaultCurrency)}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {t("savings.calculator.total_contributed")}: {formatCurrency(parseFloat(calcMonthly) * 12 * parseFloat(calcYears), defaultCurrency)}
-            </span>
-            <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
-              +{formatCurrency(calculateSavings() - (parseFloat(calcMonthly) * 12 * parseFloat(calcYears)), defaultCurrency)} {t("savings.calculator.interest_earned")}
-            </div>
-          </div>
-        </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
+              <Button onClick={handleSave}>{t("savings.dialog.save")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingGoal ? t("savings.dialog.edit_title") : t("savings.dialog.create_title")}</DialogTitle>
-            <DialogDescription>{t("savings.dialog.description")}</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">{t("savings.dialog.name_label")}</Label>
-              <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t("savings.dialog.name_placeholder")} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="target">{t("savings.dialog.target_label")}</Label>
-                <Input id="target" type="number" value={formData.targetAmount} onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="current">{t("savings.dialog.current_label")}</Label>
-                <Input id="current" type="number" value={formData.currentAmount} onChange={(e) => setFormData({ ...formData, currentAmount: e.target.value })} />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="deadline">{t("savings.dialog.date_label")}</Label>
-              <Input id="deadline" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
-            <Button onClick={handleSave}>{t("savings.dialog.save")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -25,11 +25,26 @@ services:
       - "8000:8000"
     environment:
       - PROJECT_NAME=MoneyApp
+
+      # Database
       - POSTGRES_SERVER=db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=app
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+
+      # Security - IMPORTANT: Change SECRET_KEY in production!
+      - SECRET_KEY=dev-secret-key-CHANGE-IN-PRODUCTION-use-openssl-rand-hex-32
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+
+      # Logging
+      - LOG_FORMAT=console
+      - LOG_LEVEL=INFO
+      # Optional: Initial superuser (uncomment to create on first run)
+      # - FIRST_SUPERUSER_EMAIL=admin@example.com
+      # - FIRST_SUPERUSER_USERNAME=admin
+      # - FIRST_SUPERUSER_PASSWORD=SecurePassword123!
+      # - FIRST_SUPERUSER_FULL_NAME=Admin User
     depends_on:
       db:
         condition: service_healthy
