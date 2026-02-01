@@ -214,25 +214,25 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                 <div className="grid gap-4 md:grid-cols-2">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Fixed Costs (Mandatory)</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('analytics.stats.fixed_costs')}</CardTitle>
                             <Building className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(totalFixed, defaultCurrency)}</div>
                             <p className="text-xs text-muted-foreground">
-                                {fixedRatio.toFixed(0)}% of total spending
+                                {fixedRatio.toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Discretionary (Variable)</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('analytics.stats.discretionary')}</CardTitle>
                             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(totalVariable, defaultCurrency)}</div>
                             <p className="text-xs text-muted-foreground">
-                                {(100 - fixedRatio).toFixed(0)}% of total spending
+                                {(100 - fixedRatio).toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
                         </CardContent>
                     </Card>
@@ -245,23 +245,26 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <h3 className="font-semibold text-lg">{t('analytics.breakdown.title')}</h3>
                             <p className="text-sm text-muted-foreground">{t('analytics.breakdown.subtitle')}</p>
                         </div>
-                        <div className="flex bg-muted p-1 rounded-lg">
+                        <div className="flex bg-muted p-1 rounded-lg shrink-0">
                             <Button
                                 variant={chartType === 'pie' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-8 px-2"
+                                className="h-8 px-2 text-xs"
                                 onClick={() => setChartType('pie')}
                             >
-                                <PieIcon className="w-4 h-4 mr-2" /> {t('dashboard.charts.chart_types.area')} {/* Using area as label fallback or specific pie label? Let's assume Chart Types has Pie, oh wait it doesn't. Let's add it or use raw text for now? Actually let's use t logic. */}
-                                Pie
+                                <PieIcon className="w-4 h-4 mr-2" />
+                                <span className="hidden sm:inline">{t('dashboard.charts.chart_types.pie')}</span>
+                                <span className="sm:hidden">{t('dashboard.charts.chart_types.pie').slice(0, 1)}</span>
                             </Button>
                             <Button
                                 variant={chartType === 'bar' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-8 px-2"
+                                className="h-8 px-2 text-xs"
                                 onClick={() => setChartType('bar')}
                             >
-                                <BarIcon className="w-4 h-4 mr-2" /> {t('dashboard.charts.chart_types.bar')}
+                                <BarIcon className="w-4 h-4 mr-2" />
+                                <span className="hidden sm:inline">{t('dashboard.charts.chart_types.bar')}</span>
+                                <span className="sm:hidden">{t('dashboard.charts.chart_types.bar').slice(0, 1)}</span>
                             </Button>
                         </div>
                     </div>
@@ -272,7 +275,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                 {t('analytics.common.no_data')}
                             </div>
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                                 {chartType === 'pie' ? (
                                     <PieChart>
                                         <Pie

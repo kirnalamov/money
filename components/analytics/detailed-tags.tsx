@@ -126,7 +126,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                     </div>
                 </div>
                 <div className="h-[500px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                             <XAxis type="number" tickFormatter={(val) => formatCurrency(val, defaultCurrency)} stroke="hsl(var(--muted-foreground))" fontSize={12} />

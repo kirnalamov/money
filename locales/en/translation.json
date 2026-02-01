@@ -46,7 +46,8 @@
       "chart_types": {
         "area": "Area",
         "bar": "Bar",
-        "line": "Line"
+        "line": "Line",
+        "pie": "Pie"
       }
     },
     "date_filters": {
@@ -233,7 +234,10 @@
       "avg_daily": "Avg. Daily",
       "per_month": "/ mo",
       "top_category": "Top Category",
-      "of_total": "of total"
+      "of_total": "of total",
+      "fixed_costs": "Fixed Costs (Mandatory)",
+      "discretionary": "Discretionary (Variable)",
+      "of_total_spending": "% of total spending"
     },
     "breakdown": {
       "title": "Expense Breakdown",
@@ -253,6 +257,19 @@
       "chart_subtitle": "Breakdown of expenses associated with tags",
       "no_data_title": "No tagged expenses found in this period.",
       "no_data_desc": "Try adjusting the date range or add tags to your transactions."
+    }
+  },
+  "profile": {
+    "page": {
+      "title": "My Profile",
+      "subtitle": "Your personal financial hub and achievements."
+    },
+    "card": {
+      "personal_details": "Personal Details",
+      "financial_goal": "Financial Goal",
+      "member_since": "Member since {{date}}",
+      "placeholder_name": "Your Name",
+      "placeholder_bio": "Saving for a dream home 🏠"
     }
   }
 }

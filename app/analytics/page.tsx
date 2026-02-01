@@ -45,11 +45,11 @@ export default function AnalyticsPage() {
 
             <div className="space-y-6">
                 {/* Tabs Navigation */}
-                <div className="inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full md:w-auto">
+                <div className="flex w-full items-center justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground md:w-auto md:justify-center no-scrollbar">
                     <button
                         onClick={() => handleTabChange("net-worth")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-1 md:flex-none",
+                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "net-worth" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
                         )}
                     >
@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
                     <button
                         onClick={() => handleTabChange("expenses")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-1 md:flex-none",
+                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "expenses" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
                         )}
                     >
@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
                     <button
                         onClick={() => handleTabChange("tags")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-1 md:flex-none",
+                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "tags" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
                         )}
                     >

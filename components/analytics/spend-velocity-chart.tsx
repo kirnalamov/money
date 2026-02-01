@@ -96,7 +96,7 @@ export function SpendVelocityChart() {
             </CardHeader>
             <CardContent>
                 <div className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                         <LineChart data={mergedData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis

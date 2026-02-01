@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Edit2, Check } from "lucide-react";
 
 export function ProfileCard() {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState("John Doe"); // Default/Placeholder
-    const [bio, setBio] = useState("Saving for a dream home 🏠");
+    const [name, setName] = useState(t('profile.card.placeholder_name')); // Default/Placeholder
+    const [bio, setBio] = useState(t('profile.card.placeholder_bio'));
 
     const handleSave = () => {
         setIsEditing(false);
@@ -22,7 +24,7 @@ export function ProfileCard() {
         <Card className="h-full">
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                    <span>Personal Details</span>
+                    <span>{t('profile.card.personal_details')}</span>
                     <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)}>
                         {isEditing ? <Check className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
                     </Button>
@@ -44,12 +46,12 @@ export function ProfileCard() {
                         ) : (
                             <h3 className="text-xl font-bold">{name}</h3>
                         )}
-                        <p className="text-muted-foreground text-sm">Member since Jan 2024</p>
+                        <p className="text-muted-foreground text-sm">{t('profile.card.member_since', { date: 'Jan 2024' })}</p>
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Financial Goal</Label>
+                    <Label>{t('profile.card.financial_goal')}</Label>
                     {isEditing ? (
                         <Input
                             value={bio}

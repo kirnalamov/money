@@ -10,8 +10,8 @@ export default function ProfilePage() {
     return (
         <div className="space-y-6 md:space-y-8 pb-10">
             <div className="flex flex-col gap-2">
-                <h2 className="text-3xl font-bold tracking-tight">My Profile</h2>
-                <p className="text-muted-foreground">Your personal financial hub and achievements.</p>
+                <h2 className="text-3xl font-bold tracking-tight">{t('profile.page.title')}</h2>
+                <p className="text-muted-foreground">{t('profile.page.subtitle')}</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 h-[600px]">

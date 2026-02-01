@@ -34,6 +34,7 @@
       "net_worth_title": "Динамика капитала",
       "net_worth_subtitle": "Последние 7 месяцев",
       "expenses_title": "Расходы по категориям",
+      "tags_title": "Расходы по тегам",
       "monthly_limits": "Месячные лимиты",
       "filter_accounts": "Фильтр",
       "select_accounts": "Выбрать счета",
@@ -45,7 +46,8 @@
       "chart_types": {
         "area": "Область",
         "bar": "Столбчатая",
-        "line": "Линейный"
+        "line": "Линейный",
+        "pie": "Круговая"
       }
     },
     "date_filters": {
@@ -232,7 +234,10 @@
       "avg_daily": "В среднем в день",
       "per_month": "/ мес",
       "top_category": "Топ категория",
-      "of_total": "от всего"
+      "of_total": "от всего",
+      "fixed_costs": "Постоянные расходы (Обязательные)",
+      "discretionary": "Переменные расходы (По желанию)",
+      "of_total_spending": "% от общих расходов"
     },
     "breakdown": {
       "title": "Структура расходов",
@@ -252,6 +257,19 @@
       "chart_subtitle": "Разбивка расходов по тегам",
       "no_data_title": "Нет расходов с тегами за этот период.",
       "no_data_desc": "Попробуйте изменить диапазон дат или добавьте теги к транзакциям."
+    }
+  },
+  "profile": {
+    "page": {
+      "title": "Мой Профиль",
+      "subtitle": "Ваш личный финансовый центр и достижения."
+    },
+    "card": {
+      "personal_details": "Личные данные",
+      "financial_goal": "Финансовая цель",
+      "member_since": "С нами с {{date}}",
+      "placeholder_name": "Ваше Имя",
+      "placeholder_bio": "Коплю на дом мечты 🏠"
     }
   }
 }

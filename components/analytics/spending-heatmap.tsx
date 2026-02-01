@@ -82,7 +82,7 @@ export function SpendingHeatmap() {
             <CardContent className="flex-1 flex flex-col justify-between min-h-0">
                 <div
                     ref={scrollRef}
-                    className="flex flex-wrap gap-2 justify-center sm:justify-start overflow-x-auto pb-2 custom-scrollbar pl-1 flex-1 items-center content-center"
+                    className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 custom-scrollbar pl-1 flex-1 items-center"
                 >
                     {/* 
                        Simple grid approach:

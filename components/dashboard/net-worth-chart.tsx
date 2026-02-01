@@ -196,6 +196,21 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       return newSet;
     });
   };
+  // Calculate trend percentage to determine color
+  const trendPercentage = useMemo(() => {
+    if (data.length < 2) return 0;
+    const start = data[0].total || 0;
+    const end = data[data.length - 1].total || 0;
+    if (start === 0) return 0;
+    return (end - start) / start;
+  }, [data]);
+
+  // Dynamic colors based on trend
+  const dynamicColor = useMemo(() => {
+    if (trendPercentage >= -0.01) return 'hsl(142, 76%, 36%)'; // Green (>= -1%)
+    if (trendPercentage >= -0.05) return '#FFB300'; // Amber (-1% to -5%)
+    return '#ef4444'; // Red (< -5%)
+  }, [trendPercentage]);
 
   const accountColors = [
     'hsl(var(--primary))',
@@ -305,8 +320,8 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
               <defs>
                 {displayMode === 'combined' ? (
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={dynamicColor} stopOpacity={0} />
                   </linearGradient>
                 ) : (
                   filteredAccounts.map((acc, index) => {
@@ -365,7 +380,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="hsl(var(--primary))"
+                  stroke={dynamicColor}
                   fillOpacity={1}
                   fill="url(#colorTotal)"
                   animationDuration={1000}
