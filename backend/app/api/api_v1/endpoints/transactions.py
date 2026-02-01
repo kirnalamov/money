@@ -1,13 +1,10 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app import crud
-from app.api import deps
 from app.schemas.core import Transaction, TransactionCreate, TransactionUpdate
-# Fix: Import directly because crud package might need explicit export or import
 from app.crud import crud_functions as crud_transactions
-
 from app.db.session import get_db
+
 
 router = APIRouter()
 
