@@ -1,73 +1,118 @@
+
+
 "use client";
 
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { useStore } from "@/lib/store";
-import { format } from "date-fns";
-import { ru, enUS, type Locale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
-
-const localeMap: Record<string, Locale> = {
-  ru: ru,
-  en: enUS,
-};
+import { useState } from "react";
+import { TransactionFilters } from "@/components/transactions/transaction-filters";
+import { TransactionSummary } from "@/components/transactions/transaction-summary";
+import { TransactionList } from "@/components/transactions/transaction-list";
+import { TransactionType } from "@/types";
+import { DateRange } from "react-day-picker";
+import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { convertCurrency } from "@/lib/utils";
 
 export default function TransactionsPage() {
-  const { t, i18n } = useTranslation();
-  const locale = localeMap[i18n.language] || enUS;
+  const { t } = useTranslation();
   const { transactions, accounts, defaultCurrency } = useStore();
-  
-  const getAccountName = (id: string) => accounts.find(a => a.id === id)?.name || 'Unknown';
+
+  // Filters State
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState<TransactionType | 'all'>('all');
+  const [accountId, setAccountId] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+
+  // Filter Logic
+  const filteredTransactions = transactions.filter(tx => {
+    // 1. Search
+    if (search) {
+      const searchLower = search.toLowerCase();
+      const matchesDesc = tx.description?.toLowerCase().includes(searchLower);
+      const matchesCat = tx.category.toLowerCase().includes(searchLower);
+      const matchesTags = tx.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+      if (!matchesDesc && !matchesCat && !matchesTags) return false;
+    }
+
+    // 2. Type
+    if (type !== 'all' && tx.type !== type) return false;
+
+    // 3. Account
+    if (accountId !== 'all' && tx.accountId !== accountId && tx.toAccountId !== accountId) return false;
+
+    // 4. Date Range
+    if (dateRange?.from) {
+      const txDate = new Date(tx.date);
+      const end = dateRange.to || dateRange.from;
+      // Set end of day for the end date to include all transactions on that day
+      const endOfDay = new Date(end);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      if (txDate < dateRange.from || txDate > endOfDay) return false;
+    }
+
+    return true;
+  });
+
+  // Stats Calculation
+  const stats = filteredTransactions.reduce((acc, tx) => {
+    const account = accounts.find(a => a.id === tx.accountId);
+    if (!account) return acc;
+
+    const convertedAmount = convertCurrency(tx.amount, account.currency, defaultCurrency);
+
+    if (tx.type === 'income') {
+      acc.income += convertedAmount;
+      acc.net += convertedAmount;
+    } else if (tx.type === 'expense') {
+      acc.expense += convertedAmount;
+      acc.net -= convertedAmount;
+    }
+    return acc;
+  }, { income: 0, expense: 0, net: 0 });
+
+  const resetFilters = () => {
+    setSearch("");
+    setType('all');
+    setAccountId('all');
+    setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
+    <div className="space-y-6 container mx-auto pb-20 md:pb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {filteredTransactions.length} {t('common.transactions').toLowerCase()} found
+          </p>
+        </div>
         <AddTransactionDialog />
       </div>
-      
-      <div className="rounded-md border">
-        <div className="p-4">
-           {transactions.length === 0 ? (
-             <div className="text-center text-muted-foreground py-8">
-               {t('transactions.empty_state')}
-             </div>
-           ) : (
-             <div className="space-y-4">
-               {transactions.map((tx) => (
-                 <div key={tx.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                   <div className="flex flex-col">
-                     <span className="font-medium">{tx.category}</span>
-                     <span className="text-xs text-muted-foreground">
-                       {format(new Date(tx.date), 'dd.MM.yyyy', { locale })} • {getAccountName(tx.accountId)} 
-                       {tx.type === 'transfer' && ` → ${getAccountName(tx.toAccountId!)}`}
-                     </span>
-                     {tx.description && <span className="text-xs text-muted-foreground">{tx.description}</span>}
-                   </div>
-                   <div className="flex flex-col items-end">
-                     <div className={`font-bold ${
-                       tx.type === 'income' ? 'text-plutus-green' : 
-                       tx.type === 'expense' ? 'text-destructive' : 'text-foreground'
-                     }`}>
-                       {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
-                       {formatCurrency(tx.amount, tx.currency)}
-                     </div>
-                     {tx.currency !== defaultCurrency && (
-                       <div className="text-xs text-muted-foreground mt-1">
-                         {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
-                         {formatCurrency(
-                           convertCurrency(tx.amount, tx.currency, defaultCurrency),
-                           defaultCurrency
-                         )}
-                       </div>
-                     )}
-                   </div>
-                 </div>
-               ))}
-             </div>
-           )}
-        </div>
-      </div>
+
+      <TransactionSummary
+        income={stats.income}
+        expense={stats.expense}
+        net={stats.net}
+      />
+
+      <TransactionFilters
+        search={search}
+        setSearch={setSearch}
+        type={type}
+        setType={setType}
+        accountId={accountId}
+        setAccountId={setAccountId}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        resetFilters={resetFilters}
+      />
+
+      <TransactionList transactions={filteredTransactions} />
     </div>
   );
 }

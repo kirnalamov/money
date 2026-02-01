@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Account, Transaction, Currency, LimitRule, Position, Goal } from '@/types';
+import { Account, Transaction, Currency, LimitRule, Position, Goal, RecurringExpense } from '@/types';
 
 interface AppState {
   accounts: Account[];
@@ -23,9 +23,20 @@ interface AppState {
   addGoal: (goal: Goal) => void;
   updateGoal: (id: string, goal: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
+  recurringExpenses: RecurringExpense[];
+  addRecurringExpense: (expense: RecurringExpense) => void;
+  updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => void;
+  deleteRecurringExpense: (id: string) => void;
+  payRecurringExpense: (id: string, accountId: string, date?: string) => void;
+  toggleRecurringExpense: (id: string) => void;
 }
 
 // Mock initial data
+const initialRecurringExpenses: RecurringExpense[] = [
+  { id: '1', name: 'Rent', amount: 1200, currency: 'USD', category: 'dashboard.categories.housing', dueDay: 1, lastPaidDate: '2026-01-01T00:00:00.000Z' },
+  { id: '2', name: 'Internet', amount: 60, currency: 'USD', category: 'dashboard.categories.utilities', dueDay: 15, lastPaidDate: '2026-01-15T00:00:00.000Z' },
+  { id: '3', name: 'Netflix', amount: 15, currency: 'USD', category: 'dashboard.categories.entertainment', dueDay: 20 },
+];
 const initialGoals: Goal[] = [
   { id: '1', name: 'Emergency Fund', targetAmount: 20000, currentAmount: 12000, currency: 'USD', deadline: '2026-12-31', linkedAccountId: '2' },
   { id: '2', name: 'New Car', targetAmount: 35000, currentAmount: 5000, currency: 'USD', deadline: '2027-06-30' },
@@ -110,7 +121,70 @@ export const useStore = create<AppState>()(
         }
         return { transactions: [transaction, ...state.transactions], accounts: newAccounts };
       }),
+
+      // ... Recurring Expense actions ...
+      recurringExpenses: initialRecurringExpenses, // Initialize with mock data
+      addRecurringExpense: (expense: RecurringExpense) => set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })),
+      updateRecurringExpense: (id: string, updates: Partial<RecurringExpense>) => set((state) => ({ recurringExpenses: state.recurringExpenses.map(e => e.id === id ? { ...e, ...updates } : e) })),
+      deleteRecurringExpense: (id: string) => set((state) => ({ recurringExpenses: state.recurringExpenses.filter(e => e.id !== id) })),
+      payRecurringExpense: (id: string, accountId: string, dateStr?: string) => set((state) => {
+        const expense = state.recurringExpenses.find(e => e.id === id);
+        if (!expense) return state;
+
+        const date = dateStr || new Date().toISOString();
+
+        // 1. Create Transaction
+        const transaction: Transaction = {
+          id: `recurring_${Date.now()}`,
+          accountId: accountId,
+          type: 'expense',
+          amount: expense.amount,
+          currency: expense.currency,
+          category: expense.category,
+          date: date,
+          description: `Payment: ${expense.name}`,
+          status: 'completed',
+          isRecurring: true
+        };
+
+        // 2. Update Account Balance
+        const newAccounts = [...state.accounts];
+        const accIndex = newAccounts.findIndex(a => a.id === accountId);
+        if (accIndex >= 0) {
+          newAccounts[accIndex].balance -= expense.amount;
+        }
+
+        // 3. Update Last Paid Date
+        const newRecurring = state.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: date } : e);
+
+        return {
+          transactions: [transaction, ...state.transactions],
+          accounts: newAccounts,
+          recurringExpenses: newRecurring
+        };
+      }),
+      toggleRecurringExpense: (id: string) => set((state) => {
+        const expense = state.recurringExpenses.find(e => e.id === id);
+        if (!expense) return state;
+
+        const now = new Date();
+        let newDate: string | undefined = now.toISOString();
+
+        if (expense.lastPaidDate) {
+          const lastPaid = new Date(expense.lastPaidDate);
+          if (lastPaid.getMonth() === now.getMonth() && lastPaid.getFullYear() === now.getFullYear()) {
+            newDate = undefined; // Uncheck/Unpay
+          }
+        }
+
+        return {
+          recurringExpenses: state.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: newDate } : e)
+        };
+      }),
     }),
-    { name: 'plutus-storage' }
+    {
+      name: 'plutus-storage',
+      version: 1,
+    }
   )
 );

@@ -62,10 +62,10 @@ export function convertCurrency(
 
   // Сначала конвертируем в USD (базовая валюта)
   const amountInUSD = amount / exchangeRates[fromCurrency];
-  
+
   // Затем конвертируем из USD в целевую валюту
   const convertedAmount = amountInUSD * exchangeRates[toCurrency];
-  
+
   return convertedAmount;
 }
 
@@ -82,7 +82,7 @@ export function getExchangeRate(
   if (fromCurrency === toCurrency) {
     return 1.0;
   }
-  
+
   return exchangeRates[toCurrency] / exchangeRates[fromCurrency];
 }
 
@@ -106,9 +106,19 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
     maximumFractionDigits: 2,
   }).format(amount);
 
-  return config.position === 'before' 
-    ? `${config.symbol}${formattedAmount}` 
+  return config.position === 'before'
+    ? `${config.symbol}${formattedAmount}`
     : `${formattedAmount} ${config.symbol}`;
+}
+
+export function getCurrencySymbol(currency: Currency = 'USD'): string {
+  const currencyConfig: Record<Currency, { symbol: string }> = {
+    USD: { symbol: '$' },
+    EUR: { symbol: '€' },
+    GBP: { symbol: '£' },
+    RUB: { symbol: '₽' },
+  };
+  return currencyConfig[currency]?.symbol || '$';
 }
 
 /**
@@ -128,8 +138,8 @@ export function formatCurrencyCompact(amount: number, currency: Currency = 'USD'
     maximumFractionDigits: 0,
   }).format(amount);
 
-  return config.position === 'before' 
-    ? `${config.symbol}${formattedAmount}` 
+  return config.position === 'before'
+    ? `${config.symbol}${formattedAmount}`
     : `${formattedAmount} ${config.symbol}`;
 }
 

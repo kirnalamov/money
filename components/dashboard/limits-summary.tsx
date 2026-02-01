@@ -20,9 +20,9 @@ export function LimitsSummary() {
   const { limits, defaultCurrency } = useStore();
 
   return (
-    <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg p-6 h-full transition-all duration-300 hover:shadow-xl">
-      <h3 className="font-semibold leading-none tracking-tight mb-6">{t("dashboard.charts.monthly_limits")}</h3>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
+    <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg px-4 py-3 transition-all duration-300 hover:shadow-xl">
+      <h3 className="font-semibold leading-none tracking-tight mb-3">{t("dashboard.charts.monthly_limits")}</h3>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {limits.filter(limit => limit.period === 'monthly').map((limit) => {
           const percentage = Math.min(100, (limit.spent / limit.amount) * 100);
           const convertedSpent = convertCurrency(limit.spent, limit.currency, defaultCurrency);
@@ -30,18 +30,18 @@ export function LimitsSummary() {
           const color = colorMap[limit.category] || "bg-plutus-green";
 
           return (
-            <div key={limit.id} className="p-4 border rounded-lg bg-background">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium text-sm truncate pr-2">{t(limit.category)}</span>
+            <div key={limit.id} className="p-2 border rounded-lg bg-background/50">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium text-sm truncate max-w-[100px] pr-2">{t(limit.category)}</span>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">{Math.round(percentage)}%</span>
               </div>
-              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${color}`}
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              <div className="mt-2 text-xs text-muted-foreground flex justify-between items-center">
+              <div className="mt-1 text-xs text-muted-foreground flex justify-between items-center">
                 <span>{formatCurrency(convertedSpent, defaultCurrency)} / {formatCurrency(convertedLimit, defaultCurrency)}</span>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getCurrencySymbol } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Target, TrendingUp, Calendar } from "lucide-react";
 import {
@@ -81,7 +81,7 @@ export default function SavingsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t("portfolio.delete_position") + "?")) {
+    if (confirm(t("savings.delete_confirm"))) {
       deleteGoal(id);
     }
   };
@@ -103,11 +103,11 @@ export default function SavingsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">{t("savings.title")}</h2>
-          <p className="text-muted-foreground mt-1">{t("savings.subtitle") || "Track your financial goals and dreams"}</p>
+          <p className="text-muted-foreground mt-1">{t("savings.subtitle")}</p>
         </div>
         <Button onClick={() => handleOpenDialog()} className="md:w-auto w-full">
           <Plus className="mr-2 h-4 w-4" />
-          {t("savings.add_goal") || "New Goal"}
+          {t("savings.add_goal")}
         </Button>
       </div>
 
@@ -145,7 +145,7 @@ export default function SavingsPage() {
 
               <div className="flex items-end justify-between mb-2">
                 <span className="text-2xl font-bold">{formatCurrency(goal.currentAmount, goal.currency)}</span>
-                <span className="text-sm font-medium text-muted-foreground">of {formatCurrency(goal.targetAmount, goal.currency)}</span>
+                <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatCurrency(goal.targetAmount, goal.currency)}</span>
               </div>
 
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
@@ -169,7 +169,7 @@ export default function SavingsPage() {
           <div className="p-4 rounded-full bg-muted mb-4">
             <Plus className="h-6 w-6 text-muted-foreground" />
           </div>
-          <span className="font-medium text-muted-foreground">Create New Goal</span>
+          <span className="font-medium text-muted-foreground">{t("savings.create_new_card")}</span>
         </button>
       </div>
 
@@ -180,17 +180,17 @@ export default function SavingsPage() {
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold">Interest Calculator</h3>
-            <p className="text-sm text-muted-foreground">Estimate your future savings growth</p>
+            <h3 className="text-xl font-bold">{t("savings.calculator.title")}</h3>
+            <p className="text-sm text-muted-foreground">{t("savings.calculator.subtitle")}</p>
           </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="grid gap-2">
-              <Label>Monthly Contribution</Label>
+              <Label>{t("savings.calculator.monthly_contribution")}</Label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                <span className="absolute left-3 top-2.5 text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
                 <Input
                   type="number"
                   value={calcMonthly}
@@ -200,7 +200,7 @@ export default function SavingsPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>Time Period (Years)</Label>
+              <Label>{t("savings.calculator.time_period")}</Label>
               <Input
                 type="number"
                 value={calcYears}
@@ -208,8 +208,8 @@ export default function SavingsPage() {
                 max={50}
               />
               <div className="flex justify-between text-xs text-muted-foreground px-1">
-                <span>1 year</span>
-                <span>50 years</span>
+                <span>{t("savings.calculator.year_1")}</span>
+                <span>{t("savings.calculator.year_50")}</span>
               </div>
               <input
                 type="range"
@@ -221,7 +221,7 @@ export default function SavingsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Annual Interest Rate (%)</Label>
+              <Label>{t("savings.calculator.interest_rate")}</Label>
               <div className="relative">
                 <Input
                   type="number"
@@ -235,15 +235,15 @@ export default function SavingsPage() {
           </div>
 
           <div className="flex flex-col justify-center items-center bg-secondary/20 rounded-xl p-6 text-center">
-            <span className="text-sm text-muted-foreground mb-2">Projected Total after {calcYears} years</span>
+            <span className="text-sm text-muted-foreground mb-2">{t("savings.calculator.projected_total", { years: calcYears })}</span>
             <span className="text-4xl md:text-5xl font-bold text-primary mb-2">
               {formatCurrency(calculateSavings(), defaultCurrency)}
             </span>
             <span className="text-sm text-muted-foreground">
-              Total Contributed: {formatCurrency(parseFloat(calcMonthly) * 12 * parseFloat(calcYears), defaultCurrency)}
+              {t("savings.calculator.total_contributed")}: {formatCurrency(parseFloat(calcMonthly) * 12 * parseFloat(calcYears), defaultCurrency)}
             </span>
             <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
-              +{formatCurrency(calculateSavings() - (parseFloat(calcMonthly) * 12 * parseFloat(calcYears)), defaultCurrency)} Interest Earned
+              +{formatCurrency(calculateSavings() - (parseFloat(calcMonthly) * 12 * parseFloat(calcYears)), defaultCurrency)} {t("savings.calculator.interest_earned")}
             </div>
           </div>
         </div>
@@ -252,32 +252,32 @@ export default function SavingsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingGoal ? "Edit Goal" : "Create New Goal"}</DialogTitle>
-            <DialogDescription>Set a target and deadline to track your progress.</DialogDescription>
+            <DialogTitle>{editingGoal ? t("savings.dialog.edit_title") : t("savings.dialog.create_title")}</DialogTitle>
+            <DialogDescription>{t("savings.dialog.description")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Goal Name</Label>
-              <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. New Car" />
+              <Label htmlFor="name">{t("savings.dialog.name_label")}</Label>
+              <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t("savings.dialog.name_placeholder")} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="target">Target Amount</Label>
+                <Label htmlFor="target">{t("savings.dialog.target_label")}</Label>
                 <Input id="target" type="number" value={formData.targetAmount} onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="current">Current Savings</Label>
+                <Label htmlFor="current">{t("savings.dialog.current_label")}</Label>
                 <Input id="current" type="number" value={formData.currentAmount} onChange={(e) => setFormData({ ...formData, currentAmount: e.target.value })} />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="deadline">Target Date</Label>
+              <Label htmlFor="deadline">{t("savings.dialog.date_label")}</Label>
               <Input id="deadline" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save Goal</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
+            <Button onClick={handleSave}>{t("savings.dialog.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

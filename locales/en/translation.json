@@ -14,12 +14,27 @@
     "delete": "Delete",
     "sign_out": "Sign Out",
     "actions": "Actions",
-    "pick_date": "Pick a date"
+    "pick_date": "Pick a date",
+    "reset": "Reset",
+    "pay": "Pay",
+    "paid": "Paid",
+    "due": "Due",
+    "confirm": "Confirm",
+    "account": "Account",
+    "select_account": "Select account"
   },
   "dashboard": {
     "title": "Overview",
     "net_worth_total": "Total Net Worth",
     "vs_last_month": "vs last month",
+    "mandatory_expenses": {
+      "title": "Monthly Obligations",
+      "subtitle": "Track recurring bills",
+      "empty": "No recurring expenses set.",
+      "pay_title": "Pay",
+      "pay_description": "This will create a transaction and mark this bill as paid for the current month.",
+      "pay_with_transaction": "Pay (Create Transaction)"
+    },
     "kpi": {
       "cash_balance": "Cash Balance",
       "invested_value": "Invested Value",
@@ -104,7 +119,17 @@
     "empty_state": "No transactions yet. Add one to get started.",
     "save_changes": "Save changes",
     "recurring_label": "Recurring / Mandatory",
-    "recurring_desc": "Is this a fixed monthly cost?"
+    "recurring_desc": "Is this a fixed monthly cost?",
+    "filters": {
+      "search_placeholder": "Search transactions...",
+      "all_types": "All Types",
+      "all_accounts": "All Accounts"
+    },
+    "summary": {
+      "total_income": "Total Income",
+      "total_expense": "Total Expense",
+      "net_result": "Net Result"
+    }
   },
   "portfolio": {
     "title": "Portfolio Analytics",
@@ -144,8 +169,34 @@
     "title": "Savings & Goals",
     "subtitle": "Track your financial goals and dreams",
     "add_goal": "New Goal",
-    "accounts_placeholder": "Accounts Carousel Placeholder",
-    "goals_placeholder": "Goals List Placeholder"
+    "create_new_card": "Create New Goal",
+    "delete_confirm": "Are you sure you want to delete this goal?",
+    "progress": {
+      "of": "of"
+    },
+    "calculator": {
+      "title": "Interest Calculator",
+      "subtitle": "Estimate your future savings growth",
+      "monthly_contribution": "Monthly Contribution",
+      "time_period": "Time Period (Years)",
+      "interest_rate": "Annual Interest Rate (%)",
+      "year_1": "1 year",
+      "year_50": "50 years",
+      "projected_total": "Projected Total after {{years}} years",
+      "total_contributed": "Total Contributed",
+      "interest_earned": "Interest Earned"
+    },
+    "dialog": {
+      "create_title": "Create New Goal",
+      "edit_title": "Edit Goal",
+      "description": "Set a target and deadline to track your progress.",
+      "name_label": "Goal Name",
+      "name_placeholder": "e.g. New Car",
+      "target_label": "Target Amount",
+      "current_label": "Current Savings",
+      "date_label": "Target Date",
+      "save": "Save Goal"
+    }
   },
   "limits": {
     "title": "Spending Limits",
@@ -158,7 +209,11 @@
     "add_limit": "Add Limit",
     "edit_limit": "Edit Limit",
     "delete_limit": "Delete Limit",
+    "delete_confirm": "Are you sure you want to delete this limit?",
     "no_limits": "No limits set. Add one to get started.",
+    "add_hint": "Set limits to track your spending and save more.",
+    "subtitle": "Track your spending limits and goals",
+    "remaining": "remaining",
     "periods": {
       "daily": "Daily",
       "weekly": "Weekly",
@@ -236,6 +291,8 @@
       "avg_daily": "Avg. Daily",
       "per_month": "/ mo",
       "top_category": "Top Category",
+      "liquid_assets": "Liquid Assets",
+      "active_accounts": "Active Accounts",
       "of_total": "of total",
       "fixed_costs": "Fixed Costs (Mandatory)",
       "discretionary": "Discretionary (Variable)",

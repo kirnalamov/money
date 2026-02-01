@@ -21,6 +21,7 @@ interface DatePickerWithRangeProps {
   date: DateRange | undefined
   setDate: (date: DateRange | undefined) => void
   disabled?: (date: Date) => boolean
+  align?: "start" | "center" | "end"
 }
 
 const localeMap: Record<string, Locale> = {
@@ -33,6 +34,7 @@ export function DatePickerWithRange({
   date,
   setDate,
   disabled,
+  align = "start",
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
   const locale = localeMap[i18n.language] || enUS
@@ -45,7 +47,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-full sm:w-[300px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -64,7 +66,7 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0" align={align}>
           <Calendar
             initialFocus
             mode="range"

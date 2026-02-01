@@ -32,25 +32,25 @@ export function GoalsSummary() {
     }
 
     return (
-        <div className="rounded-xl border glass-card premium-gradient p-6 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-4">
+        <div className="rounded-xl border glass-card premium-gradient px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold leading-none tracking-tight">{t("savings.title") || "Goals"}</h3>
                 <Link href="/savings">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </Link>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-3 overflow-hidden">
                 {displayGoals.map(goal => {
                     const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
                     const isCompleted = progress >= 100;
 
                     return (
-                        <div key={goal.id} className="space-y-2">
+                        <div key={goal.id} className="space-y-1">
                             <div className="flex justify-between text-sm">
-                                <span className="font-medium">{goal.name}</span>
+                                <span className="font-medium truncate">{goal.name}</span>
                                 <span className="text-muted-foreground">{progress}%</span>
                             </div>
                             <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">

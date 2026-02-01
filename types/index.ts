@@ -59,3 +59,13 @@ export interface Goal {
   deadline?: string; // ISO date
   linkedAccountId?: string;
 }
+
+export interface RecurringExpense {
+  id: string;
+  name: string;
+  amount: number;
+  currency: Currency;
+  category: string;
+  dueDay: number; // 1-31
+  lastPaidDate?: string; // ISO date
+}

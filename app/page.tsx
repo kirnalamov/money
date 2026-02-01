@@ -9,6 +9,7 @@ import { DashboardFilter } from "@/components/dashboard/dashboard-filter";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { GoalsSummary } from "@/components/dashboard/goals-summary";
+import { MandatoryExpensesList } from "@/components/dashboard/mandatory-expenses-list";
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { addDays, subDays } from "date-fns";
@@ -122,8 +123,9 @@ export default function OverviewPage() {
 
       {/* Secondary Info Area */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-1 lg:col-span-2">
+        <div className="col-span-1 lg:col-span-2 space-y-6">
           <GoalsSummary />
+          <MandatoryExpensesList />
         </div>
         <div className="col-span-1 lg:col-span-5">
           <LimitsSummary />

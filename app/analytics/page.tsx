@@ -11,6 +11,10 @@ import { cn } from "@/lib/utils";
 import { startOfMonth } from "date-fns";
 import { DateRange } from "react-day-picker";
 
+import { NetWorthStats } from "@/components/analytics/net-worth-stats";
+import { AssetAllocation } from "@/components/analytics/asset-allocation";
+import { AccountBreakdown } from "@/components/analytics/account-breakdown";
+
 export default function AnalyticsPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -78,10 +82,21 @@ export default function AnalyticsPage() {
                 {/* Content Area */}
                 <div className="min-h-[500px]">
                     {activeTab === "net-worth" && (
-                        <div className="grid gap-4 animate-in fade-in-50 duration-300">
-                            <div className="rounded-xl border bg-card text-card-foreground shadow p-6">
-                                <div className="h-[600px] w-full">
-                                    <NetWorthChart dateRange={dateRange} />
+                        <div className="space-y-6 animate-in fade-in-50 duration-300">
+                            <NetWorthStats />
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="rounded-xl border bg-card text-card-foreground shadow p-6 lg:col-span-2">
+                                    <div className="h-[400px] w-full">
+                                        <NetWorthChart dateRange={dateRange} />
+                                    </div>
+                                </div>
+
+                                <div className="lg:col-span-1">
+                                    <AssetAllocation />
+                                </div>
+                                <div className="lg:col-span-1">
+                                    <AccountBreakdown />
                                 </div>
                             </div>
                         </div>
