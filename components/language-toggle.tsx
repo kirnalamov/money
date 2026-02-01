@@ -26,10 +26,16 @@ export function LanguageToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => i18n.changeLanguage("en")}>
+        <DropdownMenuItem onClick={() => {
+          i18n.changeLanguage("en");
+          localStorage.setItem('i18nextLng', 'en');
+        }}>
           English (EN)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => i18n.changeLanguage("ru")}>
+        <DropdownMenuItem onClick={() => {
+          i18n.changeLanguage("ru");
+          localStorage.setItem('i18nextLng', 'ru');
+        }}>
           Русский (RU)
         </DropdownMenuItem>
       </DropdownMenuContent>

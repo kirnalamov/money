@@ -9,7 +9,10 @@ import resourcesToBackend from 'i18next-resources-to-backend';
  * @returns 'ru' если пользователь из СНГ, 'en' в противном случае
  */
 export function detectDefaultLanguage(): string {
-  // Always return 'en' to enforce English as default
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('i18nextLng');
+    if (saved) return saved;
+  }
   return 'en';
 }
 

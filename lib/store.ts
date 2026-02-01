@@ -185,6 +185,9 @@ export const useStore = create<AppState>()(
     {
       name: 'plutus-storage',
       version: 1,
+      migrate: (persistedState: any, _version: number) => {
+        return persistedState as AppState;
+      },
     }
   )
 );
