@@ -20,9 +20,9 @@ export function LimitsSummary() {
   const { limits, defaultCurrency } = useStore();
 
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow p-6 h-full">
+    <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg p-6 h-full transition-all duration-300 hover:shadow-xl">
       <h3 className="font-semibold leading-none tracking-tight mb-6">{t("dashboard.charts.monthly_limits")}</h3>
-      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2 hide-scrollbar">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
         {limits.filter(limit => limit.period === 'monthly').map((limit) => {
           const percentage = Math.min(100, (limit.spent / limit.amount) * 100);
           const convertedSpent = convertCurrency(limit.spent, limit.currency, defaultCurrency);
@@ -30,10 +30,10 @@ export function LimitsSummary() {
           const color = colorMap[limit.category] || "bg-plutus-green";
 
           return (
-            <div key={limit.id} className="min-w-[200px] p-4 border rounded-lg bg-background">
+            <div key={limit.id} className="p-4 border rounded-lg bg-background">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium text-sm">{t(limit.category)}</span>
-                <span className="text-xs text-muted-foreground">{Math.round(percentage)}%</span>
+                <span className="font-medium text-sm truncate pr-2">{t(limit.category)}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{Math.round(percentage)}%</span>
               </div>
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                 <div
@@ -41,8 +41,8 @@ export function LimitsSummary() {
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                {formatCurrency(convertedSpent, defaultCurrency)} / {formatCurrency(convertedLimit, defaultCurrency)}
+              <div className="mt-2 text-xs text-muted-foreground flex justify-between items-center">
+                <span>{formatCurrency(convertedSpent, defaultCurrency)} / {formatCurrency(convertedLimit, defaultCurrency)}</span>
               </div>
             </div>
           );

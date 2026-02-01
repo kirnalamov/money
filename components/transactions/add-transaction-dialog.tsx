@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { TransactionType } from '@/types';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -35,13 +36,15 @@ export function AddTransactionDialog() {
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [category, setCategory] = useState('');
+  const [tags, setTags] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
 
   const { accounts, addTransaction, defaultCurrency } = useStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !accountId) return;
-    
+
     if (type === 'transfer' && !toAccountId) return;
 
     addTransaction({
@@ -54,6 +57,8 @@ export function AddTransactionDialog() {
       category: category || 'Uncategorized',
       date: new Date().toISOString(),
       description,
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      isRecurring,
       status: 'completed'
     });
 
@@ -65,6 +70,8 @@ export function AddTransactionDialog() {
     setAmount('');
     setDescription('');
     setCategory('');
+    setTags('');
+    setIsRecurring(false);
   };
 
   return (
@@ -88,8 +95,8 @@ export function AddTransactionDialog() {
               {t('transactions.type')}
             </Label>
             <div className="col-span-3">
-              <Select 
-                value={type} 
+              <Select
+                value={type}
                 onValueChange={(value: TransactionType) => setType(value)}
               >
                 <SelectTrigger>
@@ -185,6 +192,19 @@ export function AddTransactionDialog() {
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tags" className="text-right">
+              {t('transactions.tags') || 'Tags'}
+            </Label>
+            <Input
+              id="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              className="col-span-3"
+              placeholder={t('transactions.placeholders.tags') || 'fun, jokes, entertainment'}
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               {t('transactions.description')}
             </Label>
@@ -196,7 +216,19 @@ export function AddTransactionDialog() {
               placeholder={t('transactions.placeholders.description')}
             />
           </div>
-          
+
+          <div className="flex items-center justify-between col-span-4 border p-3 rounded-md">
+            <div className="space-y-0.5">
+              <Label htmlFor="recurring" className="text-base">Recurring / Mandatory</Label>
+              <p className="text-xs text-muted-foreground">Is this a fixed monthly cost?</p>
+            </div>
+            <Switch
+              id="recurring"
+              checked={isRecurring}
+              onCheckedChange={setIsRecurring}
+            />
+          </div>
+
           <DialogFooter>
             <Button type="submit">{t('transactions.save_changes')}</Button>
           </DialogFooter>

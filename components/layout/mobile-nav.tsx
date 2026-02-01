@@ -10,7 +10,8 @@ import {
   PiggyBank,
   Gauge,
   Settings,
-  Wallet
+  Wallet,
+  User
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +26,7 @@ export function MobileNav() {
     { name: t("common.portfolio"), href: "/portfolio", icon: Briefcase },
     { name: t("common.savings"), href: "/savings", icon: PiggyBank },
     { name: t("common.settings"), href: "/settings", icon: Settings },
+    { name: "My Profile", href: "/profile", icon: User },
   ];
 
   return (

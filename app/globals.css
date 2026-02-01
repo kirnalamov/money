@@ -78,4 +78,29 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* Premium UI Utilities */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border-white/10 shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-card/50 backdrop-blur-md border border-white/5 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  .glass-hover {
+    @apply hover:bg-white/5 hover:backdrop-blur-lg transition-all duration-300;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .premium-gradient {
+    @apply bg-gradient-to-br from-background via-background to-secondary/30;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 20px rgba(0, 200, 83, 0.3);
+  }
 }

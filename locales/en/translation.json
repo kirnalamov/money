@@ -34,6 +34,7 @@
       "net_worth_title": "Net Worth Over Time",
       "net_worth_subtitle": "Last 7 months",
       "expenses_title": "Expenses by Category",
+      "tags_title": "Spending Tags",
       "monthly_limits": "Monthly Limits",
       "filter_accounts": "Filter",
       "select_accounts": "Select Accounts",
@@ -65,6 +66,12 @@
       "groceries": "Groceries",
       "dining_out": "Dining Out",
       "entertainment": "Entertainment"
+    },
+    "quick_actions": {
+      "new_expense": "New Expense",
+      "add_income": "Add Income",
+      "transfer": "Transfer",
+      "set_goal": "Set Goal"
     },
     "recent_transactions": "Recent Transactions"
   },
@@ -98,6 +105,7 @@
   },
   "portfolio": {
     "title": "Portfolio Analytics",
+    "allocation_title": "Asset Allocation",
     "total_value": "Total Value",
     "day_pnl": "Day PnL",
     "total_pnl": "Total PnL",
@@ -131,6 +139,8 @@
   },
   "savings": {
     "title": "Savings & Goals",
+    "subtitle": "Track your financial goals and dreams",
+    "add_goal": "New Goal",
     "accounts_placeholder": "Accounts Carousel Placeholder",
     "goals_placeholder": "Goals List Placeholder"
   },
@@ -178,5 +188,71 @@
     "interface_language": "Interface Language",
     "currency": "Currency",
     "default_currency": "Default Currency"
+  },
+  "analytics": {
+    "habits": {
+      "title": "Spending Habits",
+      "subtitle": "Daily spending intensity over the last year",
+      "less": "Less",
+      "more": "More",
+      "peak": "Peak"
+    },
+    "velocity": {
+      "title": "Spend Velocity",
+      "subtitle": "Cumulative vs Last Month",
+      "faster": "Faster",
+      "slower": "Slower",
+      "caution": "Caution",
+      "great_job": "Great job!",
+      "outpacing": "You are outpacing last month by {{amount}}.",
+      "saved": "You saved {{amount}} vs last month."
+    },
+    "forecast": {
+      "title": "Month-End Forecast",
+      "active": "Active",
+      "current": "Current",
+      "burn": "Burn",
+      "uncategorized_warning_title": "High Uncategorized Spending",
+      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> of your expenses are Uncategorized."
+    },
+    "page_title": "Analytics & Planning",
+    "page_subtitle": "Professional financial analysis and detailed breakdowns.",
+    "filter": {
+      "time_period": "Time Period",
+      "select_range": "Select range for analysis"
+    },
+    "settings": {
+      "title": "Analysis Settings",
+      "subtitle": "Customize your view",
+      "accounts": "Accounts",
+      "exclude_categories": "Exclude Categories"
+    },
+    "stats": {
+      "total_spend": "Total Spend",
+      "in_selected_period": "in selected period",
+      "avg_daily": "Avg. Daily",
+      "per_month": "/ mo",
+      "top_category": "Top Category",
+      "of_total": "of total"
+    },
+    "breakdown": {
+      "title": "Expense Breakdown",
+      "subtitle": "Distribution by category"
+    },
+    "common": {
+      "no_data": "No data available for selected period."
+    },
+    "tags": {
+      "top_spending": "Top Spending Tag",
+      "total": "total",
+      "most_frequent": "Most Frequent",
+      "used_in_transactions": "Used in {{count}} transactions",
+      "unique_tags": "Unique Tags",
+      "active_tags": "Active in this period",
+      "chart_title": "Spending by Tag",
+      "chart_subtitle": "Breakdown of expenses associated with tags",
+      "no_data_title": "No tagged expenses found in this period.",
+      "no_data_desc": "Try adjusting the date range or add tags to your transactions."
+    }
   }
 }

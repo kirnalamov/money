@@ -17,10 +17,6 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#00C853" },
-    { media: "(prefers-color-scheme: dark)", color: "#00C853" }
-  ],
 };
 
 export const viewport: Viewport = {
@@ -28,6 +24,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#00C853" },
+    { media: "(prefers-color-scheme: dark)", color: "#00C853" }
+  ],
 };
 
 export default function RootLayout({
@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className, "min-h-screen bg-background font-sans antialiased")}>
+      <body className={cn(inter.className, "min-h-screen bg-background font-sans antialiased")} suppressHydrationWarning>
         <I18nProvider>
           <ThemeProvider
             attribute="class"

@@ -20,6 +20,7 @@ interface DatePickerWithRangeProps {
   className?: string
   date: DateRange | undefined
   setDate: (date: DateRange | undefined) => void
+  disabled?: (date: Date) => boolean
 }
 
 const localeMap: Record<string, Locale> = {
@@ -31,6 +32,7 @@ export function DatePickerWithRange({
   className,
   date,
   setDate,
+  disabled,
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
   const locale = localeMap[i18n.language] || enUS
@@ -70,7 +72,7 @@ export function DatePickerWithRange({
             selected={date}
             onSelect={setDate}
             numberOfMonths={1}
-            min={2}
+            disabled={disabled}
           />
         </PopoverContent>
       </Popover>

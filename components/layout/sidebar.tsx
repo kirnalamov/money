@@ -11,7 +11,8 @@ import {
   Gauge,
   Settings,
   LogOut,
-  Wallet
+  Wallet,
+  User
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +27,7 @@ export function Sidebar() {
     { name: t("common.savings"), href: "/savings", icon: PiggyBank },
     { name: t("common.limits"), href: "/limits", icon: Gauge },
     { name: t("accounts.title"), href: "/accounts", icon: Wallet },
+    { name: "My Profile", href: "/profile", icon: User },
     { name: t("common.settings"), href: "/settings", icon: Settings },
   ];
 

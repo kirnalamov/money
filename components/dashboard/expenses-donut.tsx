@@ -14,16 +14,22 @@ const data = [
     { nameKey: "dashboard.categories.utilities", value: 150, color: "#AB47BC" }, // Purple
 ];
 
+import { useRouter } from "next/navigation";
+
 export function ExpensesDonut() {
     const { t } = useTranslation();
     const { defaultCurrency } = useStore();
+    const router = useRouter();
     const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), []);
 
     return (
-        <div className="rounded-xl border bg-card text-card-foreground shadow h-[450px] md:h-[450px] flex flex-col transition-all duration-200 hover:shadow-md">
+        <div
+            onClick={() => router.push("/analytics")}
+            className="rounded-xl border glass-card premium-gradient h-[350px] md:h-[350px] flex flex-col transition-all duration-200 hover:shadow-lg cursor-pointer group"
+        >
             <div className="p-6 pb-0 mb-4">
                 <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
             </div>
@@ -31,7 +37,7 @@ export function ExpensesDonut() {
                 <div ref={containerRef} className="relative w-full h-full max-w-[280px] max-h-[280px] flex-shrink-0">
                     {/* Center Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
-                        <span className="text-3xl font-bold tracking-tight">{formatCurrency(total, defaultCurrency)}</span>
+                        <span className="text-2xl font-bold tracking-tight">{formatCurrency(total, defaultCurrency)}</span>
                         <span className="text-sm text-muted-foreground mt-1 font-medium transform uppercase tracking-wider text-[10px]">{t("dashboard.charts.total")}</span>
                     </div>
                     <ResponsiveContainer width="100%" height="100%">

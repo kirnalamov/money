@@ -25,6 +25,7 @@ export interface Transaction {
   description?: string;
   merchant?: string;
   tags?: string[];
+  isRecurring?: boolean; // For mandatory/fixed expenses
   status: 'pending' | 'completed';
   toAccountId?: string; // For transfers
 }

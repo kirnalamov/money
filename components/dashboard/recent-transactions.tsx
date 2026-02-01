@@ -37,7 +37,7 @@ export function RecentTransactions() {
     }
 
     return (
-        <div className="rounded-xl border bg-card text-card-foreground shadow flex flex-col h-full">
+        <div className="rounded-xl border glass-card premium-gradient flex flex-col flex-1 min-h-[300px]">
             <div className="p-6 pb-2 flex items-center justify-between">
                 <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.recent_transactions") || "Recent Activity"}</h3>
                 <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8">View All</Button>

@@ -32,7 +32,7 @@ export function GoalsSummary() {
     }
 
     return (
-        <div className="rounded-xl border bg-card text-card-foreground shadow p-6 h-full flex flex-col">
+        <div className="rounded-xl border glass-card premium-gradient p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold leading-none tracking-tight">{t("savings.title") || "Goals"}</h3>
                 <Link href="/savings">

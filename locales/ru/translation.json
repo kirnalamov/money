@@ -66,6 +66,12 @@
       "dining_out": "Рестораны",
       "entertainment": "Развлечения"
     },
+    "quick_actions": {
+      "new_expense": "Новый расход",
+      "add_income": "Доход",
+      "transfer": "Перевод",
+      "set_goal": "Сберечь"
+    },
     "recent_transactions": "Последние операции"
   },
   "transactions": {
@@ -98,6 +104,7 @@
   },
   "portfolio": {
     "title": "Аналитика портфеля",
+    "allocation_title": "Распределение активов",
     "total_value": "Стоимость портфеля",
     "day_pnl": "PnL за день",
     "total_pnl": "Общий PnL",
@@ -131,6 +138,8 @@
   },
   "savings": {
     "title": "Цели и Накопления",
+    "subtitle": "Отслеживайте свои финансовые цели",
+    "add_goal": "Новая цель",
     "accounts_placeholder": "Карусель накопительных счетов",
     "goals_placeholder": "Список финансовых целей"
   },
@@ -178,5 +187,71 @@
     "interface_language": "Язык интерфейса",
     "currency": "Валюта",
     "default_currency": "Валюта по умолчанию"
+  },
+  "analytics": {
+    "habits": {
+      "title": "Расходы по дням",
+      "subtitle": "Интенсивность трат за последний год",
+      "less": "Меньше",
+      "more": "Больше",
+      "peak": "Пик"
+    },
+    "velocity": {
+      "title": "Скорость трат",
+      "subtitle": "Накопительно vs Прошлый месяц",
+      "faster": "Быстрее",
+      "slower": "Медленнее",
+      "caution": "Внимание",
+      "great_job": "Отлично!",
+      "outpacing": "Вы тратите больше, чем в прошлом месяце на {{amount}}.",
+      "saved": "Вы сэкономили {{amount}} по сравнению с прошлым месяцем."
+    },
+    "forecast": {
+      "title": "Прогноз на конец месяца",
+      "active": "Активен",
+      "current": "Текущий",
+      "burn": "Расход",
+      "uncategorized_warning_title": "Много некатегоризированных трат",
+      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> ваших расходов без категории."
+    },
+    "page_title": "Аналитика",
+    "page_subtitle": "Профессиональный финансовый анализ и детализация.",
+    "filter": {
+      "time_period": "Период",
+      "select_range": "Выберите диапазон"
+    },
+    "settings": {
+      "title": "Настройки анализа",
+      "subtitle": "Настройте отображение",
+      "accounts": "Счета",
+      "exclude_categories": "Исключить категории"
+    },
+    "stats": {
+      "total_spend": "Всего расходов",
+      "in_selected_period": "за выбраный период",
+      "avg_daily": "В среднем в день",
+      "per_month": "/ мес",
+      "top_category": "Топ категория",
+      "of_total": "от всего"
+    },
+    "breakdown": {
+      "title": "Структура расходов",
+      "subtitle": "Распределение по категориям"
+    },
+    "common": {
+      "no_data": "Нет данных за выбранный период."
+    },
+    "tags": {
+      "top_spending": "Топ тег по расходам",
+      "total": "всего",
+      "most_frequent": "Самый частый",
+      "used_in_transactions": "Использован в {{count}} транзакциях",
+      "unique_tags": "Уникальных тегов",
+      "active_tags": "Активны в этом периоде",
+      "chart_title": "Расходы по тегам",
+      "chart_subtitle": "Разбивка расходов по тегам",
+      "no_data_title": "Нет расходов с тегами за этот период.",
+      "no_data_desc": "Попробуйте изменить диапазон дат или добавьте теги к транзакциям."
+    }
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
@@ -37,6 +39,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   const { t, i18n } = useTranslation();
   const { accounts, defaultCurrency } = useStore();
   const locale = localeMap[i18n.language] || enUS;
+  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
   const [chartType, setChartType] = useState<ChartType>('area');
@@ -203,8 +206,13 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
     '#00C853', // Green
   ];
 
+
+
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow h-[350px] md:h-full md:min-h-[450px] flex flex-col transition-all duration-200 hover:shadow-md">
+    <div
+      onClick={() => router.push("/analytics")}
+      className="rounded-xl border glass-card premium-gradient h-[350px] md:h-full md:min-h-[350px] flex flex-col transition-all duration-200 hover:shadow-lg cursor-pointer group"
+    >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
           <div className="flex-1">
