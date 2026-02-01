@@ -15,7 +15,7 @@ import { NetWorthStats } from "@/components/analytics/net-worth-stats";
 import { AssetAllocation } from "@/components/analytics/asset-allocation";
 import { AccountBreakdown } from "@/components/analytics/account-breakdown";
 
-export default function AnalyticsPage() {
+export function AnalyticsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { t } = useTranslation();

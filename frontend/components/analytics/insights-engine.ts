@@ -1,4 +1,4 @@
-import { Transaction, Account } from "@/types";
+import { Transaction, Account, Currency } from "@/types";
 import { convertCurrency } from "@/lib/utils";
 import { getDaysInMonth, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
 
@@ -12,7 +12,7 @@ export interface ForecastMetrics {
 export const calculateForecast = (
     transactions: Transaction[],
     accounts: Account[],
-    defaultCurrency: string
+    defaultCurrency: Currency
 ): ForecastMetrics => {
     const today = new Date();
     const monthStart = startOfMonth(today);
