@@ -202,15 +202,22 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
     const start = data[0].total || 0;
     const end = data[data.length - 1].total || 0;
     if (start === 0) return 0;
-    return (end - start) / start;
+    return (end - start) / Math.abs(start);
   }, [data]);
 
   // Dynamic colors based on trend
   const dynamicColor = useMemo(() => {
-    if (trendPercentage >= -0.01) return 'hsl(142, 76%, 36%)'; // Green (>= -1%)
-    if (trendPercentage >= -0.05) return '#FFB300'; // Amber (-1% to -5%)
-    return '#ef4444'; // Red (< -5%)
-  }, [trendPercentage]);
+    if (data.length < 2) return 'hsl(142, 76%, 36%)';
+    const start = data[0].total || 0;
+    const end = data[data.length - 1].total || 0;
+    const diff = end - start;
+
+    // "Yellow border" logic: +/- 1000 threshold for neutral/stable
+    // Make updates more responsive by checking absolute difference
+    if (Math.abs(diff) <= 1000) return '#FFB300'; // Amber/Yellow (Stable)
+    if (diff > 0) return 'hsl(142, 76%, 36%)'; // Green (Gain)
+    return '#ef4444'; // Red (Loss)
+  }, [data]);
 
   const accountColors = [
     'hsl(var(--primary))',
@@ -382,6 +389,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   dataKey="total"
                   stroke={dynamicColor}
                   fillOpacity={1}
+                  baseValue="dataMin"
                   fill="url(#colorTotal)"
                   animationDuration={1000}
                 />

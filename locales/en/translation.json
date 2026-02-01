@@ -102,7 +102,9 @@
       "description": "e.g. Weekly groceries"
     },
     "empty_state": "No transactions yet. Add one to get started.",
-    "save_changes": "Save changes"
+    "save_changes": "Save changes",
+    "recurring_label": "Recurring / Mandatory",
+    "recurring_desc": "Is this a fixed monthly cost?"
   },
   "portfolio": {
     "title": "Portfolio Analytics",

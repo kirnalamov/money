@@ -90,29 +90,27 @@ export function AddTransactionDialog() {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="type">
               {t('transactions.type')}
             </Label>
-            <div className="col-span-3">
-              <Select
-                value={type}
-                onValueChange={(value: TransactionType) => setType(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('transactions.placeholders.select_type')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="expense">{t('transactions.types.expense')}</SelectItem>
-                  <SelectItem value="income">{t('transactions.types.income')}</SelectItem>
-                  <SelectItem value="transfer">{t('transactions.types.transfer')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={type}
+              onValueChange={(value: TransactionType) => setType(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('transactions.placeholders.select_type')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">{t('transactions.types.expense')}</SelectItem>
+                <SelectItem value="income">{t('transactions.types.income')}</SelectItem>
+                <SelectItem value="transfer">{t('transactions.types.transfer')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="amount" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="amount">
               {t('transactions.amount')}
             </Label>
             <Input
@@ -121,106 +119,98 @@ export function AddTransactionDialog() {
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="col-span-3"
               required
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="account" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="account">
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
             </Label>
-            <div className="col-span-3">
-              <Select value={accountId} onValueChange={setAccountId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('transactions.placeholders.select_account')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((acc) => {
-                    const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
-                    return (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.name} ({formatCurrency(acc.balance, acc.currency)}
-                        {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('transactions.placeholders.select_account')} />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((acc) => {
+                  const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+                  return (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name} ({formatCurrency(acc.balance, acc.currency)}
+                      {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
 
           {type === 'transfer' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="toAccount" className="text-right">
+            <div className="grid gap-2">
+              <Label htmlFor="toAccount">
                 {t('transactions.to_account')}
               </Label>
-              <div className="col-span-3">
-                <Select value={toAccountId} onValueChange={setToAccountId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts
-                      .filter(acc => acc.id !== accountId)
-                      .map((acc) => {
-                        const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
-                        return (
-                          <SelectItem key={acc.id} value={acc.id}>
-                            {acc.name} ({formatCurrency(acc.balance, acc.currency)}
-                            {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={toAccountId} onValueChange={setToAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts
+                    .filter(acc => acc.id !== accountId)
+                    .map((acc) => {
+                      const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+                      return (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name} ({formatCurrency(acc.balance, acc.currency)}
+                          {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
+                        </SelectItem>
+                      );
+                    })}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="category" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="category">
               {t('transactions.category')}
             </Label>
             <Input
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="col-span-3"
               placeholder={t('transactions.placeholders.category')}
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tags" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="tags">
               {t('transactions.tags') || 'Tags'}
             </Label>
             <Input
               id="tags"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="col-span-3"
               placeholder={t('transactions.placeholders.tags') || 'fun, jokes, entertainment'}
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
+          <div className="grid gap-2">
+            <Label htmlFor="description">
               {t('transactions.description')}
             </Label>
             <Input
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="col-span-3"
               placeholder={t('transactions.placeholders.description')}
             />
           </div>
 
-          <div className="flex items-center justify-between col-span-4 border p-3 rounded-md">
+          <div className="flex items-center justify-between border p-3 rounded-md mt-2">
             <div className="space-y-0.5">
-              <Label htmlFor="recurring" className="text-base">Recurring / Mandatory</Label>
-              <p className="text-xs text-muted-foreground">Is this a fixed monthly cost?</p>
+              <Label htmlFor="recurring" className="text-base">{t('transactions.recurring_label')}</Label>
+              <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc')}</p>
             </div>
             <Switch
               id="recurring"
@@ -229,8 +219,8 @@ export function AddTransactionDialog() {
             />
           </div>
 
-          <DialogFooter>
-            <Button type="submit">{t('transactions.save_changes')}</Button>
+          <DialogFooter className="mt-4">
+            <Button type="submit" className="w-full sm:w-auto">{t('transactions.save_changes')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
