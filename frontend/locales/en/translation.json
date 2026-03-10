@@ -43,7 +43,9 @@
       "updated_now": "Updated just now",
       "all_time": "all time",
       "budget_left": "of budget left",
-      "target": "Target"
+      "target": "Target",
+      "total_savings": "Total Savings",
+      "total_available": "Total Available"
     },
     "charts": {
       "net_worth_title": "Net Worth Over Time",
@@ -84,10 +86,10 @@
       "entertainment": "Entertainment"
     },
     "quick_actions": {
-      "new_expense": "New Expense",
-      "add_income": "Add Income",
+      "new_expense": "Expense",
+      "add_income": "Income",
       "transfer": "Transfer",
-      "set_goal": "Set Goal"
+      "set_goal": "Save"
     },
     "recent_transactions": "Recent Transactions"
   },
@@ -114,7 +116,10 @@
       "select_account": "Select account",
       "destination_account": "Destination account",
       "category": "e.g. Food, Rent",
-      "description": "e.g. Weekly groceries"
+      "category_income": "e.g. Salary, Freelance",
+      "description": "e.g. Weekly groceries",
+      "description_income": "e.g. Project advance",
+      "tags": "e.g. fun, entertainment"
     },
     "empty_state": "No transactions yet. Add one to get started.",
     "save_changes": "Save changes",

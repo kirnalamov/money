@@ -18,7 +18,7 @@ from app.db.session import get_db
 from app.middleware.rate_limit import get_rate_limiter
 from app.models.user import User
 from app.schemas.auth import Token, TokenRefresh, UserRegister
-from app.schemas.user import User as UserSchema
+from app.schemas.user import User as UserSchema, UserCreate
 
 router = APIRouter()
 
@@ -56,7 +56,8 @@ async def register(
         )
     
     # Create new user
-    user = await crud_user.create(db, obj_in=user_in)
+    user_create = UserCreate(**user_in.model_dump())
+    user = await crud_user.create(db, obj_in=user_create)
     return user
 
 @router.post("/login", response_model=Token)
@@ -94,7 +95,7 @@ async def login(
     # Store refresh token in database
     refresh_token_obj = RefreshTokenCreate(
         token=refresh_token_str,
-        user_id=user.id,
+        user_id=user.id,  # type: ignore
         expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
     await crud_refresh_token.create(db, obj_in=refresh_token_obj)
@@ -138,7 +139,7 @@ async def refresh_access_token(
         )
     
     # Get user
-    user_id = int(payload.get("sub"))
+    user_id = int(str(payload.get("sub")))
     user = await crud_user.get(db, id=user_id)
     if not user or not crud_user.is_active(user):
         raise HTTPException(
@@ -154,7 +155,7 @@ async def refresh_access_token(
     await crud_refresh_token.revoke_token(db, token=token_data.refresh_token)
     refresh_token_obj = RefreshTokenCreate(
         token=new_refresh_token,
-        user_id=user.id,
+        user_id=user.id,  # type: ignore
         expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
     await crud_refresh_token.create(db, obj_in=refresh_token_obj)

@@ -3,7 +3,7 @@ export type Currency = 'USD' | 'EUR' | 'GBP' | 'RUB';
 export type AccountType = 'bank' | 'brokerage' | 'cash' | 'savings';
 
 export interface Account {
-  id: string;
+  id: number;
   name: string;
   type: AccountType;
   balance: number;
@@ -15,8 +15,8 @@ export interface Account {
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'trade';
 
 export interface Transaction {
-  id: string;
-  accountId: string;
+  id: number;
+  accountId: number;
   type: TransactionType;
   amount: number;
   currency: Currency;
@@ -27,7 +27,7 @@ export interface Transaction {
   tags?: string[];
   isRecurring?: boolean; // For mandatory/fixed expenses
   status: 'pending' | 'completed';
-  toAccountId?: string; // For transfers
+  toAccountId?: number; // For transfers
 }
 
 export interface Position {
@@ -37,7 +37,7 @@ export interface Position {
   avgPrice: number;
   currentPrice: number;
   currency: Currency;
-  accountId: string;
+  accountId: number;
   assetClass?: 'stock' | 'crypto' | 'etf' | 'bond' | 'cash';
 }
 
@@ -57,7 +57,7 @@ export interface Goal {
   currentAmount: number;
   currency: Currency;
   deadline?: string; // ISO date
-  linkedAccountId?: string;
+  linkedAccountId?: number;
 }
 
 export interface RecurringExpense {

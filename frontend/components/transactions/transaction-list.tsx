@@ -23,7 +23,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
     const locale = localeMap[i18n.language] || enUS;
     const { accounts, defaultCurrency } = useStore();
 
-    const getAccountName = (id: string) => accounts.find(a => a.id === id)?.name || 'Unknown';
+    const getAccountName = (id: number) => accounts.find(a => a.id === id)?.name || 'Unknown';
 
     // Group transactions by date
     const groupedTransactions = transactions.reduce((groups, tx) => {
@@ -74,7 +74,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                             <div key={tx.id} className="group flex items-center justify-between p-4 bg-card hover:bg-muted/50 transition-colors rounded-xl border shadow-sm">
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/10' :
-                                            tx.type === 'transfer' ? 'bg-blue-500/10' : 'bg-red-500/10'
+                                        tx.type === 'transfer' ? 'bg-blue-500/10' : 'bg-red-500/10'
                                         }`}>
                                         {getIcon(tx.type, tx.category)}
                                     </div>
@@ -103,8 +103,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
 
                                 <div className="flex flex-col items-end gap-0.5">
                                     <span className={`font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' :
-                                            tx.type === 'expense' ? 'text-red-600 dark:text-red-400' :
-                                                'text-blue-600 dark:text-blue-400'
+                                        tx.type === 'expense' ? 'text-red-600 dark:text-red-400' :
+                                            'text-blue-600 dark:text-blue-400'
                                         }`}>
                                         {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
                                         {formatCurrency(tx.amount, tx.currency)}

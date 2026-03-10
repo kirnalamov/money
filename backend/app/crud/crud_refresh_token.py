@@ -29,7 +29,7 @@ class CRUDRefreshToken(CRUDBase[RefreshToken, RefreshTokenCreate, RefreshTokenUp
         """Revoke a refresh token"""
         db_token = await self.get_by_token(db, token=token)
         if db_token:
-            db_token.revoked = True
+            db_token.revoked = True  # type: ignore
             await db.commit()
             await db.refresh(db_token)
         return db_token
@@ -43,7 +43,7 @@ class CRUDRefreshToken(CRUDBase[RefreshToken, RefreshTokenCreate, RefreshTokenUp
         )
         tokens = result.scalars().all()
         for token in tokens:
-            token.revoked = True
+            token.revoked = True  # type: ignore
         await db.commit()
     
     async def cleanup_expired(self, db: AsyncSession) -> None:

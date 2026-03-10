@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import structlog
 from app.core.config import settings
-from app.db.session import async_session_maker
+from app.db.session import async_sessionmaker
 from app.db.init_db import init_db
 
 logger = structlog.get_logger()
@@ -52,7 +52,7 @@ async def main():
         )
     
     try:
-        async with async_session_maker() as session:
+        async with async_sessionmaker() as session:
             await init_db(session)
             await session.commit()
         

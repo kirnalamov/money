@@ -42,13 +42,13 @@ export function MandatoryExpensesList() {
     const handlePayClick = (expense: RecurringExpense) => {
         setSelectedExpense(expense);
         const defaultAcc = accounts.find(a => a.type === 'bank' || a.type === 'cash');
-        if (defaultAcc) setSelectedAccount(defaultAcc.id);
+        if (defaultAcc) setSelectedAccount(defaultAcc.id.toString());
         setIsPayDialogOpen(true);
     };
 
     const confirmPayment = () => {
         if (selectedExpense && selectedAccount) {
-            payRecurringExpense(selectedExpense.id, selectedAccount);
+            payRecurringExpense(selectedExpense.id, parseInt(selectedAccount));
             setIsPayDialogOpen(false);
             setSelectedExpense(null);
         }
@@ -137,7 +137,7 @@ export function MandatoryExpensesList() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {accounts.map(acc => (
-                                        <SelectItem key={acc.id} value={acc.id}>
+                                        <SelectItem key={acc.id} value={acc.id.toString()}>
                                             {acc.name} ({formatCurrency(acc.balance, acc.currency)})
                                         </SelectItem>
                                     ))}

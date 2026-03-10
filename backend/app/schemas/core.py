@@ -31,25 +31,64 @@ class TransactionType(str, Enum):
     INCOME = "income"
     EXPENSE = "expense"
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# ... (imports)
+
 class TransactionBase(BaseModel):
     amount: float
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType = TransactionType.EXPENSE
-    category_id: Optional[int] = None
+    category_id: Optional[int] = Field(None, alias="categoryId")
+    # Frontend sends 'accountId' and 'category' (string)
+    account_id: int = Field(alias="accountId")
+    
+    to_account_id: Optional[int] = Field(None, alias="toAccountId")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 class TransactionCreate(TransactionBase):
-    pass
+    category_name: Optional[str] = Field(None, alias="category")
 
 class TransactionUpdate(TransactionBase):
-    pass
+    category_name: Optional[str] = Field(None, alias="category")
 
 class TransactionInDBBase(TransactionBase):
     id: int
     created_at: datetime
     updated_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    # Expose just the category name as "category" string
+    category_name: Optional[str] = Field(None, alias="category")
+
+    @field_validator("category_name", mode="before")
+    def extract_category_name(cls, v):
+        if hasattr(v, "name"):
+            return v.name
+        return v
+        
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class Transaction(TransactionInDBBase):
     pass
+
+class TransactionOut(BaseModel):
+    id: int
+    amount: float
+    description: Optional[str] = None
+    date: Optional[datetime] = None
+    type: TransactionType
+    account_id: int = Field(alias="accountId")
+    to_account_id: Optional[int] = Field(None, alias="toAccountId")
+    category: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    @field_validator("category", mode="before")
+    def extract_category_name(cls, v):
+        if hasattr(v, "name"):
+            return v.name
+        return v
+    
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

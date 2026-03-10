@@ -1,4 +1,5 @@
 from typing import Any
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.crud.base import CRUDBase
@@ -26,7 +27,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             full_name=obj_in.full_name,
             is_active=obj_in.is_active,
             role=obj_in.role,
-            is_superuser=False  # Never allow creating superuser via API
+            is_superuser=False,  # Never allow creating superuser via API
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
         db.add(db_obj)
         await db.commit()
@@ -74,16 +77,16 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         user = await self.get_by_username(db, username=username)
         if not user:
             return None
-        if not verify_password(password, user.hashed_password):
+        if not verify_password(password, user.hashed_password):  # type: ignore
             return None
         return user
     
     def is_active(self, user: User) -> bool:
         """Check if user is active"""
-        return user.is_active
+        return user.is_active  # type: ignore
     
     def is_superuser(self, user: User) -> bool:
         """Check if user is superuser"""
-        return user.is_superuser
+        return user.is_superuser  # type: ignore
 
 user = CRUDUser(User)

@@ -46,7 +46,7 @@ export default function TransactionsPage() {
     if (type !== 'all' && tx.type !== type) return false;
 
     // 3. Account
-    if (accountId !== 'all' && tx.accountId !== accountId && tx.toAccountId !== accountId) return false;
+    if (accountId !== 'all' && tx.accountId.toString() !== accountId && tx.toAccountId?.toString() !== accountId) return false;
 
     // 4. Date Range
     if (dateRange?.from) {

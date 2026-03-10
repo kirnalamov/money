@@ -81,7 +81,7 @@ export function TransactionFilters({
                     <SelectContent>
                         <SelectItem value="all">{t('dashboard.charts.select_accounts')}</SelectItem>
                         {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
+                            <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

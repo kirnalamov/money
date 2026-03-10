@@ -31,7 +31,7 @@ import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-ch
 export default function PortfolioPage() {
   const { t } = useTranslation();
   const { positions, accounts, defaultCurrency, addPosition, updatePosition, deletePosition } = useStore();
-  const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: string } | null>(null);
+  const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: number } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     symbol: "",
@@ -54,7 +54,7 @@ export default function PortfolioPage() {
       avgPrice: "",
       currentPrice: "",
       currency: defaultCurrency,
-      accountId: brokerageAccounts[0]?.id || "",
+      accountId: brokerageAccounts[0]?.id.toString() || "",
       assetClass: "stock",
     });
     setEditingPosition(null);
@@ -70,7 +70,7 @@ export default function PortfolioPage() {
         avgPrice: position.avgPrice.toString(),
         currentPrice: position.currentPrice.toString(),
         currency: position.currency,
-        accountId: position.accountId,
+        accountId: position.accountId.toString(),
         assetClass: position.assetClass || "stock",
       });
     } else {
@@ -89,7 +89,7 @@ export default function PortfolioPage() {
       avgPrice: parseFloat(formData.avgPrice),
       currentPrice: parseFloat(formData.currentPrice),
       currency: formData.currency,
-      accountId: formData.accountId,
+      accountId: parseInt(formData.accountId),
       assetClass: formData.assetClass,
     };
 
@@ -103,9 +103,9 @@ export default function PortfolioPage() {
     resetForm();
   };
 
-  const handleDelete = (symbol: string, accountId: string) => {
+  const handleDelete = (symbol: string, accountId: string | number) => {
     if (confirm(t("portfolio.delete_position") + "?")) {
-      deletePosition(symbol, accountId);
+      deletePosition(symbol, Number(accountId));
     }
   };
 
@@ -190,7 +190,7 @@ export default function PortfolioPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {brokerageAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
+                        <SelectItem key={account.id} value={account.id.toString()}>
                           {account.name}
                         </SelectItem>
                       ))}
@@ -369,7 +369,7 @@ export default function PortfolioPage() {
         ) : (
           <div className="space-y-6">
             {Object.entries(positionsByAccount).map(([accountId, accountPositions]) => {
-              const account = accounts.find(acc => acc.id === accountId);
+              const account = accounts.find(acc => acc.id.toString() === accountId);
               if (!account) return null;
 
               return (

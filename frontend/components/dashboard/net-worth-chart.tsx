@@ -37,7 +37,7 @@ interface NetWorthChartProps {
 
 export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   const { t, i18n } = useTranslation();
-  const { accounts, defaultCurrency } = useStore();
+  const { accounts, transactions, defaultCurrency } = useStore();
   const locale = localeMap[i18n.language] || enUS;
   const router = useRouter();
   const [data, setData] = useState<any[]>([]);
@@ -47,14 +47,14 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   // Получаем стабильный список ID счетов
   const accountIds = useMemo(() => accounts.map(acc => acc.id), [accounts]);
 
-  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(() =>
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<number>>(() =>
     new Set(accountIds)
   );
 
   // Обновляем выбранные счета при изменении списка счетов
   useEffect(() => {
     setSelectedAccountIds(prev => {
-      const newSet = new Set<string>();
+      const newSet = new Set<number>();
       let hasChanges = false;
 
       accountIds.forEach(id => {
@@ -84,7 +84,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
 
   // Стабильный список ID отфильтрованных счетов для зависимостей
   const filteredAccountIds = useMemo(() =>
-    Array.from(selectedAccountIds).sort().join(','),
+    Array.from(selectedAccountIds).sort((a, b) => a - b).join(','),
     [selectedAccountIds]
   );
 
@@ -103,8 +103,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
 
   useEffect(() => {
     // Пересоздаем filteredAccounts внутри useEffect для избежания проблем с зависимостями
-    // accountsDataKey гарантирует, что accounts актуален
-    const selectedIdsArray = filteredAccountIds.split(',').filter(Boolean);
+    const selectedIdsArray = filteredAccountIds.split(',').filter(Boolean).map(Number);
     const currentFilteredAccounts = accounts.filter(acc => selectedIdsArray.includes(acc.id));
 
     if (currentFilteredAccounts.length === 0) {
@@ -113,79 +112,87 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
     }
 
     const today = new Date();
+    const endDate = dateRange?.to || today;
     const days = dateRange?.from && dateRange?.to
       ? differenceInDays(dateRange.to, dateRange.from) + 1
       : 30;
 
     const isLargeRange = days > 60;
     const step = isLargeRange ? 7 : 1;
-    const count = Math.min(days, 30);
-    const endDate = dateRange?.to || today;
+    const count = isLargeRange ? Math.ceil(days / step) : days;
 
-    if (displayMode === 'combined') {
-      // Режим "Все вместе" - показываем общую сумму
-      const points: any[] = [];
-      const totalBaseValue = currentFilteredAccounts.reduce((sum, acc) => {
-        const converted = convertCurrency(acc.balance, acc.currency, defaultCurrency);
-        return sum + converted;
-      }, 0);
+    // Start with current balances
+    let accBalances = Object.fromEntries(accounts.map(a => [a.id, a.balance]));
 
-      let currentTotal = totalBaseValue;
+    // Sort transactions descending (newest to oldest)
+    const sortedTx = [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      for (let i = count; i >= 0; i--) {
-        const date = subDays(endDate, i * step);
-        // Небольшие случайные колебания для визуализации
-        currentTotal += (Math.random() - 0.4) * (currentTotal * 0.02);
+    const getBalanceAtEndOfDay = (targetDate: Date) => {
+      let balances = { ...accBalances };
+      const targetTime = new Date(targetDate);
+      targetTime.setHours(23, 59, 59, 999);
 
-        const point: any = {
-          date: format(date, 'dd.MM', { locale }),
-          fullDate: date.toISOString(),
-          total: Math.round(currentTotal),
-        };
-
-        points.push(point);
-      }
-
-      setData(points);
-    } else {
-      // Режим "По отдельности" - показываем каждый счет отдельной линией
-      const points: any[] = [];
-
-      // Генерируем данные для каждого счета
-      const accountData: Record<string, number[]> = {};
-      currentFilteredAccounts.forEach(acc => {
-        const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
-        accountData[acc.id] = [];
-        let currentValue = convertedBalance;
-
-        for (let i = count; i >= 0; i--) {
-          currentValue += (Math.random() - 0.4) * (currentValue * 0.02);
-          accountData[acc.id].push(Math.round(currentValue));
+      for (const tx of sortedTx) {
+        const txTime = new Date(tx.date).getTime();
+        if (txTime > targetTime.getTime()) {
+          // Undo this transaction
+          if (tx.type === 'expense') {
+            if (balances[tx.accountId] !== undefined) {
+              balances[tx.accountId] += tx.amount;
+            }
+          } else if (tx.type === 'income') {
+            if (balances[tx.accountId] !== undefined) {
+              balances[tx.accountId] -= tx.amount;
+            }
+          } else if (tx.type === 'transfer') {
+            if (balances[tx.accountId] !== undefined) {
+              balances[tx.accountId] += tx.amount;
+            }
+            if (tx.toAccountId && balances[tx.toAccountId] !== undefined) {
+              balances[tx.toAccountId] -= tx.amount;
+            }
+          }
+        } else {
+          break;
         }
-      });
+      }
+      return balances;
+    };
 
-      // Создаем точки данных
-      for (let i = count; i >= 0; i--) {
-        const date = subDays(endDate, i * step);
-        const point: any = {
-          date: format(date, 'dd.MM', { locale }),
-          fullDate: date.toISOString(),
-        };
+    const points: any[] = [];
 
+    for (let i = count; i >= 0; i--) {
+      const date = subDays(endDate, i * step);
+      const pastBalances = getBalanceAtEndOfDay(date);
+
+      const point: any = {
+        date: format(date, 'dd.MM', { locale }),
+        fullDate: date.toISOString(),
+      };
+
+      if (displayMode === 'combined') {
+        let total = 0;
         currentFilteredAccounts.forEach(acc => {
-          point[acc.id] = accountData[acc.id][count - i];
+          let val = pastBalances[acc.id] || 0;
+          total += convertCurrency(val, acc.currency, defaultCurrency);
         });
-
-        points.push(point);
+        point.total = Math.round(total);
+      } else {
+        currentFilteredAccounts.forEach(acc => {
+          let val = pastBalances[acc.id] || 0;
+          point[acc.id] = Math.round(convertCurrency(val, acc.currency, defaultCurrency));
+        });
       }
 
-      setData(points);
+      points.push(point);
     }
-    // accountsDataKey отслеживает изменения accounts, поэтому accounts можно использовать внутри без добавления в зависимости
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey]);
 
-  const toggleAccount = (accountId: string) => {
+    setData(points);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey, transactions]);
+
+  const toggleAccount = (accountId: number) => {
     setSelectedAccountIds(prev => {
       const newSet = new Set(prev);
       if (newSet.has(accountId)) {
@@ -378,7 +385,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   if (displayMode === 'combined') {
                     return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
-                    const account = accounts.find(acc => acc.id === name);
+                    const account = accounts.find(acc => acc.id.toString() === name);
                     return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
                   }
                 }}
@@ -413,7 +420,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   })}
                   <Legend
                     formatter={(value) => {
-                      const account = accounts.find(acc => acc.id === value);
+                      const account = accounts.find(acc => acc.id.toString() === value);
                       return account?.name || value;
                     }}
                     wrapperStyle={{ paddingTop: '20px' }}
@@ -478,7 +485,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   if (displayMode === 'combined') {
                     return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
-                    const account = accounts.find(acc => acc.id === name);
+                    const account = accounts.find(acc => acc.id.toString() === name);
                     return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
                   }
                 }}
@@ -507,7 +514,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   })}
                   <Legend
                     formatter={(value) => {
-                      const account = accounts.find(acc => acc.id === value);
+                      const account = accounts.find(acc => acc.id.toString() === value);
                       return account?.name || value;
                     }}
                     wrapperStyle={{ paddingTop: '20px' }}
@@ -553,7 +560,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   if (displayMode === 'combined') {
                     return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
-                    const account = accounts.find(acc => acc.id === name);
+                    const account = accounts.find(acc => acc.id.toString() === name);
                     return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
                   }
                 }}
@@ -587,7 +594,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   })}
                   <Legend
                     formatter={(value) => {
-                      const account = accounts.find(acc => acc.id === value);
+                      const account = accounts.find(acc => acc.id.toString() === value);
                       return account?.name || value;
                     }}
                     wrapperStyle={{ paddingTop: '20px' }}

@@ -4,3 +4,4 @@ from app.models.transaction import Transaction  # noqa
 from app.models.various import Goal, Savings  # noqa
 from app.models.user import User  # noqa
 from app.models.refresh_token import RefreshToken  # noqa
+from app.models.account import Account  # noqa

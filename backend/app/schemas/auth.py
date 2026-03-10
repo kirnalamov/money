@@ -5,11 +5,6 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     full_name: str | None = None
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
 class Token(BaseModel):
     access_token: str
     refresh_token: str

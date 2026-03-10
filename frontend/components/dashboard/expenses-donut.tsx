@@ -1,29 +1,67 @@
 "use client";
-
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, convertCurrency } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-
-const data = [
-    { nameKey: "dashboard.categories.housing", value: 1200, color: "#00C853" }, // Green
-    { nameKey: "dashboard.categories.food", value: 450, color: "#2979FF" },    // Blue
-    { nameKey: "dashboard.categories.transport", value: 200, color: "#FFB300" }, // Amber
-    { nameKey: "dashboard.categories.shopping", value: 300, color: "#F44336" },  // Red
-    { nameKey: "dashboard.categories.utilities", value: 150, color: "#AB47BC" }, // Purple
-];
-
 import { useRouter } from "next/navigation";
+import { DateRange } from "react-day-picker";
+import { isWithinInterval } from "date-fns";
 
-export function ExpensesDonut() {
+export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     const { t } = useTranslation();
-    const { defaultCurrency } = useStore();
+    const { transactions, defaultCurrency } = useStore();
     const router = useRouter();
     const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
-    const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), []);
+    const data = React.useMemo(() => {
+        const categoryMap = new Map<string, number>();
+
+        transactions
+            .filter(t => t.type === 'expense')
+            .filter(t => {
+                if (!dateRange?.from) return true;
+                const txDate = new Date(t.date);
+                if (dateRange.to) {
+                    return isWithinInterval(txDate, { start: dateRange.from, end: dateRange.to });
+                }
+                return txDate >= dateRange.from;
+            })
+            .forEach(t => {
+                const amount = convertCurrency(t.amount, t.currency, defaultCurrency);
+                const category = t.category || "Uncategorized";
+                categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
+            });
+
+        const sorted = Array.from(categoryMap.entries())
+            .map(([name, value]) => ({ nameKey: name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        // Predefined colors
+        const colors = ["#00C853", "#2979FF", "#FFB300", "#F44336", "#AB47BC", "#EC407A", "#7E57C2"];
+
+        return sorted.map((item, index) => ({
+            ...item,
+            color: colors[index % colors.length]
+        }));
+    }, [transactions, defaultCurrency]);
+
+    const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
+
+    if (data.length === 0) {
+        return (
+            <div
+                onClick={() => router.push("/analytics")}
+                className="rounded-xl border glass-card premium-gradient h-[350px] md:h-[350px] flex flex-col items-center justify-center transition-all duration-200 hover:shadow-lg cursor-pointer group"
+            >
+                <div className="p-6 pb-0 mb-4 absolute top-0 left-0">
+                    <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
+                </div>
+                <div className="text-muted-foreground text-sm">No expense data</div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -80,7 +118,7 @@ export function ExpensesDonut() {
                                                         className="h-2.5 w-2.5 rounded-full ring-2 ring-background"
                                                         style={{ backgroundColor: payload[0].payload.color }}
                                                     />
-                                                    <span className="text-sm font-semibold">{t(payload[0].payload.nameKey)}</span>
+                                                    <span className="text-sm font-semibold">{t(payload[0].payload.nameKey) || payload[0].payload.nameKey}</span>
                                                 </div>
                                                 <div className="flex items-baseline gap-2">
                                                     <span className="text-xl font-bold tabular-nums">

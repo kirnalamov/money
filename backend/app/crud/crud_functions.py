@@ -9,7 +9,13 @@ class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
     pass
 
 class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate]):
-    pass
+    async def create(self, db, *, obj_in: TransactionCreate) -> Transaction:
+        obj_in_data = obj_in.model_dump(exclude={'category_name'})
+        db_obj = self.model(**obj_in_data)
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
 
 class CRUDGoal(CRUDBase[Goal, GoalCreate, GoalUpdate]):
     pass

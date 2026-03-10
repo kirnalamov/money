@@ -32,7 +32,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     const { t } = useTranslation();
     const [chartType, setChartType] = useState<ChartType>('pie');
     const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set());
-    const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set(accounts.map(a => a.id)));
+    const [selectedAccounts, setSelectedAccounts] = useState<Set<number>>(new Set(accounts.map(a => a.id)));
 
     // Toggle logic
     const toggleCategory = (cat: string) => {
@@ -42,7 +42,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
         setExcludedCategories(newSet);
     };
 
-    const toggleAccount = (id: string) => {
+    const toggleAccount = (id: number) => {
         const newSet = new Set(selectedAccounts);
         if (newSet.has(id)) newSet.delete(id);
         else newSet.add(id);

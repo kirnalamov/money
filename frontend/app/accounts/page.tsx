@@ -83,7 +83,7 @@ export default function AccountsPage() {
     } else {
       addAccount({
         ...(accountData as Omit<Account, "id">),
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.floor(Math.random() * 1000000),
       });
     }
 
@@ -91,7 +91,7 @@ export default function AccountsPage() {
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm(t("accounts.delete_account") + "?")) {
       deleteAccount(id);
     }

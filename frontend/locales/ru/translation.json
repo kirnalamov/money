@@ -43,7 +43,9 @@
       "updated_now": "Обновлено только что",
       "all_time": "за всё время",
       "budget_left": "бюджета осталось",
-      "target": "Цель"
+      "target": "Цель",
+      "total_savings": "Всего сбережений",
+      "total_available": "Свободно"
     },
     "charts": {
       "net_worth_title": "Динамика капитала",
@@ -84,7 +86,7 @@
       "entertainment": "Развлечения"
     },
     "quick_actions": {
-      "new_expense": "Новый расход",
+      "new_expense": "Расход",
       "add_income": "Доход",
       "transfer": "Перевод",
       "set_goal": "Сберечь"
@@ -114,7 +116,10 @@
       "select_account": "Выберите счёт",
       "destination_account": "Счёт зачисления",
       "category": "напр. Продукты",
-      "description": "напр. Закупка на неделю"
+      "category_income": "напр. Зарплата, Фриланс",
+      "description": "напр. Закупка на неделю",
+      "description_income": "напр. Аванс за проект",
+      "tags": "напр. развлечения, подарки"
     },
     "empty_state": "Список операций пуст. Добавьте первую.",
     "save_changes": "Сохранить",

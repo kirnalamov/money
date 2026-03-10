@@ -5,6 +5,7 @@ class UserBase(BaseModel):
     email: EmailStr
     username: str
     full_name: str | None = None
+    financial_goal: str | None = None
     is_active: bool = True
     role: str = "user"
 
@@ -14,6 +15,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
     full_name: str | None = None
+    financial_goal: str | None = None
     password: str | None = None
 
 class UserInDBBase(UserBase):
@@ -27,7 +29,3 @@ class UserInDBBase(UserBase):
 class User(UserInDBBase):
     """Schema for returning user data to clients"""
     pass
-
-class UserInDB(UserInDBBase):
-    """Schema for internal use with hashed password"""
-    hashed_password: str

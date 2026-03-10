@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useStore } from "@/lib/store";
 import { useRouter, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -13,6 +14,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const { fetchAllData } = useStore();
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -20,7 +22,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
             sessionStorage.setItem("redirectAfterLogin", pathname);
             router.push("/login");
         }
-    }, [isAuthenticated, isLoading, router, pathname]);
+        if (isAuthenticated) {
+            fetchAllData();
+        }
+    }, [isAuthenticated, isLoading, router, pathname, fetchAllData]);
 
     if (isLoading) {
         return (

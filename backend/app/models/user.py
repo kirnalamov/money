@@ -11,6 +11,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
+    financial_goal = Column(String, nullable=True)
     
     # Status and permissions
     is_active = Column(Boolean, default=True, nullable=False)
@@ -23,3 +24,4 @@ class User(Base):
     
     # Relationships
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")

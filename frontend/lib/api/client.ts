@@ -14,6 +14,13 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+        if (process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
+            if (config.headers) {
+                config.headers.Authorization = `Bearer dev_token`;
+            }
+            return config;
+        }
+
         const token = getAccessToken();
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;

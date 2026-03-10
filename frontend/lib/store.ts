@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Account, Transaction, Currency, LimitRule, Position, Goal, RecurringExpense } from '@/types';
+import { getAccounts, createAccount, updateAccount as updateAccountApi, deleteAccount as deleteAccountApi } from './api/accounts';
+import { getTransactions, createTransaction } from './api/transactions';
+import { getGoals, createGoal, updateGoal as updateGoalApi, deleteGoal as deleteGoalApi } from './api/goals';
 
 interface AppState {
   accounts: Account[];
@@ -9,82 +12,119 @@ interface AppState {
   positions: Position[];
   defaultCurrency: Currency;
   setDefaultCurrency: (currency: Currency) => void;
-  addTransaction: (transaction: Transaction) => void;
-  addAccount: (account: Account) => void;
-  updateAccount: (id: string, account: Partial<Account>) => void;
-  deleteAccount: (id: string) => void;
+
+  isLoading: boolean;
+  fetchAllData: () => Promise<void>;
+
+  addAccount: (account: Account) => Promise<void>;
+  updateAccount: (id: number, account: Partial<Account>) => Promise<void>;
+  deleteAccount: (id: number) => Promise<void>;
+
+  addTransaction: (transaction: Transaction) => Promise<void>;
+
   addLimit: (limit: LimitRule) => void;
   updateLimit: (id: string, limit: Partial<LimitRule>) => void;
   deleteLimit: (id: string) => void;
   addPosition: (position: Position) => void;
-  updatePosition: (symbol: string, accountId: string, position: Partial<Position>) => void;
-  deletePosition: (symbol: string, accountId: string) => void;
+  updatePosition: (symbol: string, accountId: number, position: Partial<Position>) => void;
+  deletePosition: (symbol: string, accountId: number) => void;
   goals: Goal[];
-  addGoal: (goal: Goal) => void;
-  updateGoal: (id: string, goal: Partial<Goal>) => void;
-  deleteGoal: (id: string) => void;
+  addGoal: (goal: Goal) => Promise<void>;
+  updateGoal: (id: string, goal: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
   recurringExpenses: RecurringExpense[];
   addRecurringExpense: (expense: RecurringExpense) => void;
   updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => void;
   deleteRecurringExpense: (id: string) => void;
-  payRecurringExpense: (id: string, accountId: string, date?: string) => void;
+  payRecurringExpense: (id: string, accountId: number, date?: string) => void;
   toggleRecurringExpense: (id: string) => void;
+  reset: () => void;
 }
 
-// Mock initial data
-const initialRecurringExpenses: RecurringExpense[] = [
-  { id: '1', name: 'Rent', amount: 1200, currency: 'USD', category: 'dashboard.categories.housing', dueDay: 1, lastPaidDate: '2026-01-01T00:00:00.000Z' },
-  { id: '2', name: 'Internet', amount: 60, currency: 'USD', category: 'dashboard.categories.utilities', dueDay: 15, lastPaidDate: '2026-01-15T00:00:00.000Z' },
-  { id: '3', name: 'Netflix', amount: 15, currency: 'USD', category: 'dashboard.categories.entertainment', dueDay: 20 },
-];
-const initialGoals: Goal[] = [
-  { id: '1', name: 'Emergency Fund', targetAmount: 20000, currentAmount: 12000, currency: 'USD', deadline: '2026-12-31', linkedAccountId: '2' },
-  { id: '2', name: 'New Car', targetAmount: 35000, currentAmount: 5000, currency: 'USD', deadline: '2027-06-30' },
-  { id: '3', name: 'Vacation', targetAmount: 5000, currentAmount: 350, currency: 'USD', deadline: '2026-08-15', linkedAccountId: '3' },
-];
-
-const initialAccounts: Account[] = [
-  { id: '1', name: 'Chase Checking', type: 'bank', balance: 4500.00, currency: 'USD' },
-  { id: '2', name: 'Citi Savings', type: 'savings', balance: 12000.00, currency: 'USD' }, // Matched to Emergency Fund
-  { id: '3', name: 'Cash Wallet', type: 'cash', balance: 350.00, currency: 'USD' }, // Matched to Vacation
-];
-
-// ... (existing initialLimits and initialPositions remain unchanged)
-const initialLimits: LimitRule[] = [
-  { id: '1', category: 'dashboard.categories.groceries', period: 'monthly', amount: 600, currency: 'USD', spent: 450 },
-  { id: '2', category: 'dashboard.categories.dining_out', period: 'monthly', amount: 300, currency: 'USD', spent: 280 },
-  { id: '3', category: 'dashboard.categories.entertainment', period: 'monthly', amount: 200, currency: 'USD', spent: 150 },
-  { id: '4', category: 'dashboard.categories.transport', period: 'monthly', amount: 250, currency: 'USD', spent: 180 },
-  { id: '5', category: 'dashboard.categories.shopping', period: 'monthly', amount: 300, currency: 'USD', spent: 320 },
-];
-
-const initialPositions: Position[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', quantity: 10, avgPrice: 150.00, currentPrice: 175.50, currency: 'USD', accountId: '1', assetClass: 'stock' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', quantity: 5, avgPrice: 120.00, currentPrice: 140.25, currency: 'USD', accountId: '1', assetClass: 'stock' },
-  { symbol: 'BTC', name: 'Bitcoin', quantity: 0.5, avgPrice: 40000.00, currentPrice: 45000.00, currency: 'USD', accountId: '1', assetClass: 'crypto' },
-  { symbol: 'VTI', name: 'Vanguard Total Stock Market', quantity: 15, avgPrice: 200.00, currentPrice: 240.00, currency: 'USD', accountId: '1', assetClass: 'etf' }, // Added variety
-];
+// Empty initial data for backend integration
+const initialRecurringExpenses: RecurringExpense[] = [];
+const initialGoals: Goal[] = [];
+const initialAccounts: Account[] = [];
+const initialLimits: LimitRule[] = [];
+const initialPositions: Position[] = [];
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
-      accounts: initialAccounts,
+    (set, get) => ({
+      accounts: [],
       transactions: [],
       limits: initialLimits,
       positions: initialPositions,
       goals: initialGoals,
+      recurringExpenses: initialRecurringExpenses,
       defaultCurrency: 'USD',
+      isLoading: false,
+
       setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
 
+      fetchAllData: async () => {
+        set({ isLoading: true });
+        try {
+          const [accounts, transactions, goals] = await Promise.all([
+            getAccounts(),
+            getTransactions(),
+            getGoals()
+          ]);
+          set((state) => {
+            const accountIds = new Set(accounts.map((a) => a.id));
+            const validPositions = state.positions.filter((p) => accountIds.has(p.accountId));
+            return { accounts, transactions, goals, positions: validPositions, isLoading: false };
+          });
+        } catch (error) {
+          console.error("Failed to fetch data:", error);
+          set({ isLoading: false });
+        }
+      },
+
       // ... Account actions ...
-      addAccount: (account: Account) => set((state) => ({ accounts: [...state.accounts, account] })),
-      updateAccount: (id: string, updates: Partial<Account>) => set((state) => ({ accounts: state.accounts.map(acc => acc.id === id ? { ...acc, ...updates } : acc) })),
-      deleteAccount: (id: string) => set((state) => ({ accounts: state.accounts.filter(acc => acc.id !== id) })),
+      addAccount: async (account: Account) => {
+        try {
+          const newAccount = await createAccount(account);
+          set((state) => ({ accounts: [...state.accounts, newAccount] }));
+        } catch (e) { console.error(e) }
+      },
+      updateAccount: async (id: number, updates: Partial<Account>) => {
+        try {
+          // Convert to string for API if needed, or update API client
+          const updated = await updateAccountApi(id, updates);
+          set((state) => ({ accounts: state.accounts.map(acc => acc.id === id ? updated : acc) }));
+        } catch (e) { console.error(e) }
+      },
+      deleteAccount: async (id: number) => {
+        try {
+          await deleteAccountApi(id);
+          set((state) => ({
+            accounts: state.accounts.filter(acc => acc.id !== id),
+            positions: state.positions.filter(p => p.accountId !== id),
+          }));
+        } catch (e) { console.error(e) }
+      },
 
       // ... Goal actions ...
-      addGoal: (goal: Goal) => set((state) => ({ goals: [...state.goals, goal] })),
-      updateGoal: (id: string, updates: Partial<Goal>) => set((state) => ({ goals: state.goals.map(g => g.id === id ? { ...g, ...updates } : g) })),
-      deleteGoal: (id: string) => set((state) => ({ goals: state.goals.filter(g => g.id !== id) })),
+      // ... Goal actions ...
+      addGoal: async (goal: Goal) => {
+        try {
+          const newGoal = await createGoal(goal);
+          set((state) => ({ goals: [...state.goals, newGoal] }));
+        } catch (e) { console.error(e) }
+      },
+      updateGoal: async (id: string, updates: Partial<Goal>) => {
+        try {
+          const updated = await updateGoalApi(id, updates);
+          set((state) => ({ goals: state.goals.map(g => g.id === id ? updated : g) }));
+        } catch (e) { console.error(e) }
+      },
+      deleteGoal: async (id: string) => {
+        try {
+          await deleteGoalApi(id);
+          set((state) => ({ goals: state.goals.filter(g => g.id !== id) }));
+        } catch (e) { console.error(e) }
+      },
 
       // ... Limit actions ...
       addLimit: (limit: LimitRule) => set((state) => ({ limits: [...state.limits, limit] })),
@@ -99,87 +139,75 @@ export const useStore = create<AppState>()(
         }
         return { positions: [...state.positions, position] };
       }),
-      updatePosition: (symbol: string, accountId: string, updates: Partial<Position>) => set((state) => ({ positions: state.positions.map(p => p.symbol === symbol && p.accountId === accountId ? { ...p, ...updates } : p) })),
-      deletePosition: (symbol: string, accountId: string) => set((state) => ({ positions: state.positions.filter(p => !(p.symbol === symbol && p.accountId === accountId)) })),
+      updatePosition: (symbol: string, accountId: number, updates: Partial<Position>) => set((state) => ({ positions: state.positions.map(p => p.symbol === symbol && p.accountId === accountId ? { ...p, ...updates } : p) })),
+      deletePosition: (symbol: string, accountId: number) => set((state) => ({ positions: state.positions.filter(p => !(p.symbol === symbol && p.accountId === accountId)) })),
 
       // ... Transaction actions ...
-      addTransaction: (transaction: Transaction) => set((state) => {
-        const newAccounts = [...state.accounts];
-        if (transaction.type === 'expense') {
-          const accIndex = newAccounts.findIndex(a => a.id === transaction.accountId);
-          if (accIndex >= 0) newAccounts[accIndex].balance -= transaction.amount;
-        } else if (transaction.type === 'income') {
-          const accIndex = newAccounts.findIndex(a => a.id === transaction.accountId);
-          if (accIndex >= 0) newAccounts[accIndex].balance += transaction.amount;
-        } else if (transaction.type === 'transfer' && transaction.toAccountId) {
-          const fromIndex = newAccounts.findIndex(a => a.id === transaction.accountId);
-          const toIndex = newAccounts.findIndex(a => a.id === transaction.toAccountId);
-          if (fromIndex >= 0 && toIndex >= 0) {
-            newAccounts[fromIndex].balance -= transaction.amount;
-            newAccounts[toIndex].balance += transaction.amount;
-          }
-        }
-        return { transactions: [transaction, ...state.transactions], accounts: newAccounts };
-      }),
+      addTransaction: async (transaction: Transaction) => {
+        try {
+          const newTx = await createTransaction(transaction);
+          set((state) => {
+            const newAccounts = [...state.accounts];
+            if (newTx.type === 'expense') {
+              const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId); // IDs are now both numbers
+              if (accIndex >= 0) newAccounts[accIndex].balance -= newTx.amount;
+            } else if (newTx.type === 'income') {
+              const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId); // IDs are now both numbers
+              if (accIndex >= 0) newAccounts[accIndex].balance += newTx.amount;
+            }
+            // TODO: Update account balance regarding transfers, which might need API support
+            return { transactions: [newTx, ...state.transactions], accounts: newAccounts };
+          });
+        } catch (e) { console.error(e) }
+      },
 
       // ... Recurring Expense actions ...
-      recurringExpenses: initialRecurringExpenses, // Initialize with mock data
+      // recurringExpenses property is already initialized in state object above
       addRecurringExpense: (expense: RecurringExpense) => set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })),
       updateRecurringExpense: (id: string, updates: Partial<RecurringExpense>) => set((state) => ({ recurringExpenses: state.recurringExpenses.map(e => e.id === id ? { ...e, ...updates } : e) })),
       deleteRecurringExpense: (id: string) => set((state) => ({ recurringExpenses: state.recurringExpenses.filter(e => e.id !== id) })),
-      payRecurringExpense: (id: string, accountId: string, dateStr?: string) => set((state) => {
+      payRecurringExpense: async (id: string, accountId: number, dateStr?: string) => {
+        const state = get();
         const expense = state.recurringExpenses.find(e => e.id === id);
-        if (!expense) return state;
+        if (!expense) return;
 
         const date = dateStr || new Date().toISOString();
 
-        // 1. Create Transaction
-        const transaction: Transaction = {
-          id: `recurring_${Date.now()}`,
-          accountId: accountId,
-          type: 'expense',
+        // 1. Create Transaction to sync with backend
+        await state.addTransaction({
           amount: expense.amount,
           currency: expense.currency,
-          category: expense.category,
+          description: expense.name,
           date: date,
-          description: `Payment: ${expense.name}`,
-          status: 'completed',
-          isRecurring: true
-        };
+          type: 'expense',
+          category: 'Housing', // Default category for mandatory expenses
+          accountId: accountId,
+        } as Transaction);
 
-        // 2. Update Account Balance
-        const newAccounts = [...state.accounts];
-        const accIndex = newAccounts.findIndex(a => a.id === accountId);
-        if (accIndex >= 0) {
-          newAccounts[accIndex].balance -= expense.amount;
-        }
-
-        // 3. Update Last Paid Date
-        const newRecurring = state.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: date } : e);
-
+        // 2. Update local state
+        set((currentState) => ({
+          recurringExpenses: currentState.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: date } : e)
+        }));
+      },
+      toggleRecurringExpense: (id: string) => set((state) => {
         return {
-          transactions: [transaction, ...state.transactions],
-          accounts: newAccounts,
-          recurringExpenses: newRecurring
+          recurringExpenses: state.recurringExpenses.map(e => {
+            if (e.id === id) {
+              const date = e.lastPaidDate ? undefined : new Date().toISOString();
+              return { ...e, lastPaidDate: date };
+            }
+            return e;
+          })
         };
       }),
-      toggleRecurringExpense: (id: string) => set((state) => {
-        const expense = state.recurringExpenses.find(e => e.id === id);
-        if (!expense) return state;
-
-        const now = new Date();
-        let newDate: string | undefined = now.toISOString();
-
-        if (expense.lastPaidDate) {
-          const lastPaid = new Date(expense.lastPaidDate);
-          if (lastPaid.getMonth() === now.getMonth() && lastPaid.getFullYear() === now.getFullYear()) {
-            newDate = undefined; // Uncheck/Unpay
-          }
-        }
-
-        return {
-          recurringExpenses: state.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: newDate } : e)
-        };
+      reset: () => set({
+        accounts: [],
+        transactions: [],
+        limits: initialLimits,
+        positions: initialPositions,
+        goals: initialGoals,
+        recurringExpenses: initialRecurringExpenses,
+        isLoading: false
       }),
     }),
     {

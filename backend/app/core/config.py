@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Money App"
     API_V1_STR: str = "/api/v1"
+    DEV_MODE: bool = False
     
     # Security
     SECRET_KEY: str = "CHANGE_THIS_IN_PRODUCTION_TO_A_RANDOM_SECRET_KEY"
@@ -33,8 +34,10 @@ class Settings(BaseSettings):
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list):
             return v
+        elif isinstance(v, str):
+            return [v]
         raise ValueError(v)
 
     # Database
@@ -42,15 +45,15 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    DATABASE_URL: Union[PostgresDsn, str] = None
+    DATABASE_URL: Union[PostgresDsn, str] | None = None
 
     @field_validator("DATABASE_URL", mode="before")
-    def assemble_db_connection(cls, v: Union[str, None], info) -> AnyHttpUrl:
+    def assemble_db_connection(cls, v: Union[str, None], info) -> Union[AnyHttpUrl, str]:
         if isinstance(v, str):
             return v
         
-        # Fallback if DATABASE_URL not explicitly set (construct it)
-        # Note: In Pydantic v2 validation logic changes slightly, but this is standard pattern
+        # If any Postgres field is missing and we don't have a URL, ensure we don't crash if we want SQLite
+        # But here we are building PostgresDSN by default.
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
             username=info.data.get("POSTGRES_USER"),
@@ -61,4 +64,4 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
-settings = Settings()
+settings = Settings()  # type: ignore

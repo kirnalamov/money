@@ -17,8 +17,14 @@ class Transaction(Base):
     date = Column(DateTime(timezone=True), server_default=func.now())
     type = Column(String, nullable=False, default=TransactionType.EXPENSE) # stored as string to avoid enum issues in migration sometimes, but generic Enum is fine.
     
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    to_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
+    
+    account = relationship("Account", foreign_keys=[account_id], back_populates="transactions")
+    to_account = relationship("Account", foreign_keys=[to_account_id])
+
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-    category = relationship("Category", back_populates="transactions")
+    category = relationship("Category", back_populates="transactions", lazy="selectin")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())

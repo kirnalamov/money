@@ -17,16 +17,31 @@ const colorMap: Record<string, string> = {
 
 export function LimitsSummary() {
   const { t } = useTranslation();
-  const { limits, defaultCurrency } = useStore();
+  const { limits, transactions, defaultCurrency } = useStore();
 
   return (
     <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg px-4 py-3 transition-all duration-300 hover:shadow-xl">
       <h3 className="font-semibold leading-none tracking-tight mb-3">{t("dashboard.charts.monthly_limits")}</h3>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {limits.filter(limit => limit.period === 'monthly').map((limit) => {
-          const percentage = Math.min(100, (limit.spent / limit.amount) * 100);
-          const convertedSpent = convertCurrency(limit.spent, limit.currency, defaultCurrency);
+
+          // Calculate dynamically from current month's transactions
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
+
+          const matchingTransactions = transactions.filter(t =>
+            t.type === 'expense' &&
+            t.category === limit.category &&
+            new Date(t.date).getMonth() === currentMonth &&
+            new Date(t.date).getFullYear() === currentYear
+          );
+
+          const calculatedSpent = matchingTransactions.reduce((acc, tx) => {
+            return acc + convertCurrency(tx.amount, tx.currency, defaultCurrency);
+          }, 0);
+
           const convertedLimit = convertCurrency(limit.amount, limit.currency, defaultCurrency);
+          const percentage = convertedLimit > 0 ? Math.min(100, (calculatedSpent / convertedLimit) * 100) : 0;
           const color = colorMap[limit.category] || "bg-plutus-green";
 
           return (
@@ -42,7 +57,7 @@ export function LimitsSummary() {
                 />
               </div>
               <div className="mt-1 text-xs text-muted-foreground flex justify-between items-center">
-                <span>{formatCurrency(convertedSpent, defaultCurrency)} / {formatCurrency(convertedLimit, defaultCurrency)}</span>
+                <span>{formatCurrency(calculatedSpent, defaultCurrency)} / {formatCurrency(convertedLimit, defaultCurrency)}</span>
               </div>
             </div>
           );

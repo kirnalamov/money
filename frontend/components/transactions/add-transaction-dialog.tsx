@@ -27,10 +27,21 @@ import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, convertCurrency } from '@/lib/utils';
 
-export function AddTransactionDialog() {
+interface AddTransactionDialogProps {
+  defaultType?: TransactionType;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+}
+
+export function AddTransactionDialog({ defaultType = 'expense', open: controlledOpen, onOpenChange: setControlledOpen, trigger }: AddTransactionDialogProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [type, setType] = useState<TransactionType>('expense');
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? setControlledOpen : setInternalOpen;
+
+  const [type, setType] = useState<TransactionType>(defaultType);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -38,6 +49,9 @@ export function AddTransactionDialog() {
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
+
+  // Update type when defaultType changes (only if not user-modified? typically reset on open)
+  // useEffect(() => setType(defaultType), [defaultType, open]); 
 
   const { accounts, addTransaction, defaultCurrency } = useStore();
 
@@ -48,12 +62,12 @@ export function AddTransactionDialog() {
     if (type === 'transfer' && !toAccountId) return;
 
     addTransaction({
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.floor(Math.random() * 1000000),
       type,
       amount: parseFloat(amount),
       currency: defaultCurrency,
-      accountId,
-      toAccountId: type === 'transfer' ? toAccountId : undefined,
+      accountId: parseInt(accountId),
+      toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
       category: category || 'Uncategorized',
       date: new Date().toISOString(),
       description,
@@ -62,7 +76,7 @@ export function AddTransactionDialog() {
       status: 'completed'
     });
 
-    setOpen(false);
+    setOpen?.(false);
     resetForm();
   };
 
@@ -75,13 +89,20 @@ export function AddTransactionDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('transactions.add_button')}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(val) => {
+      setOpen?.(val);
+      if (val) setType(defaultType); // Reset type on open
+    }}>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('transactions.add_button')}
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t('transactions.add_dialog_title')}</DialogTitle>
@@ -135,7 +156,7 @@ export function AddTransactionDialog() {
                 {accounts.map((acc) => {
                   const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
                   return (
-                    <SelectItem key={acc.id} value={acc.id}>
+                    <SelectItem key={acc.id} value={acc.id.toString()}>
                       {acc.name} ({formatCurrency(acc.balance, acc.currency)}
                       {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
                     </SelectItem>
@@ -156,11 +177,11 @@ export function AddTransactionDialog() {
                 </SelectTrigger>
                 <SelectContent>
                   {accounts
-                    .filter(acc => acc.id !== accountId)
+                    .filter(acc => acc.id !== parseInt(accountId))
                     .map((acc) => {
                       const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
                       return (
-                        <SelectItem key={acc.id} value={acc.id}>
+                        <SelectItem key={acc.id} value={acc.id.toString()}>
                           {acc.name} ({formatCurrency(acc.balance, acc.currency)}
                           {acc.currency !== defaultCurrency && ` ≈ ${formatCurrency(convertedBalance, defaultCurrency)}`})
                         </SelectItem>
@@ -179,7 +200,7 @@ export function AddTransactionDialog() {
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder={t('transactions.placeholders.category')}
+              placeholder={type === 'income' ? t('transactions.placeholders.category_income') : t('transactions.placeholders.category')}
             />
           </div>
 
@@ -203,21 +224,23 @@ export function AddTransactionDialog() {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('transactions.placeholders.description')}
+              placeholder={type === 'income' ? t('transactions.placeholders.description_income') : t('transactions.placeholders.description')}
             />
           </div>
 
-          <div className="flex items-center justify-between border p-3 rounded-md mt-2">
-            <div className="space-y-0.5">
-              <Label htmlFor="recurring" className="text-base">{t('transactions.recurring_label')}</Label>
-              <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc')}</p>
+          {type !== 'income' && type !== 'transfer' && (
+            <div className="flex items-center justify-between border p-3 rounded-md mt-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="recurring" className="text-base">{t('transactions.recurring_label')}</Label>
+                <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc')}</p>
+              </div>
+              <Switch
+                id="recurring"
+                checked={isRecurring}
+                onCheckedChange={setIsRecurring}
+              />
             </div>
-            <Switch
-              id="recurring"
-              checked={isRecurring}
-              onCheckedChange={setIsRecurring}
-            />
-          </div>
+          )}
 
           <DialogFooter className="mt-4">
             <Button type="submit" className="w-full sm:w-auto">{t('transactions.save_changes')}</Button>

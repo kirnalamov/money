@@ -5,6 +5,7 @@ export interface User {
     email: string;
     username: string;
     full_name: string | null;
+    financial_goal: string | null;
     is_active: boolean;
     is_superuser: boolean;
     role: string;
@@ -43,6 +44,7 @@ export interface TokenRefreshResponse {
 export interface UserUpdateRequest {
     email?: string;
     full_name?: string;
+    financial_goal?: string;
     password?: string;
 }
 

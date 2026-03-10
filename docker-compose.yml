@@ -35,7 +35,7 @@ services:
 
       # Security - IMPORTANT: Change SECRET_KEY in production!
       - SECRET_KEY=dev-secret-key-CHANGE-IN-PRODUCTION-use-openssl-rand-hex-32
-      - BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
 
       # Logging
       - LOG_FORMAT=console
@@ -45,6 +45,8 @@ services:
       # - FIRST_SUPERUSER_USERNAME=admin
       # - FIRST_SUPERUSER_PASSWORD=SecurePassword123!
       # - FIRST_SUPERUSER_FULL_NAME=Admin User
+    volumes:
+      - ./backend:/app
     depends_on:
       db:
         condition: service_healthy

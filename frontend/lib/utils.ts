@@ -53,46 +53,51 @@ export function getExchangeRates(): Record<Currency, number> {
  */
 export function convertCurrency(
   amount: number,
-  fromCurrency: Currency,
-  toCurrency: Currency
+  fromCurrency?: Currency | string,
+  toCurrency?: Currency | string
 ): number {
-  if (fromCurrency === toCurrency) {
+  if (!amount || isNaN(amount)) return 0;
+  const fromC = (fromCurrency as Currency) || 'USD';
+  const toC = (toCurrency as Currency) || 'USD';
+
+  if (fromC === toC) {
     return amount;
   }
 
   // Сначала конвертируем в USD (базовая валюта)
-  const amountInUSD = amount / exchangeRates[fromCurrency];
+  const rateFrom = exchangeRates[fromC] || 1.0;
+  const rateTo = exchangeRates[toC] || 1.0;
 
-  // Затем конвертируем из USD в целевую валюту
-  const convertedAmount = amountInUSD * exchangeRates[toCurrency];
+  const amountInUSD = amount / rateFrom;
+  const convertedAmount = amountInUSD * rateTo;
 
   return convertedAmount;
 }
 
 /**
  * Получает курс обмена между двумя валютами
- * @param fromCurrency - исходная валюта
- * @param toCurrency - целевая валюта
- * @returns курс обмена
  */
 export function getExchangeRate(
-  fromCurrency: Currency,
-  toCurrency: Currency
+  fromCurrency?: Currency | string,
+  toCurrency?: Currency | string
 ): number {
-  if (fromCurrency === toCurrency) {
+  const fromC = (fromCurrency as Currency) || 'USD';
+  const toC = (toCurrency as Currency) || 'USD';
+  if (fromC === toC) {
     return 1.0;
   }
+  const rateFrom = exchangeRates[fromC] || 1.0;
+  const rateTo = exchangeRates[toC] || 1.0;
 
-  return exchangeRates[toCurrency] / exchangeRates[fromCurrency];
+  return rateTo / rateFrom;
 }
 
 /**
  * Форматирует сумму денег с символом валюты
- * @param amount - сумма для форматирования
- * @param currency - валюта (USD, EUR, GBP, RUB)
- * @returns отформатированная строка с символом валюты
  */
-export function formatCurrency(amount: number, currency: Currency = 'USD'): string {
+export function formatCurrency(amount: number, currency?: Currency | string): string {
+  if (amount === undefined || isNaN(amount)) return '$0.00';
+  const curr = (currency as Currency) || 'USD';
   const currencyConfig: Record<Currency, { symbol: string; position: 'before' | 'after'; locale: string }> = {
     USD: { symbol: '$', position: 'before', locale: 'en-US' },
     EUR: { symbol: '€', position: 'before', locale: 'de-DE' },
@@ -100,7 +105,7 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
     RUB: { symbol: '₽', position: 'after', locale: 'ru-RU' },
   };
 
-  const config = currencyConfig[currency];
+  const config = currencyConfig[curr] || currencyConfig['USD'];
   const formattedAmount = new Intl.NumberFormat(config.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -111,20 +116,23 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
     : `${formattedAmount} ${config.symbol}`;
 }
 
-export function getCurrencySymbol(currency: Currency = 'USD'): string {
+export function getCurrencySymbol(currency?: Currency | string): string {
+  const curr = (currency as Currency) || 'USD';
   const currencyConfig: Record<Currency, { symbol: string }> = {
     USD: { symbol: '$' },
     EUR: { symbol: '€' },
     GBP: { symbol: '£' },
     RUB: { symbol: '₽' },
   };
-  return currencyConfig[currency]?.symbol || '$';
+  return currencyConfig[curr]?.symbol || '$';
 }
 
 /**
  * Форматирует сумму денег без десятичных знаков (для больших чисел)
  */
-export function formatCurrencyCompact(amount: number, currency: Currency = 'USD'): string {
+export function formatCurrencyCompact(amount: number, currency?: Currency | string): string {
+  if (amount === undefined || isNaN(amount)) return '$0';
+  const curr = (currency as Currency) || 'USD';
   const currencyConfig: Record<Currency, { symbol: string; position: 'before' | 'after'; locale: string }> = {
     USD: { symbol: '$', position: 'before', locale: 'en-US' },
     EUR: { symbol: '€', position: 'before', locale: 'de-DE' },
@@ -132,7 +140,7 @@ export function formatCurrencyCompact(amount: number, currency: Currency = 'USD'
     RUB: { symbol: '₽', position: 'after', locale: 'ru-RU' },
   };
 
-  const config = currencyConfig[currency];
+  const config = currencyConfig[curr] || currencyConfig['USD'];
   const formattedAmount = new Intl.NumberFormat(config.locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
