@@ -3,6 +3,9 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.base_class import Base
 
+# Important: import RefreshToken here so `relationship("RefreshToken")` can resolve
+from app.models.refresh_token import RefreshToken
+
 class User(Base):
     __tablename__ = "users"
     
@@ -25,3 +28,5 @@ class User(Base):
     # Relationships
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")
+    categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+    tags = relationship("Tag", back_populates="user", cascade="all, delete-orphan")

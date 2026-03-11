@@ -1,5 +1,21 @@
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'RUB';
 
+export interface Category {
+  id: number;
+  name: string;
+  icon?: string;
+  color?: string;
+  limit?: number;
+  created_at?: string;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  color?: string;
+  created_at?: string;
+}
+
 export type AccountType = 'bank' | 'brokerage' | 'cash' | 'savings';
 
 export interface Account {

@@ -28,7 +28,7 @@ interface DetailedExpensesProps {
 type ChartType = 'pie' | 'bar';
 
 export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
-    const { transactions, defaultCurrency, accounts } = useStore();
+    const { transactions, defaultCurrency, accounts, categories } = useStore();
     const { t } = useTranslation();
     const [chartType, setChartType] = useState<ChartType>('pie');
     const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set());
@@ -93,7 +93,10 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     const allCategories = Array.from(new Set(transactions.filter(t => t.type === 'expense').map(t => t.category))).sort();
 
     const data = Object.entries(categoryData)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => {
+            const catObj = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+            return { name, value, color: catObj?.color };
+        })
         .sort((a, b) => b.value - a.value);
 
     // Stats
@@ -288,7 +291,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             dataKey="value"
                                         >
                                             {data.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} strokeWidth={2} stroke="hsl(var(--card))" />
+                                                <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} strokeWidth={2} stroke="hsl(var(--card))" />
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -311,7 +314,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                         />
                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                             {data.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                                <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
                                             ))}
                                         </Bar>
                                     </BarChart>

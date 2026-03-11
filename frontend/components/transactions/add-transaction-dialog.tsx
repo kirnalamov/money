@@ -26,6 +26,8 @@ import { TransactionType } from '@/types';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, convertCurrency } from '@/lib/utils';
+import { CreatableCombobox } from '@/components/ui/creatable-combobox';
+import { MultiSelectCreatable } from '@/components/ui/multi-select-creatable';
 
 interface AddTransactionDialogProps {
   defaultType?: TransactionType;
@@ -47,13 +49,13 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [category, setCategory] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isRecurring, setIsRecurring] = useState(false);
 
   // Update type when defaultType changes (only if not user-modified? typically reset on open)
   // useEffect(() => setType(defaultType), [defaultType, open]); 
 
-  const { accounts, addTransaction, defaultCurrency } = useStore();
+  const { accounts, categories, tags: tagsList, addTransaction, defaultCurrency } = useStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,17 +63,19 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
 
     if (type === 'transfer' && !toAccountId) return;
 
+    const selectedAccount = accounts.find(a => a.id === parseInt(accountId));
+    
     addTransaction({
       id: Math.floor(Math.random() * 1000000),
       type,
       amount: parseFloat(amount),
-      currency: defaultCurrency,
+      currency: selectedAccount?.currency || defaultCurrency,
       accountId: parseInt(accountId),
       toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
       category: category || 'Uncategorized',
       date: new Date().toISOString(),
       description,
-      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      tags: tags.length > 0 ? tags : undefined,
       isRecurring,
       status: 'completed'
     });
@@ -84,7 +88,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
     setAmount('');
     setDescription('');
     setCategory('');
-    setTags('');
+    setTags([]);
     setIsRecurring(false);
   };
 
@@ -196,11 +200,14 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             <Label htmlFor="category">
               {t('transactions.category')}
             </Label>
-            <Input
-              id="category"
+            <CreatableCombobox
+              options={categories.map(c => ({ label: c.name, value: c.name }))}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={setCategory}
               placeholder={type === 'income' ? t('transactions.placeholders.category_income') : t('transactions.placeholders.category')}
+              onCreate={(val) => {
+                // Optionally could dispatch create action here immediately if desired
+              }}
             />
           </div>
 
@@ -208,10 +215,10 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             <Label htmlFor="tags">
               {t('transactions.tags') || 'Tags'}
             </Label>
-            <Input
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
+            <MultiSelectCreatable
+              options={tagsList.map(t => ({ label: t.name, value: t.name }))}
+              values={tags}
+              onChange={setTags}
               placeholder={t('transactions.placeholders.tags') || 'fun, jokes, entertainment'}
             />
           </div>

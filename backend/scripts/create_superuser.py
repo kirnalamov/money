@@ -22,8 +22,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import structlog
 from app.core.config import settings
-from app.db.session import async_sessionmaker
+from app.db.session import AsyncSessionLocal
 from app.db.init_db import init_db
+import app.db.base  # Register all models
 
 logger = structlog.get_logger()
 
@@ -52,7 +53,9 @@ async def main():
         )
     
     try:
-        async with async_sessionmaker() as session:
+        if sys.platform == 'win32':
+            sys.stdout.reconfigure(encoding='utf-8')
+        async with AsyncSessionLocal() as session:
             await init_db(session)
             await session.commit()
         
@@ -62,8 +65,8 @@ async def main():
         print(f"  Username: {settings.FIRST_SUPERUSER_USERNAME}")
         
     except Exception as e:
-        logger.error("superuser_creation_failed", error=str(e), exc_info=True)
-        print(f"\n✗ Failed to create superuser: {e}")
+        logger.error("superuser_creation_failed", error=str(e))
+        print(f"\nFailed to create superuser: {e}")
         sys.exit(1)
 
 

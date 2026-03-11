@@ -7,12 +7,45 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Palette, Globe, Coins, Database, Trash2 } from "lucide-react";
+import { Palette, Globe, Coins, Database, Trash2, Tags, Tag as TagIcon, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useStore } from "@/lib/store";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useState } from "react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const { categories, tags, addCategory, updateCategory, deleteCategory, addTag, updateTag, deleteTag } = useStore();
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newTagName, setNewTagName] = useState("");
+  const [catError, setCatError] = useState("");
+  const [tagError, setTagError] = useState("");
+
+  const handleAddCategory = async () => {
+    setCatError("");
+    if (newCategoryName.trim()) {
+      try {
+        await addCategory({ name: newCategoryName.trim() });
+        setNewCategoryName("");
+      } catch (e: any) {
+        setCatError("Failed to add category. Please try again.");
+      }
+    }
+  };
+
+  const handleAddTag = async () => {
+  	setTagError("");
+    if (newTagName.trim()) {
+      try {
+        await addTag({ name: newTagName.trim() });
+        setNewTagName("");
+      } catch (e: any) {
+        setTagError("Failed to add tag. Please try again.");
+      }
+    }
+  };
 
   const handleReset = () => {
     if (confirm("Are you sure you want to reset all data? This action cannot be undone.")) {
@@ -77,6 +110,130 @@ export default function SettingsPage() {
                   <p className="text-xs text-muted-foreground">Select your primary currency for reporting.</p>
                 </div>
                 <CurrencyToggle />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Categories and Tags Management */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Tags className="h-5 w-5 text-primary" />
+                <CardTitle>Custom Classifications</CardTitle>
+              </div>
+              <CardDescription>Manage your custom categories and tags.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Categories */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 font-medium">
+                  <LayoutList className="h-4 w-4" /> Categories
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="New category name..." 
+                    value={newCategoryName} 
+                    onChange={(e) => setNewCategoryName(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                  />
+                  <Button onClick={handleAddCategory}>Add</Button>
+                </div>
+                {catError && <p className="text-sm text-destructive font-medium">{catError}</p>}
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((c) => (
+                    <Popover key={c.id}>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
+                          <div className="w-3 h-3 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: c.color || '#cccccc' }} />
+                          {c.name}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm flex items-center gap-2"><LayoutList className="w-4 h-4" /> Edit Category</h4>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="color"
+                              defaultValue={c.color || '#cccccc'}
+                              className="w-12 h-10 p-1 cursor-pointer shrink-0"
+                              onBlur={(e) => updateCategory(c.id, { name: c.name, color: e.target.value })}
+                            />
+                            <Input
+                              type="text"
+                              defaultValue={c.name}
+                              className="w-full h-10"
+                              onBlur={(e) => {
+                                const val = e.target.value.trim();
+                                if (val && val !== c.name) updateCategory(c.id, { name: val, color: c.color });
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteCategory(c.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete Category
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
+                  ))}
+                  {categories.length === 0 && <span className="text-xs text-muted-foreground">No custom categories.</span>}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Tags */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 font-medium">
+                  <TagIcon className="h-4 w-4" /> Tags
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="New tag name..." 
+                    value={newTagName} 
+                    onChange={(e) => setNewTagName(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                  />
+                  <Button onClick={handleAddTag}>Add</Button>
+                </div>
+                {tagError && <p className="text-sm text-destructive font-medium">{tagError}</p>}
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <Popover key={t.id}>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
+                          <div className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: t.color || '#cccccc' }} />
+                          #{t.name}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm flex items-center gap-2"><TagIcon className="w-4 h-4" /> Edit Tag</h4>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="color"
+                              defaultValue={t.color || '#cccccc'}
+                              className="w-12 h-10 p-1 cursor-pointer shrink-0"
+                              onBlur={(e) => updateTag(t.id, { name: t.name, color: e.target.value })}
+                            />
+                            <Input
+                              type="text"
+                              defaultValue={t.name}
+                              className="w-full h-10"
+                              onBlur={(e) => {
+                                const val = e.target.value.trim();
+                                if (val && val !== t.name) updateTag(t.id, { name: val, color: t.color });
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteTag(t.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete Tag
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
+                  ))}
+                  {tags.length === 0 && <span className="text-xs text-muted-foreground">No custom tags.</span>}
+                </div>
               </div>
             </CardContent>
           </Card>

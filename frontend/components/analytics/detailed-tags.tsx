@@ -14,7 +14,7 @@ interface DetailedTagsProps {
 }
 
 export function DetailedTags({ dateRange }: DetailedTagsProps) {
-    const { transactions, defaultCurrency, accounts } = useStore();
+    const { transactions, defaultCurrency, accounts, tags } = useStore();
     const { t } = useTranslation();
 
     // Filter transactions by date range
@@ -54,7 +54,10 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
     });
 
     const data = Object.entries(tagDataMap)
-        .map(([key, stats]) => ({ name: key, ...stats }))
+        .map(([key, stats]) => {
+            const tagObj = tags.find(t => t.name.toLowerCase() === key.toLowerCase());
+            return { name: key, color: tagObj?.color, ...stats };
+        })
         .sort((a, b) => b.value - a.value);
 
     const topTag = data[0];
@@ -146,7 +149,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                             />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                                 {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                    <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
                                 ))}
                             </Bar>
                         </BarChart>

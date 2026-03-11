@@ -26,14 +26,34 @@ class CategoryInDBBase(CategoryBase):
 class Category(CategoryInDBBase):
     pass
 
+# Tag Schemas
+class TagBase(BaseModel):
+    name: str
+    color: Optional[str] = None
+
+class TagCreate(TagBase):
+    pass
+
+class TagUpdate(TagBase):
+    pass
+
+class TagInDBBase(TagBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class Tag(TagInDBBase):
+    pass
+
 # Transaction Schemas
 class TransactionType(str, Enum):
     INCOME = "income"
     EXPENSE = "expense"
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-# ... (imports)
 
 class TransactionBase(BaseModel):
     amount: float
@@ -50,9 +70,11 @@ class TransactionBase(BaseModel):
 
 class TransactionCreate(TransactionBase):
     category_name: Optional[str] = Field(None, alias="category")
+    tags: Optional[list[str]] = None
 
 class TransactionUpdate(TransactionBase):
     category_name: Optional[str] = Field(None, alias="category")
+    tags: Optional[list[str]] = None
 
 class TransactionInDBBase(TransactionBase):
     id: int
@@ -61,11 +83,20 @@ class TransactionInDBBase(TransactionBase):
     
     # Expose just the category name as "category" string
     category_name: Optional[str] = Field(None, alias="category")
+    tags: Optional[list[str]] = None
 
     @field_validator("category_name", mode="before")
     def extract_category_name(cls, v):
         if hasattr(v, "name"):
             return v.name
+        return v
+        
+    @field_validator("tags", mode="before")
+    def extract_tag_names(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, list) and len(v) > 0 and hasattr(v[0], "name"):
+            return [tag.name for tag in v]
         return v
         
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -82,6 +113,7 @@ class TransactionOut(BaseModel):
     account_id: int = Field(alias="accountId")
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category: Optional[str] = None
+    tags: Optional[list[str]] = None
     created_at: datetime
     updated_at: datetime
     
@@ -89,6 +121,14 @@ class TransactionOut(BaseModel):
     def extract_category_name(cls, v):
         if hasattr(v, "name"):
             return v.name
+        return v
+        
+    @field_validator("tags", mode="before")
+    def extract_tag_names(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, list) and len(v) > 0 and hasattr(v[0], "name"):
+            return [tag.name for tag in v]
         return v
     
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

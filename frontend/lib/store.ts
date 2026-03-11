@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Account, Transaction, Currency, LimitRule, Position, Goal, RecurringExpense } from '@/types';
+import { Account, Transaction, Currency, LimitRule, Position, Goal, RecurringExpense, Category, Tag } from '@/types';
 import { getAccounts, createAccount, updateAccount as updateAccountApi, deleteAccount as deleteAccountApi } from './api/accounts';
 import { getTransactions, createTransaction } from './api/transactions';
 import { getGoals, createGoal, updateGoal as updateGoalApi, deleteGoal as deleteGoalApi } from './api/goals';
+import { getCategories, createCategory as createCategoryApi, updateCategory as updateCategoryApi, deleteCategory as deleteCategoryApi } from './api/categories';
+import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTag as deleteTagApi } from './api/tags';
+
+const getRandomHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
 interface AppState {
   accounts: Account[];
   transactions: Transaction[];
+  categories: Category[];
+  tags: Tag[];
   limits: LimitRule[];
   positions: Position[];
   defaultCurrency: Currency;
@@ -21,6 +27,14 @@ interface AppState {
   deleteAccount: (id: number) => Promise<void>;
 
   addTransaction: (transaction: Transaction) => Promise<void>;
+
+  addCategory: (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateCategory: (id: number, category: Partial<Category>) => Promise<void>;
+  deleteCategory: (id: number) => Promise<void>;
+
+  addTag: (tag: Omit<Tag, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateTag: (id: number, tag: Partial<Tag>) => Promise<void>;
+  deleteTag: (id: number) => Promise<void>;
 
   addLimit: (limit: LimitRule) => void;
   updateLimit: (id: string, limit: Partial<LimitRule>) => void;
@@ -53,6 +67,8 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       accounts: [],
       transactions: [],
+      categories: [],
+      tags: [],
       limits: initialLimits,
       positions: initialPositions,
       goals: initialGoals,
@@ -65,15 +81,17 @@ export const useStore = create<AppState>()(
       fetchAllData: async () => {
         set({ isLoading: true });
         try {
-          const [accounts, transactions, goals] = await Promise.all([
+          const [accounts, transactions, goals, categories, tags] = await Promise.all([
             getAccounts(),
             getTransactions(),
-            getGoals()
+            getGoals(),
+            getCategories(),
+            getTags()
           ]);
           set((state) => {
             const accountIds = new Set(accounts.map((a) => a.id));
             const validPositions = state.positions.filter((p) => accountIds.has(p.accountId));
-            return { accounts, transactions, goals, positions: validPositions, isLoading: false };
+            return { accounts, transactions, goals, categories, tags, positions: validPositions, isLoading: false };
           });
         } catch (error) {
           console.error("Failed to fetch data:", error);
@@ -161,6 +179,52 @@ export const useStore = create<AppState>()(
         } catch (e) { console.error(e) }
       },
 
+      addCategory: async (category) => {
+        try {
+          const catPayload = { ...category, color: category.color || getRandomHexColor() };
+          const newCat = await createCategoryApi(catPayload);
+          set((state) => ({ categories: [...state.categories, newCat] }));
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
+      },
+      updateCategory: async (id, updates) => {
+        try {
+          const updated = await updateCategoryApi(id, updates);
+          set((state) => ({ categories: state.categories.map(c => c.id === id ? updated : c) }));
+        } catch (e) { console.error(e) }
+      },
+      deleteCategory: async (id) => {
+        try {
+          await deleteCategoryApi(id);
+          set((state) => ({ categories: state.categories.filter(c => c.id !== id) }));
+        } catch (e) { console.error(e) }
+      },
+
+      addTag: async (tag) => {
+        try {
+          const tagPayload = { ...tag, color: tag.color || getRandomHexColor() };
+          const newTag = await createTagApi(tagPayload);
+          set((state) => ({ tags: [...state.tags, newTag] }));
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
+      },
+      updateTag: async (id, updates) => {
+        try {
+          const updated = await updateTagApi(id, updates);
+          set((state) => ({ tags: state.tags.map(t => t.id === id ? updated : t) }));
+        } catch (e) { console.error(e) }
+      },
+      deleteTag: async (id) => {
+        try {
+          await deleteTagApi(id);
+          set((state) => ({ tags: state.tags.filter(t => t.id !== id) }));
+        } catch (e) { console.error(e) }
+      },
+
       // ... Recurring Expense actions ...
       // recurringExpenses property is already initialized in state object above
       addRecurringExpense: (expense: RecurringExpense) => set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })),
@@ -203,6 +267,8 @@ export const useStore = create<AppState>()(
       reset: () => set({
         accounts: [],
         transactions: [],
+        categories: [],
+        tags: [],
         limits: initialLimits,
         positions: initialPositions,
         goals: initialGoals,
