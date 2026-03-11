@@ -60,6 +60,7 @@ class TransactionBase(BaseModel):
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType = TransactionType.EXPENSE
+    currency: str = "USD"
     category_id: Optional[int] = Field(None, alias="categoryId")
     # Frontend sends 'accountId' and 'category' (string)
     account_id: int = Field(alias="accountId")
@@ -110,6 +111,7 @@ class TransactionOut(BaseModel):
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType
+    currency: str
     account_id: int = Field(alias="accountId")
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category: Optional[str] = None

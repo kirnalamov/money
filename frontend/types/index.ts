@@ -37,6 +37,7 @@ export interface Transaction {
   amount: number;
   currency: Currency;
   category: string;
+
   date: string; // ISO date
   description?: string;
   merchant?: string;

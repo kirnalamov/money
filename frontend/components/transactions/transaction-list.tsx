@@ -8,6 +8,8 @@ import { formatCurrency, convertCurrency } from "@/lib/utils";
 import { ShoppingBag, ArrowUpRight, ArrowDownRight, ArrowRightLeft, CreditCard, Banknote, Landmark, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Transaction } from "@/types";
+import { useState } from "react";
+import { TransactionDetailsDialog } from "./transaction-details-dialog";
 
 const localeMap: Record<string, Locale> = {
     ru: ru,
@@ -22,6 +24,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
     const { t, i18n } = useTranslation();
     const locale = localeMap[i18n.language] || enUS;
     const { accounts, defaultCurrency } = useStore();
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     const getAccountName = (id: number) => accounts.find(a => a.id === id)?.name || 'Unknown';
 
@@ -71,7 +75,14 @@ export function TransactionList({ transactions }: TransactionListProps) {
                     </h3>
                     <div className="grid gap-3">
                         {groupedTransactions[dateKey].map((tx) => (
-                            <div key={tx.id} className="group flex items-center justify-between p-4 bg-card hover:bg-muted/50 transition-colors rounded-xl border shadow-sm">
+                            <div 
+                                key={tx.id} 
+                                className="group flex items-center justify-between p-4 bg-card hover:bg-muted/50 transition-colors rounded-xl border shadow-sm cursor-pointer"
+                                onClick={() => {
+                                    setSelectedTx(tx);
+                                    setIsDetailsOpen(true);
+                                }}
+                            >
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/10' :
                                         tx.type === 'transfer' ? 'bg-blue-500/10' : 'bg-red-500/10'
@@ -120,6 +131,11 @@ export function TransactionList({ transactions }: TransactionListProps) {
                     </div>
                 </div>
             ))}
+            <TransactionDetailsDialog 
+                transaction={selectedTx} 
+                open={isDetailsOpen} 
+                onOpenChange={setIsDetailsOpen} 
+            />
         </div>
     );
 }

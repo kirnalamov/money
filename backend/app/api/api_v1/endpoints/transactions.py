@@ -48,6 +48,10 @@ async def create_transaction(
     if not account:
         raise HTTPException(status_code=403, detail="Not authorized to use this account")
 
+    # Prefill currency from account if not specified or different
+    if not item_in.currency or item_in.currency == "USD": # Default fallback
+        item_in.currency = account.currency
+
     # Handle category string to ID mapping
     if item_in.category_name:
         result = await db.execute(select(Category).where(Category.name == item_in.category_name, Category.user_id == current_user.id))
@@ -106,11 +110,51 @@ async def update_transaction(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     # Validate transaction access (left out simple query for brevity, assumed safe for single user context or implement account verify here too)
-    item = await crud_transactions.transaction.get(db, id=id)
+    item = await db.get(TransactionModel, id, options=[selectinload(TransactionModel.tags)])
     if not item:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    # For a full implementation, we'd also update tags and categories here.
-    return await crud_transactions.transaction.update(db, db_obj=item, obj_in=item_in)
+    
+    # Verify account ownership
+    account_result = await db.execute(select(Account).where(Account.id == item.account_id, Account.user_id == current_user.id))
+    if not account_result.scalars().first():
+         raise HTTPException(status_code=403, detail="Not authorized to edit this transaction")
+
+    # Handle category update
+    if item_in.category_name is not None:
+        cat_result = await db.execute(select(Category).where(Category.name == item_in.category_name, Category.user_id == current_user.id))
+        category = cat_result.scalars().first()
+        if not category:
+             category = Category(name=item_in.category_name, color="#666666", icon="help-circle", user_id=current_user.id)
+             db.add(category)
+             await db.commit()
+             await db.refresh(category)
+        item.category_id = category.id
+
+    # Handle tags update
+    if item_in.tags is not None:
+        tag_instances = []
+        for tag_str in item_in.tags:
+            tag_name = tag_str.strip()
+            if not tag_name: continue
+            tag_res = await db.execute(select(Tag).where(Tag.name == tag_name, Tag.user_id == current_user.id))
+            tag = tag_res.scalars().first()
+            if not tag:
+                tag = Tag(name=tag_name, user_id=current_user.id)
+                db.add(tag)
+                await db.commit()
+                await db.refresh(tag)
+            tag_instances.append(tag)
+        item.tags = tag_instances
+
+    # Update basic fields
+    update_data = item_in.model_dump(exclude={'category_name', 'tags'}, exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(item, key, value)
+    
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
 
 @router.get("/{id}", response_model=Transaction, response_model_by_alias=True)
 async def read_transaction(

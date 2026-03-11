@@ -23,6 +23,8 @@ class Transaction(Base):
     description = Column(String, nullable=True)
     date = Column(DateTime(timezone=True), server_default=func.now())
     type = Column(String, nullable=False, default=TransactionType.EXPENSE) # stored as string to avoid enum issues in migration sometimes, but generic Enum is fine.
+    currency = Column(String, nullable=False, default="USD")
+
     
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     to_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)

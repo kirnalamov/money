@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Account, Transaction, Currency, LimitRule, Position, Goal, RecurringExpense, Category, Tag } from '@/types';
 import { getAccounts, createAccount, updateAccount as updateAccountApi, deleteAccount as deleteAccountApi } from './api/accounts';
-import { getTransactions, createTransaction } from './api/transactions';
+import { getTransactions, createTransaction, updateTransaction as updateTransactionApi, deleteTransaction as deleteTransactionApi } from './api/transactions';
+
 import { getGoals, createGoal, updateGoal as updateGoalApi, deleteGoal as deleteGoalApi } from './api/goals';
 import { getCategories, createCategory as createCategoryApi, updateCategory as updateCategoryApi, deleteCategory as deleteCategoryApi } from './api/categories';
 import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTag as deleteTagApi } from './api/tags';
@@ -27,6 +28,8 @@ interface AppState {
   deleteAccount: (id: number) => Promise<void>;
 
   addTransaction: (transaction: Transaction) => Promise<void>;
+  updateTransaction: (id: number, transaction: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: number) => Promise<void>;
 
   addCategory: (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateCategory: (id: number, category: Partial<Category>) => Promise<void>;
@@ -166,15 +169,67 @@ export const useStore = create<AppState>()(
           const newTx = await createTransaction(transaction);
           set((state) => {
             const newAccounts = [...state.accounts];
-            if (newTx.type === 'expense') {
-              const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId); // IDs are now both numbers
-              if (accIndex >= 0) newAccounts[accIndex].balance -= newTx.amount;
-            } else if (newTx.type === 'income') {
-              const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId); // IDs are now both numbers
-              if (accIndex >= 0) newAccounts[accIndex].balance += newTx.amount;
+            const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId);
+            if (accIndex >= 0) {
+              if (newTx.type === 'expense') newAccounts[accIndex].balance -= newTx.amount;
+              else if (newTx.type === 'income') newAccounts[accIndex].balance += newTx.amount;
             }
-            // TODO: Update account balance regarding transfers, which might need API support
             return { transactions: [newTx, ...state.transactions], accounts: newAccounts };
+          });
+        } catch (e) { console.error(e) }
+      },
+
+      updateTransaction: async (id: number, updates: Partial<Transaction>) => {
+        try {
+          const oldTx = get().transactions.find(t => t.id === id);
+          if (!oldTx) return;
+
+          const updated = await updateTransactionApi(id.toString(), updates);
+          
+          set((state) => {
+            const newAccounts = [...state.accounts];
+            
+            // Revert old transaction effect
+            const oldAccIndex = newAccounts.findIndex(a => a.id === oldTx.accountId);
+            if (oldAccIndex >= 0) {
+                if (oldTx.type === 'expense') newAccounts[oldAccIndex].balance += oldTx.amount;
+                else if (oldTx.type === 'income') newAccounts[oldAccIndex].balance -= oldTx.amount;
+            }
+
+            // Apply new transaction effect
+            const newAccIndex = newAccounts.findIndex(a => a.id === updated.accountId);
+            if (newAccIndex >= 0) {
+                if (updated.type === 'expense') newAccounts[newAccIndex].balance -= updated.amount;
+                else if (updated.type === 'income') newAccounts[newAccIndex].balance += updated.amount;
+            }
+
+            return {
+              transactions: state.transactions.map(t => t.id === id ? updated : t),
+              accounts: newAccounts
+            };
+          });
+        } catch (e) { console.error(e) }
+      },
+
+      deleteTransaction: async (id: number) => {
+        try {
+          const txToDelete = get().transactions.find(t => t.id === id);
+          if (!txToDelete) return;
+
+          await deleteTransactionApi(id.toString());
+          
+          set((state) => {
+            const newAccounts = [...state.accounts];
+            const accIndex = newAccounts.findIndex(a => a.id === txToDelete.accountId);
+            if (accIndex >= 0) {
+              if (txToDelete.type === 'expense') newAccounts[accIndex].balance += txToDelete.amount;
+              else if (txToDelete.type === 'income') newAccounts[accIndex].balance -= txToDelete.amount;
+            }
+
+            return {
+              transactions: state.transactions.filter(t => t.id !== id),
+              accounts: newAccounts
+            };
           });
         } catch (e) { console.error(e) }
       },
