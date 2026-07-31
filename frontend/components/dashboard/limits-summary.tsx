@@ -4,20 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 
-const colorMap: Record<string, string> = {
-  "dashboard.categories.groceries": "bg-plutus-green",
-  "dashboard.categories.dining_out": "bg-plutus-amber",
-  "dashboard.categories.entertainment": "bg-plutus-blue",
-  "dashboard.categories.transport": "bg-plutus-green",
-  "dashboard.categories.shopping": "bg-destructive",
-  "dashboard.categories.housing": "bg-plutus-green",
-  "dashboard.categories.food": "bg-plutus-blue",
-  "dashboard.categories.utilities": "bg-plutus-amber",
-};
+// Categories are now fetched from store with their colors
 
 export function LimitsSummary() {
   const { t } = useTranslation();
-  const { limits, transactions, defaultCurrency } = useStore();
+  const { limits, transactions, defaultCurrency, categories } = useStore();
 
   return (
     <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg px-4 py-3 transition-all duration-300 hover:shadow-xl">
@@ -42,7 +33,10 @@ export function LimitsSummary() {
 
           const convertedLimit = convertCurrency(limit.amount, limit.currency, defaultCurrency);
           const percentage = convertedLimit > 0 ? Math.min(100, (calculatedSpent / convertedLimit) * 100) : 0;
-          const color = colorMap[limit.category] || "bg-plutus-green";
+          
+          // Try to find category in store for color
+          const storeCategory = categories.find(c => c.name === limit.category);
+          const categoryColor = storeCategory?.color || "#10b981"; // Fallback to green
 
           return (
             <div key={limit.id} className="p-2 border rounded-lg bg-background/50">
@@ -52,8 +46,8 @@ export function LimitsSummary() {
               </div>
               <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden">
                 <div
-                  className={`h-full ${color}`}
-                  style={{ width: `${percentage}%` }}
+                  className="h-full"
+                  style={{ width: `${percentage}%`, backgroundColor: categoryColor }}
                 />
               </div>
               <div className="mt-1 text-xs text-muted-foreground flex justify-between items-center">

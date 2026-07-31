@@ -167,6 +167,9 @@ export const useStore = create<AppState>()(
       addTransaction: async (transaction: Transaction) => {
         try {
           const newTx = await createTransaction(transaction);
+          const categories = await getCategories();
+          const tags = await getTags();
+          
           set((state) => {
             const newAccounts = [...state.accounts];
             const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId);
@@ -174,7 +177,35 @@ export const useStore = create<AppState>()(
               if (newTx.type === 'expense') newAccounts[accIndex].balance -= newTx.amount;
               else if (newTx.type === 'income') newAccounts[accIndex].balance += newTx.amount;
             }
-            return { transactions: [newTx, ...state.transactions], accounts: newAccounts };
+            
+            let updatedState: Partial<AppState> = { 
+              transactions: [newTx, ...state.transactions], 
+              accounts: newAccounts, 
+              categories, 
+              tags 
+            };
+            
+            // If isRecurring is true, also add to recurringExpenses if not already there
+            if (transaction.isRecurring) {
+              const exists = state.recurringExpenses.find(e => 
+                e.name === transaction.description || 
+                (e.amount === transaction.amount && e.category === transaction.category && e.name === transaction.category)
+              );
+              if (!exists) {
+                const newRecurring: RecurringExpense = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  name: transaction.description || transaction.category,
+                  amount: transaction.amount,
+                  currency: transaction.currency,
+                  category: transaction.category,
+                  dueDay: new Date(transaction.date).getDate(),
+                  lastPaidDate: transaction.date
+                };
+                updatedState.recurringExpenses = [...state.recurringExpenses, newRecurring];
+              }
+            }
+            
+            return updatedState;
           });
         } catch (e) { console.error(e) }
       },
@@ -186,6 +217,9 @@ export const useStore = create<AppState>()(
 
           const updated = await updateTransactionApi(id.toString(), updates);
           
+          const categories = await getCategories();
+          const tags = await getTags();
+
           set((state) => {
             const newAccounts = [...state.accounts];
             
@@ -203,10 +237,34 @@ export const useStore = create<AppState>()(
                 else if (updated.type === 'income') newAccounts[newAccIndex].balance += updated.amount;
             }
 
-            return {
+            let updatedState: Partial<AppState> = {
               transactions: state.transactions.map(t => t.id === id ? updated : t),
-              accounts: newAccounts
+              accounts: newAccounts,
+              categories,
+              tags
             };
+
+            // If isRecurring became true, also add to recurringExpenses if not already there
+            if (updated.isRecurring && !oldTx.isRecurring) {
+              const exists = state.recurringExpenses.find(e => 
+                e.name === updated.description || 
+                (e.amount === updated.amount && e.category === updated.category && e.name === updated.category)
+              );
+              if (!exists) {
+                const newRecurring: RecurringExpense = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  name: updated.description || updated.category,
+                  amount: updated.amount,
+                  currency: updated.currency,
+                  category: updated.category,
+                  dueDay: new Date(updated.date).getDate(),
+                  lastPaidDate: updated.date
+                };
+                updatedState.recurringExpenses = [...state.recurringExpenses, newRecurring];
+              }
+            }
+
+            return updatedState;
           });
         } catch (e) { console.error(e) }
       },

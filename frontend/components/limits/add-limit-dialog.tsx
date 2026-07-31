@@ -31,7 +31,7 @@ interface AddLimitDialogProps {
 
 export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDialogProps) {
     const { t } = useTranslation();
-    const { defaultCurrency, addLimit, updateLimit } = useStore();
+    const { defaultCurrency, addLimit, updateLimit, categories } = useStore();
 
     const [formData, setFormData] = useState({
         category: "",
@@ -105,14 +105,9 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                                 <SelectValue placeholder={t("limits.category")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="dashboard.categories.housing">{t("dashboard.categories.housing")}</SelectItem>
-                                <SelectItem value="dashboard.categories.food">{t("dashboard.categories.food")}</SelectItem>
-                                <SelectItem value="dashboard.categories.transport">{t("dashboard.categories.transport")}</SelectItem>
-                                <SelectItem value="dashboard.categories.shopping">{t("dashboard.categories.shopping")}</SelectItem>
-                                <SelectItem value="dashboard.categories.utilities">{t("dashboard.categories.utilities")}</SelectItem>
-                                <SelectItem value="dashboard.categories.groceries">{t("dashboard.categories.groceries")}</SelectItem>
-                                <SelectItem value="dashboard.categories.dining_out">{t("dashboard.categories.dining_out")}</SelectItem>
-                                <SelectItem value="dashboard.categories.entertainment">{t("dashboard.categories.entertainment")}</SelectItem>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

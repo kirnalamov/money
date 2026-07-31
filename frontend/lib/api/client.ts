@@ -14,14 +14,8 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        if (process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
-            if (config.headers) {
-                config.headers.Authorization = `Bearer dev_token`;
-            }
-            return config;
-        }
-
         const token = getAccessToken();
+
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -78,9 +72,13 @@ apiClient.interceptors.response.use(
             if (!refreshToken) {
                 // No refresh token, clear auth and redirect to login
                 clearTokens();
-                window.location.href = '/login';
+                // Avoid redirect loop or clearing state if already on login page
+                if (window.location.pathname !== '/login' && !originalRequest.url?.includes('/auth/login')) {
+                    window.location.href = '/login';
+                }
                 return Promise.reject(error);
             }
+
 
             try {
                 // Try to refresh the access token

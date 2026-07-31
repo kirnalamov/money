@@ -28,27 +28,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Load user on mount if tokens exist
     const loadUser = useCallback(async () => {
-        if (process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
-            try {
-                const userData = await authApi.getCurrentUser();
-                setUser(userData);
-            } catch (error) {
-                setUser({
-                    id: 1,
-                    email: 'dev@example.com',
-                    username: 'devuser',
-                    full_name: 'Dev User',
-                    role: 'admin',
-                    is_active: true,
-                    is_superuser: true,
-                    created_at: new Date().toISOString()
-                } as User);
-            }
-            setIsLoading(false);
-            return;
-        }
-
         if (!hasTokens()) {
+
             setIsLoading(false);
             return;
         }

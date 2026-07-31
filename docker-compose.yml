@@ -41,10 +41,11 @@ services:
       - LOG_FORMAT=console
       - LOG_LEVEL=INFO
       # Optional: Initial superuser (uncomment to create on first run)
-      # - FIRST_SUPERUSER_EMAIL=admin@example.com
-      # - FIRST_SUPERUSER_USERNAME=admin
-      # - FIRST_SUPERUSER_PASSWORD=SecurePassword123!
-      # - FIRST_SUPERUSER_FULL_NAME=Admin User
+      - FIRST_SUPERUSER_EMAIL=admin@example.com
+      - FIRST_SUPERUSER_USERNAME=admin
+      - FIRST_SUPERUSER_PASSWORD=ChangeMe123!
+      - FIRST_SUPERUSER_FULL_NAME=Admin User
+
     volumes:
       - ./backend:/app
     depends_on:

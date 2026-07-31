@@ -1,6 +1,8 @@
 {
   "common": {
     "overview": "Обзор",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
     "transactions": "Операции",
     "portfolio": "Портфель",
     "savings": "Накопления",
@@ -21,7 +23,10 @@
     "due": "Срок",
     "confirm": "Подтвердить",
     "account": "Счет",
-    "select_account": "Выберите счет"
+    "select_account": "Выберите счет",
+    "date": "Дата",
+    "create": "Создать",
+    "search_placeholder": "Поиск или добавление..."
   },
   "dashboard": {
     "title": "Обзор",
@@ -98,6 +103,9 @@
     "add_button": "Добавить операцию",
     "add_dialog_title": "Новая операция",
     "add_dialog_desc": "Введите детали новой операции ниже.",
+    "edit_dialog_title": "Детали операции",
+    "edit_dialog_desc": "Просмотрите или обновите детали операции.",
+    "confirm_delete": "Вы уверены, что хотите удалить эту операцию?",
     "type": "Тип",
     "amount": "Сумма",
     "account": "Счёт",

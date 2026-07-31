@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [newTagName, setNewTagName] = useState("");
   const [catError, setCatError] = useState("");
   const [tagError, setTagError] = useState("");
+  const [editingCategory, setEditingCategory] = useState<{ id: number; name: string; color: string } | null>(null);
+  const [editingTag, setEditingTag] = useState<{ id: number; name: string; color: string } | null>(null);
+
 
   const handleAddCategory = async () => {
     setCatError("");
@@ -140,12 +143,15 @@ export default function SettingsPage() {
                 </div>
                 {catError && <p className="text-sm text-destructive font-medium">{catError}</p>}
                 <div className="flex flex-wrap gap-2">
-                  {categories.map((c) => (
-                    <Popover key={c.id}>
+                  {categories.map((cat) => (
+                    <Popover key={cat.id} onOpenChange={(open) => {
+                      if (open) setEditingCategory({ id: cat.id, name: cat.name, color: cat.color || '#cccccc' });
+                      else setEditingCategory(null);
+                    }}>
                       <PopoverTrigger asChild>
                         <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
-                          <div className="w-3 h-3 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: c.color || '#cccccc' }} />
-                          {c.name}
+                          <div className="w-3 h-3 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: cat.color || '#cccccc' }} />
+                          {cat.name}
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
@@ -154,22 +160,32 @@ export default function SettingsPage() {
                           <div className="flex gap-2 items-center">
                             <Input
                               type="color"
-                              defaultValue={c.color || '#cccccc'}
+                              value={editingCategory?.id === cat.id ? editingCategory.color : (cat.color || '#cccccc')}
                               className="w-12 h-10 p-1 cursor-pointer shrink-0"
-                              onBlur={(e) => updateCategory(c.id, { name: c.name, color: e.target.value })}
+                              onChange={(e) => setEditingCategory(prev => prev ? { ...prev, color: e.target.value } : null)}
                             />
                             <Input
                               type="text"
-                              defaultValue={c.name}
+                              value={editingCategory?.id === cat.id ? editingCategory.name : cat.name}
                               className="w-full h-10"
-                              onBlur={(e) => {
-                                const val = e.target.value.trim();
-                                if (val && val !== c.name) updateCategory(c.id, { name: val, color: c.color });
-                              }}
+                              onChange={(e) => setEditingCategory(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
+                          <Button 
+                            size="sm" 
+                            className="w-full" 
+                            onClick={() => {
+                              if (editingCategory && editingCategory.name.trim()) {
+                                updateCategory(cat.id, { name: editingCategory.name.trim(), color: editingCategory.color });
+                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); // Close popover
+                              }
+                            }}
+                          >
+                            {t('common.save')}
+                          </Button>
                         </div>
-                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteCategory(c.id)}>
+                        <Separator />
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteCategory(cat.id)}>
                           <Trash2 className="h-4 w-4 mr-2" /> Delete Category
                         </Button>
                       </PopoverContent>
@@ -197,12 +213,15 @@ export default function SettingsPage() {
                 </div>
                 {tagError && <p className="text-sm text-destructive font-medium">{tagError}</p>}
                 <div className="flex flex-wrap gap-2">
-                  {tags.map((t) => (
-                    <Popover key={t.id}>
+                  {tags.map((tag) => (
+                    <Popover key={tag.id} onOpenChange={(open) => {
+                      if (open) setEditingTag({ id: tag.id, name: tag.name, color: tag.color || '#cccccc' });
+                      else setEditingTag(null);
+                    }}>
                       <PopoverTrigger asChild>
                         <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
-                          <div className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: t.color || '#cccccc' }} />
-                          #{t.name}
+                          <div className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: tag.color || '#cccccc' }} />
+                          #{tag.name}
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
@@ -211,22 +230,32 @@ export default function SettingsPage() {
                           <div className="flex gap-2 items-center">
                             <Input
                               type="color"
-                              defaultValue={t.color || '#cccccc'}
+                              value={editingTag?.id === tag.id ? editingTag.color : (tag.color || '#cccccc')}
                               className="w-12 h-10 p-1 cursor-pointer shrink-0"
-                              onBlur={(e) => updateTag(t.id, { name: t.name, color: e.target.value })}
+                              onChange={(e) => setEditingTag(prev => prev ? { ...prev, color: e.target.value } : null)}
                             />
                             <Input
                               type="text"
-                              defaultValue={t.name}
+                              value={editingTag?.id === tag.id ? editingTag.name : tag.name}
                               className="w-full h-10"
-                              onBlur={(e) => {
-                                const val = e.target.value.trim();
-                                if (val && val !== t.name) updateTag(t.id, { name: val, color: t.color });
-                              }}
+                              onChange={(e) => setEditingTag(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
+                          <Button 
+                            size="sm" 
+                            className="w-full" 
+                            onClick={() => {
+                              if (editingTag && editingTag.name.trim()) {
+                                updateTag(tag.id, { name: editingTag.name.trim(), color: editingTag.color });
+                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); // Close popover
+                              }
+                            }}
+                          >
+                            {t('common.save')}
+                          </Button>
                         </div>
-                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteTag(t.id)}>
+                        <Separator />
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteTag(tag.id)}>
                           <Trash2 className="h-4 w-4 mr-2" /> Delete Tag
                         </Button>
                       </PopoverContent>
@@ -235,6 +264,7 @@ export default function SettingsPage() {
                   {tags.length === 0 && <span className="text-xs text-muted-foreground">No custom tags.</span>}
                 </div>
               </div>
+
             </CardContent>
           </Card>
 

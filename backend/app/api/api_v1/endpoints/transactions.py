@@ -8,6 +8,10 @@ from app.crud import crud_functions as crud_transactions
 from app.db.session import get_db
 from app.core.deps import get_current_active_user
 from app.models.user import User
+from app.models.transaction import Transaction as TransactionModel
+from app.models.account import Account
+from app.models.category import Category
+from app.models.tag import Tag
 
 router = APIRouter()
 
@@ -18,8 +22,6 @@ async def read_transactions(
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    from app.models.transaction import Transaction as TransactionModel
-    from app.models.account import Account as AccountModel
     
     result = await db.execute(
         select(TransactionModel)
@@ -38,9 +40,6 @@ async def create_transaction(
     item_in: TransactionCreate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    from app.models.category import Category
-    from app.models.tag import Tag
-    from app.models.account import Account
     
     # Ensure Account belongs to user
     account_result = await db.execute(select(Account).where(Account.id == item_in.account_id, Account.user_id == current_user.id))
@@ -91,7 +90,6 @@ async def create_transaction(
 
     # Note: crud_transaction.create doesn't know about tags list yet unless we pass it. 
     # Let's bypass the base crud and do it directly here to tie tags easily.
-    from app.models.transaction import Transaction as TransactionModel
     obj_in_data = item_in.model_dump(exclude={'category_name', 'tags'})
     db_obj = TransactionModel(**obj_in_data)
     db_obj.tags = tag_instances

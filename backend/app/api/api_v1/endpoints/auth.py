@@ -58,7 +58,23 @@ async def register(
     # Create new user
     user_create = UserCreate(**user_in.model_dump())
     user = await crud_user.create(db, obj_in=user_create)
+
+    # Create initial account for new user
+    from app.crud.crud_account import account as crud_account
+    from app.schemas.account import AccountCreate
+    await crud_account.create_with_owner(
+        db, 
+        obj_in=AccountCreate(
+            name="Main Account",
+            type="cash",
+            currency="USD",
+            balance=0.0
+        ),
+        user_id=user.id
+    )
+
     return user
+
 
 @router.post("/login", response_model=Token)
 async def login(

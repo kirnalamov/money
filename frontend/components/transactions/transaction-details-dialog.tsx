@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Transaction, TransactionType } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
@@ -45,6 +46,7 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [date, setDate] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
 
   useEffect(() => {
     if (transaction) {
@@ -56,6 +58,7 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
       setCategory(transaction.category);
       setTags(transaction.tags || []);
       setDate(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
+      setIsRecurring(!!transaction.isRecurring);
     }
   }, [transaction, open]);
 
@@ -71,6 +74,7 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
       category,
       description,
       tags,
+      isRecurring,
       date: new Date(date).toISOString(),
     });
 
@@ -212,6 +216,20 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
               placeholder={t('transactions.placeholders.description')}
             />
           </div>
+
+          {type !== 'income' && type !== 'transfer' && (
+            <div className="flex items-center justify-between border p-3 rounded-md mt-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="recurring" className="text-base">{t('transactions.recurring_label') || 'Recurring'}</Label>
+                <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc') || 'Mark as fixed monthly expense'}</p>
+              </div>
+              <Switch
+                id="recurring"
+                checked={isRecurring}
+                onCheckedChange={setIsRecurring}
+              />
+            </div>
+          )}
 
           <DialogFooter className="mt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

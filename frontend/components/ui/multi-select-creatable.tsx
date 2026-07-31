@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react"
 
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -29,6 +30,7 @@ export function MultiSelectCreatable({
   emptyText = "No results found.",
   onCreate,
 }: MultiSelectCreatableProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
 
@@ -98,7 +100,7 @@ export function MultiSelectCreatable({
         <div className="flex flex-col">
           <div className="p-2 border-b">
             <Input
-              placeholder="Search or add fresh..."
+              placeholder={t('common.search_placeholder') || "Search or add fresh..."}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               className="h-8 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none px-2"
@@ -145,7 +147,7 @@ export function MultiSelectCreatable({
                 onClick={handleCreate}
               >
                 <Plus className="h-4 w-4" />
-                Create &quot;{inputValue}&quot;
+                {t('common.create') || 'Create'} &quot;{inputValue}&quot;
               </button>
             )}
           </div>
