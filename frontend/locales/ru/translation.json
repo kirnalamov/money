@@ -1,0 +1,347 @@
+{
+  "common": {
+    "overview": "Обзор",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "transactions": "Операции",
+    "portfolio": "Портфель",
+    "savings": "Накопления",
+    "limits": "Лимиты",
+    "accounts": "Счета",
+    "settings": "Настройки",
+    "add": "Добавить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "sign_out": "Выйти",
+    "actions": "Действия",
+    "pick_date": "Выберите дату",
+    "reset": "Сброс",
+    "pay": "Оплатить",
+    "paid": "Оплачено",
+    "due": "Срок",
+    "confirm": "Подтвердить",
+    "account": "Счет",
+    "select_account": "Выберите счет",
+    "date": "Дата",
+    "create": "Создать",
+    "search_placeholder": "Поиск или добавление..."
+  },
+  "dashboard": {
+    "title": "Обзор",
+    "net_worth_total": "Общий капитал",
+    "vs_last_month": "к прошл. месяцу",
+    "mandatory_expenses": {
+      "title": "Обязательные платежи",
+      "subtitle": "Регулярные расходы",
+      "empty": "Нет обязательных платежей.",
+      "pay_title": "Оплатить",
+      "pay_description": "Это создаст транзакцию и отметит счет как оплаченный в этом месяце.",
+      "pay_with_transaction": "Оплатить (Транзакция)"
+    },
+    "kpi": {
+      "cash_balance": "Баланс наличных",
+      "invested_value": "Инвестиции",
+      "available_spend": "Свободно",
+      "planned_savings": "План сбережений",
+      "updated_now": "Обновлено только что",
+      "all_time": "за всё время",
+      "budget_left": "бюджета осталось",
+      "target": "Цель",
+      "total_savings": "Всего сбережений",
+      "total_available": "Свободно"
+    },
+    "charts": {
+      "net_worth_title": "Динамика капитала",
+      "net_worth_subtitle": "Последние 7 месяцев",
+      "expenses_title": "Расходы по категориям",
+      "tags_title": "Расходы по тегам",
+      "monthly_limits": "Месячные лимиты",
+      "filter_accounts": "Фильтр",
+      "select_accounts": "Выбрать счета",
+      "display_mode": "Режим отображения",
+      "mode_combined": "Все вместе",
+      "mode_separate": "По отдельности",
+      "total": "Всего",
+      "chart_style": "Стиль графика",
+      "chart_types": {
+        "area": "Область",
+        "bar": "Столбчатая",
+        "line": "Линейный",
+        "pie": "Круговая"
+      }
+    },
+    "date_filters": {
+      "7d": "7Д",
+      "1m": "1М",
+      "3m": "3М",
+      "6m": "6М",
+      "1y": "1Г",
+      "all": "Все"
+    },
+    "categories": {
+      "housing": "Жильё",
+      "food": "Еда",
+      "transport": "Транспорт",
+      "shopping": "Покупки",
+      "utilities": "Коммунальные",
+      "groceries": "Продукты",
+      "dining_out": "Рестораны",
+      "entertainment": "Развлечения"
+    },
+    "quick_actions": {
+      "new_expense": "Расход",
+      "add_income": "Доход",
+      "transfer": "Перевод",
+      "set_goal": "Сберечь"
+    },
+    "recent_transactions": "Последние операции"
+  },
+  "transactions": {
+    "title": "Операции",
+    "add_button": "Добавить операцию",
+    "add_dialog_title": "Новая операция",
+    "add_dialog_desc": "Введите детали новой операции ниже.",
+    "edit_dialog_title": "Детали операции",
+    "edit_dialog_desc": "Просмотрите или обновите детали операции.",
+    "confirm_delete": "Вы уверены, что хотите удалить эту операцию?",
+    "type": "Тип",
+    "amount": "Сумма",
+    "account": "Счёт",
+    "from_account": "Списать со счёта",
+    "to_account": "Зачислить на счёт",
+    "category": "Категория",
+    "description": "Описание",
+    "tags": "Метки",
+    "types": {
+      "expense": "Расход",
+      "income": "Доход",
+      "transfer": "Перевод"
+    },
+    "placeholders": {
+      "select_type": "Выберите тип",
+      "select_account": "Выберите счёт",
+      "destination_account": "Счёт зачисления",
+      "category": "напр. Продукты",
+      "category_income": "напр. Зарплата, Фриланс",
+      "description": "напр. Закупка на неделю",
+      "description_income": "напр. Аванс за проект",
+      "tags": "напр. развлечения, подарки"
+    },
+    "empty_state": "Список операций пуст. Добавьте первую.",
+    "save_changes": "Сохранить",
+    "recurring_label": "Постоянный / Обязательный",
+    "recurring_desc": "Это фиксированный ежемесячный расход?",
+    "filters": {
+      "search_placeholder": "Поиск операций...",
+      "all_types": "Все типы",
+      "all_accounts": "Все счета"
+    },
+    "summary": {
+      "total_income": "Общий доход",
+      "total_expense": "Всего расходов",
+      "net_result": "Чистый результат"
+    }
+  },
+  "portfolio": {
+    "title": "Аналитика портфеля",
+    "allocation_title": "Распределение активов",
+    "total_value": "Стоимость портфеля",
+    "day_pnl": "PnL за день",
+    "total_pnl": "Общий PnL",
+    "ytd_return": "Доходность YTD",
+    "chart_placeholder": "Здесь будет график доходности",
+    "add_position": "Добавить позицию",
+    "edit_position": "Изменить позицию",
+    "add_position_desc": "Введите детали новой позиции",
+    "edit_position_desc": "Измените детали позиции",
+    "delete_position": "Удалить позицию",
+    "account": "Счёт",
+    "select_account": "Выберите счёт",
+    "symbol": "Символ",
+    "name": "Название",
+    "asset_class": "Класс актива",
+    "asset_classes": {
+      "stock": "Акции",
+      "crypto": "Криптовалюта",
+      "etf": "ETF",
+      "bond": "Облигации",
+      "cash": "Наличные"
+    },
+    "quantity": "Количество",
+    "avg_price": "Средняя цена",
+    "current_price": "Текущая цена",
+    "currency": "Валюта",
+    "value": "Стоимость",
+    "pnl": "Прибыль/Убыток",
+    "no_positions": "Позиции не добавлены. Добавьте первую.",
+    "no_brokerage_accounts": "Нет брокерских счетов. Добавьте брокерский счёт в разделе Счета."
+  },
+  "savings": {
+    "title": "Цели и Накопления",
+    "subtitle": "Отслеживайте свои финансовые цели",
+    "add_goal": "Новая цель",
+    "create_new_card": "Создать новую цель",
+    "delete_confirm": "Вы уверены, что хотите удалить эту цель?",
+    "progress": {
+      "of": "из"
+    },
+    "calculator": {
+      "title": "Калькулятор процентов",
+      "subtitle": "Оцените рост ваших сбережений",
+      "monthly_contribution": "Ежемесячный взнос",
+      "time_period": "Срок (Лет)",
+      "interest_rate": "Годовая ставка (%)",
+      "year_1": "1 год",
+      "year_50": "50 лет",
+      "projected_total": "Итого через {{years}} лет",
+      "total_contributed": "Всего внесено",
+      "interest_earned": "Начислено процентов"
+    },
+    "dialog": {
+      "create_title": "Создать новую цель",
+      "edit_title": "Изменить цель",
+      "description": "Установите цель и срок для отслеживания прогресса.",
+      "name_label": "Название цели",
+      "name_placeholder": "напр. Новая машина",
+      "target_label": "Целевая сумма",
+      "current_label": "Текущие накопления",
+      "date_label": "Целевая дата",
+      "save": "Сохранить цель"
+    }
+  },
+  "limits": {
+    "title": "Лимиты расходов",
+    "editor_placeholder": "Таблица управления лимитами",
+    "category": "Категория",
+    "limit": "Лимит",
+    "spent": "Потрачено",
+    "period": "Период",
+    "currency": "Валюта",
+    "add_limit": "Добавить лимит",
+    "edit_limit": "Изменить лимит",
+    "delete_limit": "Удалить лимит",
+    "delete_confirm": "Вы уверены, что хотите удалить этот лимит?",
+    "no_limits": "Лимиты не установлены. Добавьте первый.",
+    "add_hint": "Установите лимиты, чтобы контролировать расходы.",
+    "subtitle": "Отслеживайте лимиты расходов и цели",
+    "remaining": "осталось",
+    "periods": {
+      "daily": "Дневной",
+      "weekly": "Недельный",
+      "monthly": "Месячный"
+    }
+  },
+  "accounts": {
+    "title": "Счета",
+    "add_account": "Добавить счёт",
+    "edit_account": "Изменить счёт",
+    "delete_account": "Удалить счёт",
+    "account_name": "Название счёта",
+    "account_type": "Тип счёта",
+    "balance": "Баланс",
+    "currency": "Валюта",
+    "provider": "Банк/Провайдер",
+    "no_accounts": "Счета не добавлены. Добавьте первый.",
+    "types": {
+      "bank": "Банковский счёт",
+      "savings": "Накопительный счёт",
+      "cash": "Наличные",
+      "brokerage": "Брокерский счёт"
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "appearance": "Внешний вид",
+    "theme_mode": "Тема оформления",
+    "language": "Язык",
+    "interface_language": "Язык интерфейса",
+    "currency": "Валюта",
+    "default_currency": "Валюта по умолчанию"
+  },
+  "analytics": {
+    "habits": {
+      "title": "Расходы по дням",
+      "subtitle": "Интенсивность трат за последний год",
+      "less": "Меньше",
+      "more": "Больше",
+      "peak": "Пик"
+    },
+    "velocity": {
+      "title": "Скорость трат",
+      "subtitle": "Накопительно vs Прошлый месяц",
+      "faster": "Быстрее",
+      "slower": "Медленнее",
+      "caution": "Внимание",
+      "great_job": "Отлично!",
+      "outpacing": "Вы тратите больше, чем в прошлом месяце на {{amount}}.",
+      "saved": "Вы сэкономили {{amount}} по сравнению с прошлым месяцем."
+    },
+    "forecast": {
+      "title": "Прогноз на конец месяца",
+      "active": "Активен",
+      "current": "Текущий",
+      "burn": "Расход",
+      "uncategorized_warning_title": "Много некатегоризированных трат",
+      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> ваших расходов без категории."
+    },
+    "page_title": "Аналитика",
+    "page_subtitle": "Профессиональный финансовый анализ и детализация.",
+    "filter": {
+      "time_period": "Период",
+      "select_range": "Выберите диапазон"
+    },
+    "settings": {
+      "title": "Настройки анализа",
+      "subtitle": "Настройте отображение",
+      "accounts": "Счета",
+      "exclude_categories": "Исключить категории"
+    },
+    "stats": {
+      "total_spend": "Всего расходов",
+      "in_selected_period": "за выбраный период",
+      "avg_daily": "В среднем в день",
+      "per_month": "/ мес",
+      "top_category": "Топ категория",
+      "liquid_assets": "Ликвидные активы",
+      "active_accounts": "Активные счета",
+      "of_total": "от всего",
+      "fixed_costs": "Постоянные расходы (Обязательные)",
+      "discretionary": "Переменные расходы (По желанию)",
+      "of_total_spending": "% от общих расходов"
+    },
+    "breakdown": {
+      "title": "Структура расходов",
+      "subtitle": "Распределение по категориям"
+    },
+    "common": {
+      "no_data": "Нет данных за выбранный период."
+    },
+    "tags": {
+      "top_spending": "Топ тег по расходам",
+      "total": "всего",
+      "most_frequent": "Самый частый",
+      "used_in_transactions": "Использован в {{count}} транзакциях",
+      "unique_tags": "Уникальных тегов",
+      "active_tags": "Активны в этом периоде",
+      "chart_title": "Расходы по тегам",
+      "chart_subtitle": "Разбивка расходов по тегам",
+      "no_data_title": "Нет расходов с тегами за этот период.",
+      "no_data_desc": "Попробуйте изменить диапазон дат или добавьте теги к транзакциям."
+    }
+  },
+  "profile": {
+    "page": {
+      "title": "Мой Профиль",
+      "subtitle": "Ваш личный финансовый центр и достижения."
+    },
+    "card": {
+      "personal_details": "Личные данные",
+      "financial_goal": "Финансовая цель",
+      "member_since": "С нами с {{date}}",
+      "placeholder_name": "Ваше Имя",
+      "placeholder_bio": "Коплю на дом мечты 🏠"
+    }
+  }
+}

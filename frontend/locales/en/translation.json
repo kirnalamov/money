@@ -1,0 +1,347 @@
+{
+  "common": {
+    "overview": "Overview",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "transactions": "Transactions",
+    "portfolio": "Portfolio",
+    "savings": "Savings",
+    "limits": "Limits",
+    "accounts": "Accounts",
+    "settings": "Settings",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "sign_out": "Sign Out",
+    "actions": "Actions",
+    "pick_date": "Pick a date",
+    "reset": "Reset",
+    "pay": "Pay",
+    "paid": "Paid",
+    "due": "Due",
+    "confirm": "Confirm",
+    "account": "Account",
+    "select_account": "Select account",
+    "date": "Date",
+    "create": "Create",
+    "search_placeholder": "Search or add fresh..."
+  },
+  "dashboard": {
+    "title": "Overview",
+    "net_worth_total": "Total Net Worth",
+    "vs_last_month": "vs last month",
+    "mandatory_expenses": {
+      "title": "Monthly Obligations",
+      "subtitle": "Track recurring bills",
+      "empty": "No recurring expenses set.",
+      "pay_title": "Pay",
+      "pay_description": "This will create a transaction and mark this bill as paid for the current month.",
+      "pay_with_transaction": "Pay (Create Transaction)"
+    },
+    "kpi": {
+      "cash_balance": "Cash Balance",
+      "invested_value": "Invested Value",
+      "available_spend": "Available to Spend",
+      "planned_savings": "Planned Savings",
+      "updated_now": "Updated just now",
+      "all_time": "all time",
+      "budget_left": "of budget left",
+      "target": "Target",
+      "total_savings": "Total Savings",
+      "total_available": "Total Available"
+    },
+    "charts": {
+      "net_worth_title": "Net Worth Over Time",
+      "net_worth_subtitle": "Last 7 months",
+      "expenses_title": "Expenses by Category",
+      "tags_title": "Spending Tags",
+      "monthly_limits": "Monthly Limits",
+      "filter_accounts": "Filter",
+      "select_accounts": "Select Accounts",
+      "display_mode": "Display Mode",
+      "mode_combined": "Combined",
+      "mode_separate": "Separate",
+      "total": "Total",
+      "chart_style": "Chart Style",
+      "chart_types": {
+        "area": "Area",
+        "bar": "Bar",
+        "line": "Line",
+        "pie": "Pie"
+      }
+    },
+    "date_filters": {
+      "7d": "7D",
+      "1m": "1M",
+      "3m": "3M",
+      "6m": "6M",
+      "1y": "1Y",
+      "all": "All"
+    },
+    "categories": {
+      "housing": "Housing",
+      "food": "Food",
+      "transport": "Transport",
+      "shopping": "Shopping",
+      "utilities": "Utilities",
+      "groceries": "Groceries",
+      "dining_out": "Dining Out",
+      "entertainment": "Entertainment"
+    },
+    "quick_actions": {
+      "new_expense": "Expense",
+      "add_income": "Income",
+      "transfer": "Transfer",
+      "set_goal": "Save"
+    },
+    "recent_transactions": "Recent Transactions"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "add_button": "Add Transaction",
+    "add_dialog_title": "Add New Transaction",
+    "add_dialog_desc": "Enter transaction details below.",
+    "edit_dialog_title": "Transaction Details",
+    "edit_dialog_desc": "View or update transaction details.",
+    "confirm_delete": "Are you sure you want to delete this transaction?",
+    "type": "Type",
+    "amount": "Amount",
+    "account": "Account",
+    "from_account": "From Account",
+    "to_account": "To Account",
+    "category": "Category",
+    "description": "Description",
+    "tags": "Tags",
+    "types": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer"
+    },
+    "placeholders": {
+      "select_type": "Select type",
+      "select_account": "Select account",
+      "destination_account": "Destination account",
+      "category": "e.g. Food, Rent",
+      "category_income": "e.g. Salary, Freelance",
+      "description": "e.g. Weekly groceries",
+      "description_income": "e.g. Project advance",
+      "tags": "e.g. fun, entertainment"
+    },
+    "empty_state": "No transactions yet. Add one to get started.",
+    "save_changes": "Save changes",
+    "recurring_label": "Recurring / Mandatory",
+    "recurring_desc": "Is this a fixed monthly cost?",
+    "filters": {
+      "search_placeholder": "Search transactions...",
+      "all_types": "All Types",
+      "all_accounts": "All Accounts"
+    },
+    "summary": {
+      "total_income": "Total Income",
+      "total_expense": "Total Expense",
+      "net_result": "Net Result"
+    }
+  },
+  "portfolio": {
+    "title": "Portfolio Analytics",
+    "allocation_title": "Asset Allocation",
+    "total_value": "Total Value",
+    "day_pnl": "Day PnL",
+    "total_pnl": "Total PnL",
+    "ytd_return": "YTD Return",
+    "chart_placeholder": "Performance Chart Placeholder",
+    "add_position": "Add Position",
+    "edit_position": "Edit Position",
+    "add_position_desc": "Enter the details of your new position",
+    "edit_position_desc": "Edit the position details",
+    "delete_position": "Delete position",
+    "account": "Account",
+    "select_account": "Select account",
+    "symbol": "Symbol",
+    "name": "Name",
+    "asset_class": "Asset Class",
+    "asset_classes": {
+      "stock": "Stock",
+      "crypto": "Crypto",
+      "etf": "ETF",
+      "bond": "Bond",
+      "cash": "Cash"
+    },
+    "quantity": "Quantity",
+    "avg_price": "Avg Price",
+    "current_price": "Current Price",
+    "currency": "Currency",
+    "value": "Value",
+    "pnl": "P&L",
+    "no_positions": "No positions yet. Add one to get started.",
+    "no_brokerage_accounts": "No brokerage accounts. Add a brokerage account in the Accounts section."
+  },
+  "savings": {
+    "title": "Savings & Goals",
+    "subtitle": "Track your financial goals and dreams",
+    "add_goal": "New Goal",
+    "create_new_card": "Create New Goal",
+    "delete_confirm": "Are you sure you want to delete this goal?",
+    "progress": {
+      "of": "of"
+    },
+    "calculator": {
+      "title": "Interest Calculator",
+      "subtitle": "Estimate your future savings growth",
+      "monthly_contribution": "Monthly Contribution",
+      "time_period": "Time Period (Years)",
+      "interest_rate": "Annual Interest Rate (%)",
+      "year_1": "1 year",
+      "year_50": "50 years",
+      "projected_total": "Projected Total after {{years}} years",
+      "total_contributed": "Total Contributed",
+      "interest_earned": "Interest Earned"
+    },
+    "dialog": {
+      "create_title": "Create New Goal",
+      "edit_title": "Edit Goal",
+      "description": "Set a target and deadline to track your progress.",
+      "name_label": "Goal Name",
+      "name_placeholder": "e.g. New Car",
+      "target_label": "Target Amount",
+      "current_label": "Current Savings",
+      "date_label": "Target Date",
+      "save": "Save Goal"
+    }
+  },
+  "limits": {
+    "title": "Spending Limits",
+    "editor_placeholder": "Limits Editor Table Placeholder",
+    "category": "Category",
+    "limit": "Limit",
+    "spent": "Spent",
+    "period": "Period",
+    "currency": "Currency",
+    "add_limit": "Add Limit",
+    "edit_limit": "Edit Limit",
+    "delete_limit": "Delete Limit",
+    "delete_confirm": "Are you sure you want to delete this limit?",
+    "no_limits": "No limits set. Add one to get started.",
+    "add_hint": "Set limits to track your spending and save more.",
+    "subtitle": "Track your spending limits and goals",
+    "remaining": "remaining",
+    "periods": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "add_account": "Add Account",
+    "edit_account": "Edit Account",
+    "delete_account": "Delete Account",
+    "account_name": "Account Name",
+    "account_type": "Account Type",
+    "balance": "Balance",
+    "currency": "Currency",
+    "provider": "Provider",
+    "no_accounts": "No accounts yet. Add one to get started.",
+    "types": {
+      "bank": "Bank Account",
+      "savings": "Savings Account",
+      "cash": "Cash",
+      "brokerage": "Brokerage Account"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme_mode": "Theme Mode",
+    "language": "Language",
+    "interface_language": "Interface Language",
+    "currency": "Currency",
+    "default_currency": "Default Currency"
+  },
+  "analytics": {
+    "habits": {
+      "title": "Spending Habits",
+      "subtitle": "Daily spending intensity over the last year",
+      "less": "Less",
+      "more": "More",
+      "peak": "Peak"
+    },
+    "velocity": {
+      "title": "Spend Velocity",
+      "subtitle": "Cumulative vs Last Month",
+      "faster": "Faster",
+      "slower": "Slower",
+      "caution": "Caution",
+      "great_job": "Great job!",
+      "outpacing": "You are outpacing last month by {{amount}}.",
+      "saved": "You saved {{amount}} vs last month."
+    },
+    "forecast": {
+      "title": "Month-End Forecast",
+      "active": "Active",
+      "current": "Current",
+      "burn": "Burn",
+      "uncategorized_warning_title": "High Uncategorized Spending",
+      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> of your expenses are Uncategorized."
+    },
+    "page_title": "Analytics & Planning",
+    "page_subtitle": "Professional financial analysis and detailed breakdowns.",
+    "filter": {
+      "time_period": "Time Period",
+      "select_range": "Select range for analysis"
+    },
+    "settings": {
+      "title": "Analysis Settings",
+      "subtitle": "Customize your view",
+      "accounts": "Accounts",
+      "exclude_categories": "Exclude Categories"
+    },
+    "stats": {
+      "total_spend": "Total Spend",
+      "in_selected_period": "in selected period",
+      "avg_daily": "Avg. Daily",
+      "per_month": "/ mo",
+      "top_category": "Top Category",
+      "liquid_assets": "Liquid Assets",
+      "active_accounts": "Active Accounts",
+      "of_total": "of total",
+      "fixed_costs": "Fixed Costs (Mandatory)",
+      "discretionary": "Discretionary (Variable)",
+      "of_total_spending": "% of total spending"
+    },
+    "breakdown": {
+      "title": "Expense Breakdown",
+      "subtitle": "Distribution by category"
+    },
+    "common": {
+      "no_data": "No data available for selected period."
+    },
+    "tags": {
+      "top_spending": "Top Spending Tag",
+      "total": "total",
+      "most_frequent": "Most Frequent",
+      "used_in_transactions": "Used in {{count}} transactions",
+      "unique_tags": "Unique Tags",
+      "active_tags": "Active in this period",
+      "chart_title": "Spending by Tag",
+      "chart_subtitle": "Breakdown of expenses associated with tags",
+      "no_data_title": "No tagged expenses found in this period.",
+      "no_data_desc": "Try adjusting the date range or add tags to your transactions."
+    }
+  },
+  "profile": {
+    "page": {
+      "title": "My Profile",
+      "subtitle": "Your personal financial hub and achievements."
+    },
+    "card": {
+      "personal_details": "Personal Details",
+      "financial_goal": "Financial Goal",
+      "member_since": "Member since {{date}}",
+      "placeholder_name": "Your Name",
+      "placeholder_bio": "Saving for a dream home 🏠"
+    }
+  }
+}
