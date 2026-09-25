@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,14 +73,13 @@ export default function SavingsPage() {
       updateGoal(editingGoal.id, goalData);
     } else {
       addGoal({
-        id: crypto.randomUUID(),
         ...goalData,
       });
     }
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm(t("savings.delete_confirm"))) {
       deleteGoal(id);
     }
@@ -89,14 +87,12 @@ export default function SavingsPage() {
 
   // Calculator Logic
   const calculateSavings = () => {
-    const p = 0; // initial
     const r = parseFloat(calcInterest) / 100 / 12;
     const n = parseFloat(calcYears) * 12;
     const pmt = parseFloat(calcMonthly);
 
     // FV = PMT * (((1 + r)^n - 1) / r)
-    const fv = pmt * ((Math.pow(1 + r, n) - 1) / r);
-    return fv;
+    return r === 0 ? pmt * n : pmt * ((Math.pow(1 + r, n) - 1) / r);
   };
 
   return (

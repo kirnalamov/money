@@ -192,5 +192,8 @@ async def logout(
     """
     Logout by revoking the refresh token.
     """
+    token_obj = await crud_refresh_token.get_by_token(db, token=token_data.refresh_token)
+    if token_obj and token_obj.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not belong to this user")
     await crud_refresh_token.revoke_token(db, token=token_data.refresh_token)
     return None

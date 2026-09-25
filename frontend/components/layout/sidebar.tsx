@@ -22,6 +22,10 @@ export function Sidebar() {
   const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   const navItems = [
     { name: t("common.overview"), href: "/", icon: LayoutDashboard },
     { name: t("common.transactions"), href: "/transactions", icon: ArrowRightLeft },
@@ -71,7 +75,7 @@ export function Sidebar() {
         </div>
 
         {/* User Info & Logout */}
-        {isAuthenticated && user && (
+        {user && (
           <div className="p-4 mt-auto border-t space-y-2">
             <div className="px-3 pb-2">
               <p className="text-sm font-medium truncate">{user.full_name || user.username}</p>

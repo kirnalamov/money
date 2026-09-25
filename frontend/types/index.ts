@@ -28,7 +28,7 @@ export interface Account {
   lastSync?: string; // ISO date
 }
 
-export type TransactionType = 'income' | 'expense' | 'transfer' | 'trade';
+export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
   id: number;
@@ -43,7 +43,7 @@ export interface Transaction {
   merchant?: string;
   tags?: string[];
   isRecurring?: boolean; // For mandatory/fixed expenses
-  status: 'pending' | 'completed';
+  status?: 'pending' | 'completed';
   toAccountId?: number; // For transfers
 }
 
@@ -68,7 +68,7 @@ export interface LimitRule {
 }
 
 export interface Goal {
-  id: string;
+  id: number;
   name: string;
   targetAmount: number;
   currentAmount: number;

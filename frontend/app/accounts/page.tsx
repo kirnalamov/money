@@ -4,7 +4,7 @@ import { useState } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -220,7 +220,7 @@ export default function AccountsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map((account) => {
               const convertedBalance = account.currency !== defaultCurrency
-                ? formatCurrency(account.balance, account.currency)
+                ? convertCurrency(account.balance, account.currency, defaultCurrency)
                 : null;
 
               return (
@@ -260,7 +260,7 @@ export default function AccountsPage() {
                       </p>
                       {convertedBalance && (
                         <p className="text-xs text-muted-foreground">
-                          ≈ {formatCurrency(account.balance, defaultCurrency)}
+                          ≈ {formatCurrency(convertedBalance, defaultCurrency)}
                         </p>
                       )}
                     </div>

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud.crud_user import user as crud_user
+from app.core.security import validate_password_strength
 from app.schemas.user import UserCreate
 
 logger = structlog.get_logger()
@@ -15,8 +16,24 @@ async def init_db(db: AsyncSession) -> None:
     Initialize database with initial data.
     Creates first superuser if configured via environment variables.
     """
-    # Create first superuser if configured
-    if settings.FIRST_SUPERUSER_EMAIL and settings.FIRST_SUPERUSER_USERNAME:
+    superuser_values = (
+        settings.FIRST_SUPERUSER_EMAIL,
+        settings.FIRST_SUPERUSER_USERNAME,
+        settings.FIRST_SUPERUSER_PASSWORD,
+    )
+
+    # Create the first superuser only when all required credentials are explicit.
+    if any(superuser_values):
+        if not all(superuser_values):
+            raise RuntimeError(
+                "FIRST_SUPERUSER_EMAIL, FIRST_SUPERUSER_USERNAME and "
+                "FIRST_SUPERUSER_PASSWORD must be set together"
+            )
+
+        is_valid, error_msg = validate_password_strength(settings.FIRST_SUPERUSER_PASSWORD)
+        if not is_valid:
+            raise ValueError(f"Invalid FIRST_SUPERUSER_PASSWORD: {error_msg}")
+
         logger.info(
             "checking_for_initial_superuser",
             email=settings.FIRST_SUPERUSER_EMAIL
@@ -37,7 +54,7 @@ async def init_db(db: AsyncSession) -> None:
             user_in = UserCreate(
                 email=settings.FIRST_SUPERUSER_EMAIL,
                 username=settings.FIRST_SUPERUSER_USERNAME,
-                password=settings.FIRST_SUPERUSER_PASSWORD or "ChangeMe123!",
+                password=settings.FIRST_SUPERUSER_PASSWORD,
                 full_name=settings.FIRST_SUPERUSER_FULL_NAME or "Admin User",
                 is_active=True,
                 role="admin"

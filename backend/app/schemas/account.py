@@ -1,12 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
+from app.schemas.core import Currency
 
 class AccountBase(BaseModel):
     name: str
     type: str
     balance: float = 0.0
-    currency: str = "USD"
+    currency: Currency = Currency.USD
 
 class AccountCreate(AccountBase):
     pass
@@ -15,7 +16,7 @@ class AccountUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
     balance: Optional[float] = None
-    currency: Optional[str] = None
+    currency: Optional[Currency] = None
 
 class AccountInDBBase(AccountBase):
     id: int

@@ -8,16 +8,20 @@ import {
   ArrowRightLeft,
   Briefcase,
   PiggyBank,
-  Gauge,
   Settings,
-  Wallet,
   User
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/auth-context";
 
 export function MobileNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // Reduced to 5 core items for better mobile UX
   const navItems = [

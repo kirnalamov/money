@@ -1,8 +1,10 @@
 from typing import Annotated, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, require_role
+from app.core.security import validate_password_strength
 from app.crud.crud_user import user as crud_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
@@ -30,7 +32,27 @@ async def update_current_user(
     Update current user profile.
     """
     # Users can only update their own profile
-    user = await crud_user.update(db, db_obj=current_user, obj_in=user_in)
+    if user_in.email is not None:
+        existing_user = await crud_user.get_by_email(db, email=user_in.email)
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists",
+            )
+
+    if user_in.password is not None:
+        is_valid, error_msg = validate_password_strength(user_in.password)
+        if not is_valid:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
+    try:
+        user = await crud_user.update(db, db_obj=current_user, obj_in=user_in)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists",
+        )
     return user
 
 @router.get("/", response_model=List[User])

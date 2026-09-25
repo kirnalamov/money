@@ -7,6 +7,8 @@ import { getTransactions, createTransaction, updateTransaction as updateTransact
 import { getGoals, createGoal, updateGoal as updateGoalApi, deleteGoal as deleteGoalApi } from './api/goals';
 import { getCategories, createCategory as createCategoryApi, updateCategory as updateCategoryApi, deleteCategory as deleteCategoryApi } from './api/categories';
 import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTag as deleteTagApi } from './api/tags';
+import { getExchangeRates as getExchangeRatesApi } from './api/exchange-rates';
+import { updateExchangeRates } from './utils';
 
 const getRandomHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
@@ -22,12 +24,14 @@ interface AppState {
 
   isLoading: boolean;
   fetchAllData: () => Promise<void>;
+  exchangeRatesUpdatedAt: string | null;
+  refreshExchangeRates: () => Promise<void>;
 
   addAccount: (account: Account) => Promise<void>;
   updateAccount: (id: number, account: Partial<Account>) => Promise<void>;
   deleteAccount: (id: number) => Promise<void>;
 
-  addTransaction: (transaction: Transaction) => Promise<void>;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: number, transaction: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: number) => Promise<void>;
 
@@ -46,9 +50,9 @@ interface AppState {
   updatePosition: (symbol: string, accountId: number, position: Partial<Position>) => void;
   deletePosition: (symbol: string, accountId: number) => void;
   goals: Goal[];
-  addGoal: (goal: Goal) => Promise<void>;
-  updateGoal: (id: string, goal: Partial<Goal>) => Promise<void>;
-  deleteGoal: (id: string) => Promise<void>;
+  addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
+  updateGoal: (id: number, goal: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: number) => Promise<void>;
   recurringExpenses: RecurringExpense[];
   addRecurringExpense: (expense: RecurringExpense) => void;
   updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => void;
@@ -61,7 +65,6 @@ interface AppState {
 // Empty initial data for backend integration
 const initialRecurringExpenses: RecurringExpense[] = [];
 const initialGoals: Goal[] = [];
-const initialAccounts: Account[] = [];
 const initialLimits: LimitRule[] = [];
 const initialPositions: Position[] = [];
 
@@ -78,12 +81,24 @@ export const useStore = create<AppState>()(
       recurringExpenses: initialRecurringExpenses,
       defaultCurrency: 'USD',
       isLoading: false,
+      exchangeRatesUpdatedAt: null,
 
       setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
+
+      refreshExchangeRates: async () => {
+        try {
+          const snapshot = await getExchangeRatesApi();
+          updateExchangeRates(snapshot.rates);
+          set({ exchangeRatesUpdatedAt: snapshot.updated_at });
+        } catch (error) {
+          console.warn('Failed to refresh exchange rates; using cached rates:', error);
+        }
+      },
 
       fetchAllData: async () => {
         set({ isLoading: true });
         try {
+          const exchangeRatesPromise = get().refreshExchangeRates();
           const [accounts, transactions, goals, categories, tags] = await Promise.all([
             getAccounts(),
             getTransactions(),
@@ -91,6 +106,7 @@ export const useStore = create<AppState>()(
             getCategories(),
             getTags()
           ]);
+          await exchangeRatesPromise;
           set((state) => {
             const accountIds = new Set(accounts.map((a) => a.id));
             const validPositions = state.positions.filter((p) => accountIds.has(p.accountId));
@@ -128,19 +144,19 @@ export const useStore = create<AppState>()(
 
       // ... Goal actions ...
       // ... Goal actions ...
-      addGoal: async (goal: Goal) => {
+      addGoal: async (goal: Omit<Goal, 'id'>) => {
         try {
           const newGoal = await createGoal(goal);
           set((state) => ({ goals: [...state.goals, newGoal] }));
         } catch (e) { console.error(e) }
       },
-      updateGoal: async (id: string, updates: Partial<Goal>) => {
+      updateGoal: async (id: number, updates: Partial<Goal>) => {
         try {
           const updated = await updateGoalApi(id, updates);
           set((state) => ({ goals: state.goals.map(g => g.id === id ? updated : g) }));
         } catch (e) { console.error(e) }
       },
-      deleteGoal: async (id: string) => {
+      deleteGoal: async (id: number) => {
         try {
           await deleteGoalApi(id);
           set((state) => ({ goals: state.goals.filter(g => g.id !== id) }));
@@ -164,23 +180,19 @@ export const useStore = create<AppState>()(
       deletePosition: (symbol: string, accountId: number) => set((state) => ({ positions: state.positions.filter(p => !(p.symbol === symbol && p.accountId === accountId)) })),
 
       // ... Transaction actions ...
-      addTransaction: async (transaction: Transaction) => {
+      addTransaction: async (transaction: Omit<Transaction, 'id'>) => {
         try {
           const newTx = await createTransaction(transaction);
-          const categories = await getCategories();
-          const tags = await getTags();
+          const [accounts, categories, tags] = await Promise.all([
+            getAccounts(),
+            getCategories(),
+            getTags(),
+          ]);
           
           set((state) => {
-            const newAccounts = [...state.accounts];
-            const accIndex = newAccounts.findIndex(a => a.id === newTx.accountId);
-            if (accIndex >= 0) {
-              if (newTx.type === 'expense') newAccounts[accIndex].balance -= newTx.amount;
-              else if (newTx.type === 'income') newAccounts[accIndex].balance += newTx.amount;
-            }
-            
-            let updatedState: Partial<AppState> = { 
+            const updatedState: Partial<AppState> = {
               transactions: [newTx, ...state.transactions], 
-              accounts: newAccounts, 
+              accounts,
               categories, 
               tags 
             };
@@ -207,7 +219,10 @@ export const useStore = create<AppState>()(
             
             return updatedState;
           });
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       updateTransaction: async (id: number, updates: Partial<Transaction>) => {
@@ -217,29 +232,16 @@ export const useStore = create<AppState>()(
 
           const updated = await updateTransactionApi(id.toString(), updates);
           
-          const categories = await getCategories();
-          const tags = await getTags();
+          const [accounts, categories, tags] = await Promise.all([
+            getAccounts(),
+            getCategories(),
+            getTags(),
+          ]);
 
           set((state) => {
-            const newAccounts = [...state.accounts];
-            
-            // Revert old transaction effect
-            const oldAccIndex = newAccounts.findIndex(a => a.id === oldTx.accountId);
-            if (oldAccIndex >= 0) {
-                if (oldTx.type === 'expense') newAccounts[oldAccIndex].balance += oldTx.amount;
-                else if (oldTx.type === 'income') newAccounts[oldAccIndex].balance -= oldTx.amount;
-            }
-
-            // Apply new transaction effect
-            const newAccIndex = newAccounts.findIndex(a => a.id === updated.accountId);
-            if (newAccIndex >= 0) {
-                if (updated.type === 'expense') newAccounts[newAccIndex].balance -= updated.amount;
-                else if (updated.type === 'income') newAccounts[newAccIndex].balance += updated.amount;
-            }
-
-            let updatedState: Partial<AppState> = {
+            const updatedState: Partial<AppState> = {
               transactions: state.transactions.map(t => t.id === id ? updated : t),
-              accounts: newAccounts,
+              accounts,
               categories,
               tags
             };
@@ -266,7 +268,10 @@ export const useStore = create<AppState>()(
 
             return updatedState;
           });
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       deleteTransaction: async (id: number) => {
@@ -275,21 +280,15 @@ export const useStore = create<AppState>()(
           if (!txToDelete) return;
 
           await deleteTransactionApi(id.toString());
-          
-          set((state) => {
-            const newAccounts = [...state.accounts];
-            const accIndex = newAccounts.findIndex(a => a.id === txToDelete.accountId);
-            if (accIndex >= 0) {
-              if (txToDelete.type === 'expense') newAccounts[accIndex].balance += txToDelete.amount;
-              else if (txToDelete.type === 'income') newAccounts[accIndex].balance -= txToDelete.amount;
-            }
-
-            return {
-              transactions: state.transactions.filter(t => t.id !== id),
-              accounts: newAccounts
-            };
-          });
-        } catch (e) { console.error(e) }
+          const accounts = await getAccounts();
+          set((state) => ({
+            transactions: state.transactions.filter(t => t.id !== id),
+            accounts,
+          }));
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       addCategory: async (category) => {
@@ -386,13 +385,15 @@ export const useStore = create<AppState>()(
         positions: initialPositions,
         goals: initialGoals,
         recurringExpenses: initialRecurringExpenses,
+        defaultCurrency: 'USD',
+        exchangeRatesUpdatedAt: null,
         isLoading: false
       }),
     }),
     {
       name: 'plutus-storage',
       version: 1,
-      migrate: (persistedState: any, _version: number) => {
+      migrate: (persistedState: unknown) => {
         return persistedState as AppState;
       },
     }

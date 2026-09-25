@@ -46,7 +46,12 @@ async def get_current_user(
         raise credentials_exception
         
     # Get user from database
-    user_obj = await crud_user.get(db, id=int(token_data.sub))
+    try:
+        user_id = int(token_data.sub)
+    except (TypeError, ValueError):
+        raise credentials_exception
+
+    user_obj = await crud_user.get(db, id=user_id)
     if user_obj is None:
         raise credentials_exception
     

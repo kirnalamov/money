@@ -5,6 +5,7 @@ import { User, AuthContextType, RegisterRequest, UserUpdateRequest } from '@/typ
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
 import { hasTokens, getRefreshToken, clearTokens } from '@/lib/auth/token-manager';
+import { useStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,9 +26,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const resetStore = useStore((state) => state.reset);
+    const refreshExchangeRates = useStore((state) => state.refreshExchangeRates);
 
     // Load user on mount if tokens exist
     const loadUser = useCallback(async () => {
+        // Never render persisted financial data before the current session is known.
+        resetStore();
+
         if (!hasTokens()) {
 
             setIsLoading(false);
@@ -41,14 +47,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Failed to load user:', error);
             clearTokens();
             setUser(null);
+            resetStore();
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [resetStore]);
 
     useEffect(() => {
         loadUser();
     }, [loadUser]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        void refreshExchangeRates();
+        const interval = window.setInterval(() => {
+            void refreshExchangeRates();
+        }, 60 * 60 * 1000);
+
+        return () => window.clearInterval(interval);
+    }, [user, refreshExchangeRates]);
 
     const login = async (username: string, password: string) => {
         setIsLoading(true);
@@ -94,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
+            resetStore();
             setUser(null);
             router.push('/login');
             setIsLoading(false);

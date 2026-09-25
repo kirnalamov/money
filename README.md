@@ -39,10 +39,10 @@ money/
 cd c:\money
 ```
 
-Создать файл окружения:
+Создать корневой файл окружения для Docker:
 
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
 
 Настроить основные параметры:
@@ -50,8 +50,15 @@ cp backend/.env.example backend/.env
 ```env
 SECRET_KEY=your_secret_key
 POSTGRES_PASSWORD=your_password
-BACKEND_CORS_ORIGINS=http://localhost:3000
+BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+DATABASE_URL=postgresql+asyncpg://postgres:your_password@db:5432/app
+EXCHANGE_RATES_URL=https://open.er-api.com/v6/latest/USD
+EXCHANGE_RATES_TTL_MINUTES=60
 ```
+
+Для локального запуска backend вне Docker используйте отдельный `backend/.env`; не подставляйте SQLite-конфигурацию в Docker Compose.
+
+Курсы валют обновляются backend через `EXCHANGE_RATES_URL` с интервалом `EXCHANGE_RATES_TTL_MINUTES`. При недоступности провайдера используется последний успешный снимок или безопасные резервные значения.
 
 Запустить приложение:
 

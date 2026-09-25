@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { formatCurrency, convertCurrency } from '@/lib/utils';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
 import { MultiSelectCreatable } from '@/components/ui/multi-select-creatable';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AddTransactionDialogProps {
   defaultType?: TransactionType;
@@ -51,22 +52,24 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isRecurring, setIsRecurring] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Update type when defaultType changes (only if not user-modified? typically reset on open)
   // useEffect(() => setType(defaultType), [defaultType, open]); 
 
   const { accounts, categories, tags: tagsList, addTransaction, defaultCurrency } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!amount || !accountId) return;
 
     if (type === 'transfer' && !toAccountId) return;
 
     const selectedAccount = accounts.find(a => a.id === parseInt(accountId));
     
-    addTransaction({
-      id: Math.floor(Math.random() * 1000000),
+    try {
+      await addTransaction({
       type,
       amount: parseFloat(amount),
       currency: selectedAccount?.currency || defaultCurrency,
@@ -78,10 +81,13 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
       tags: tags.length > 0 ? tags : undefined,
       isRecurring,
       status: 'completed'
-    });
+      });
 
-    setOpen?.(false);
-    resetForm();
+      setOpen?.(false);
+      resetForm();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t('common.error'));
+    }
   };
 
   const resetForm = () => {
@@ -95,7 +101,10 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
   return (
     <Dialog open={open} onOpenChange={(val) => {
       setOpen?.(val);
-      if (val) setType(defaultType); // Reset type on open
+      if (val) {
+        setType(defaultType);
+        setError(null);
+      }
     }}>
       {trigger !== null && (
         <DialogTrigger asChild>
@@ -114,6 +123,11 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             {t('transactions.add_dialog_desc')}
           </DialogDescription>
         </DialogHeader>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">
@@ -205,7 +219,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
               value={category}
               onChange={setCategory}
               placeholder={type === 'income' ? t('transactions.placeholders.category_income') : t('transactions.placeholders.category')}
-              onCreate={(val) => {
+              onCreate={() => {
                 // Optionally could dispatch create action here immediately if desired
               }}
             />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,8 @@ import { Transaction, TransactionType } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
 import { MultiSelectCreatable } from '@/components/ui/multi-select-creatable';
-import { Trash2, Calendar, Wallet, Tag as TagIcon, FileText } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TransactionDetailsDialogProps {
@@ -34,62 +35,67 @@ interface TransactionDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function TransactionDetailsDialog({ transaction, open, onOpenChange }: TransactionDetailsDialogProps) {
+interface TransactionDetailsFormProps extends Omit<TransactionDetailsDialogProps, 'transaction'> {
+  transaction: Transaction;
+}
+
+export function TransactionDetailsDialog(props: TransactionDetailsDialogProps) {
+  if (!props.transaction) return null;
+
+  return <TransactionDetailsForm key={props.transaction.id} {...props} transaction={props.transaction} />;
+}
+
+function TransactionDetailsForm({ transaction, open, onOpenChange }: TransactionDetailsFormProps) {
   const { t } = useTranslation();
-  const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction, defaultCurrency } = useStore();
+  const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction } = useStore();
 
-  const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [date, setDate] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
-
-  useEffect(() => {
-    if (transaction) {
-      setType(transaction.type);
-      setAmount(transaction.amount.toString());
-      setDescription(transaction.description || '');
-      setAccountId(transaction.accountId.toString());
-      setToAccountId(transaction.toAccountId?.toString() || '');
-      setCategory(transaction.category);
-      setTags(transaction.tags || []);
-      setDate(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
-      setIsRecurring(!!transaction.isRecurring);
-    }
-  }, [transaction, open]);
+  const [type, setType] = useState<TransactionType>(transaction.type);
+  const [amount, setAmount] = useState(transaction.amount.toString());
+  const [description, setDescription] = useState(transaction.description || '');
+  const [accountId, setAccountId] = useState(transaction.accountId.toString());
+  const [toAccountId, setToAccountId] = useState(transaction.toAccountId?.toString() || '');
+  const [category, setCategory] = useState(transaction.category);
+  const [tags, setTags] = useState<string[]>(transaction.tags || []);
+  const [date, setDate] = useState(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
+  const [isRecurring, setIsRecurring] = useState(!!transaction.isRecurring);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction || !amount || !accountId) return;
 
-    await updateTransaction(transaction.id, {
-      type,
-      amount: parseFloat(amount),
-      accountId: parseInt(accountId),
-      toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
-      category,
-      description,
-      tags,
-      isRecurring,
-      date: new Date(date).toISOString(),
-    });
+    setError(null);
+    try {
+      await updateTransaction(transaction.id, {
+        type,
+        amount: parseFloat(amount),
+        accountId: parseInt(accountId),
+        toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
+        category,
+        description,
+        tags,
+        isRecurring,
+        date: new Date(date).toISOString(),
+      });
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t('common.error'));
+    }
   };
 
   const handleDelete = async () => {
     if (!transaction) return;
     if (confirm(t('common.confirm_delete') || 'Are you sure you want to delete this transaction?')) {
-      await deleteTransaction(transaction.id);
-      onOpenChange(false);
+      setError(null);
+      try {
+        await deleteTransaction(transaction.id);
+        onOpenChange(false);
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t('common.error'));
+      }
     }
   };
-
-  if (!transaction) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,6 +111,11 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
             {t('transactions.edit_dialog_desc') || 'View or update your transaction information.'}
           </DialogDescription>
         </DialogHeader>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">{t('transactions.type')}</Label>

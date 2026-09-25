@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEV_MODE: bool = False
     
     # Security
-    SECRET_KEY: str = "CHANGE_THIS_IN_PRODUCTION_TO_A_RANDOM_SECRET_KEY"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "console"  # "console" or "json"
+
+    # Exchange rates
+    EXCHANGE_RATES_URL: str = "https://open.er-api.com/v6/latest/USD"
+    EXCHANGE_RATES_TTL_MINUTES: int = 60
     
     # Initial Superuser (optional)
     FIRST_SUPERUSER_EMAIL: str | None = None
@@ -39,6 +43,16 @@ class Settings(BaseSettings):
         elif isinstance(v, str):
             return [v]
         raise ValueError(v)
+
+    @field_validator("SECRET_KEY")
+    def validate_secret_key(cls, v: str) -> str:
+        if len(v) < 32 or v in {
+            "CHANGE_THIS_IN_PRODUCTION_TO_A_RANDOM_SECRET_KEY",
+            "dev-secret-key-CHANGE-IN-PRODUCTION-use-openssl-rand-hex-32",
+            "replace_with_a_random_secret_at_least_32_characters_long",
+        }:
+            raise ValueError("SECRET_KEY must be a random value of at least 32 characters")
+        return v
 
     # Database
     POSTGRES_SERVER: str

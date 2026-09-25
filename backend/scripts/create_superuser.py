@@ -33,7 +33,11 @@ async def main():
     """Create initial superuser if configured."""
     logger.info("starting_superuser_creation")
     
-    if not settings.FIRST_SUPERUSER_EMAIL or not settings.FIRST_SUPERUSER_USERNAME:
+    if (
+        not settings.FIRST_SUPERUSER_EMAIL
+        or not settings.FIRST_SUPERUSER_USERNAME
+        or not settings.FIRST_SUPERUSER_PASSWORD
+    ):
         logger.error(
             "missing_superuser_config",
             message="FIRST_SUPERUSER_EMAIL and FIRST_SUPERUSER_USERNAME must be set in environment"
@@ -42,15 +46,9 @@ async def main():
         print("Please set the following environment variables:")
         print("  - FIRST_SUPERUSER_EMAIL")
         print("  - FIRST_SUPERUSER_USERNAME")
-        print("  - FIRST_SUPERUSER_PASSWORD (optional, defaults to 'ChangeMe123!')")
+        print("  - FIRST_SUPERUSER_PASSWORD")
         print("  - FIRST_SUPERUSER_FULL_NAME (optional)")
         sys.exit(1)
-    
-    if not settings.FIRST_SUPERUSER_PASSWORD:
-        logger.warning(
-            "using_default_password",
-            message="FIRST_SUPERUSER_PASSWORD not set, using default password 'ChangeMe123!'"
-        )
     
     try:
         if sys.platform == 'win32':

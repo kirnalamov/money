@@ -2,8 +2,8 @@
 
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency, cn } from "@/lib/utils";
-import { ShoppingBag, Coffee, Car, Home, Smartphone, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, MoreHorizontal } from "lucide-react";
+import { convertCurrency, formatCurrency, cn } from "@/lib/utils";
+import { ArrowRightLeft, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -13,17 +13,6 @@ export function RecentTransactions() {
 
     // Sort by date desc and take top 5
     const recent = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-
-    const getIcon = (category: string) => {
-        switch (category) {
-            case 'dashboard.categories.groceries': return ShoppingBag;
-            case 'dashboard.categories.dining_out': return Coffee;
-            case 'dashboard.categories.transport': return Car;
-            case 'dashboard.categories.housing': return Home;
-            case 'dashboard.categories.utilities': return Smartphone;
-            default: return MoreHorizontal;
-        }
-    };
 
     if (recent.length === 0) {
         return (
@@ -44,8 +33,8 @@ export function RecentTransactions() {
             </div>
             <div className="p-6 pt-2 space-y-4">
                 {recent.map((tx) => {
-                    const Icon = getIcon(tx.category);
                     const isExpense = tx.type === 'expense';
+                    const convertedAmount = convertCurrency(tx.amount, tx.currency, defaultCurrency);
 
                     return (
                         <div key={tx.id} className="flex items-center justify-between group">
@@ -65,7 +54,12 @@ export function RecentTransactions() {
                             <div className={cn("font-semibold text-sm tabular-nums",
                                 isExpense ? "text-foreground" : "text-green-600"
                             )}>
-                                {isExpense ? "-" : "+"}{formatCurrency(tx.amount, defaultCurrency)}
+                                <div>{isExpense ? "-" : "+"}{formatCurrency(tx.amount, tx.currency)}</div>
+                                {tx.currency !== defaultCurrency && (
+                                    <div className="text-xs font-normal text-muted-foreground">
+                                        ≈ {formatCurrency(convertedAmount, defaultCurrency)}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )

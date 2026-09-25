@@ -3,11 +3,9 @@ services:
     image: postgres:16-alpine
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=app
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,36 +22,29 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PROJECT_NAME=MoneyApp
-
-      # Database
-      - POSTGRES_SERVER=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=app
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
-
-      # Security - IMPORTANT: Change SECRET_KEY in production!
-      - SECRET_KEY=dev-secret-key-CHANGE-IN-PRODUCTION-use-openssl-rand-hex-32
-      - BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
-
-      # Logging
-      - LOG_FORMAT=console
-      - LOG_LEVEL=INFO
-      # Optional: Initial superuser (uncomment to create on first run)
-      - FIRST_SUPERUSER_EMAIL=admin@example.com
-      - FIRST_SUPERUSER_USERNAME=admin
-      - FIRST_SUPERUSER_PASSWORD=ChangeMe123!
-      - FIRST_SUPERUSER_FULL_NAME=Admin User
-
-    volumes:
-      - ./backend:/app
+      PROJECT_NAME: ${PROJECT_NAME:-MoneyApp}
+      POSTGRES_SERVER: db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-'["http://localhost:3000"]'}
+      DEV_MODE: ${DEV_MODE:-false}
+      LOG_FORMAT: json
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      EXCHANGE_RATES_URL: ${EXCHANGE_RATES_URL:-https://open.er-api.com/v6/latest/USD}
+      EXCHANGE_RATES_TTL_MINUTES: ${EXCHANGE_RATES_TTL_MINUTES:-60}
+      FIRST_SUPERUSER_EMAIL: ${FIRST_SUPERUSER_EMAIL:-}
+      FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME:-}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:-}
+      FIRST_SUPERUSER_FULL_NAME: ${FIRST_SUPERUSER_FULL_NAME:-}
     depends_on:
       db:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     build:

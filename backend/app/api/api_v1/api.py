@@ -1,5 +1,15 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import categories, tags, transactions, goals, savings, auth, users, accounts
+from app.api.api_v1.endpoints import (
+    accounts,
+    auth,
+    categories,
+    exchange_rates,
+    goals,
+    savings,
+    tags,
+    transactions,
+    users,
+)
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
@@ -10,4 +20,5 @@ api_router.include_router(accounts.router, prefix="/accounts", tags=["accounts"]
 api_router.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
 api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(savings.router, prefix="/savings", tags=["savings"])
+api_router.include_router(exchange_rates.router, prefix="/exchange-rates", tags=["exchange-rates"])
 
