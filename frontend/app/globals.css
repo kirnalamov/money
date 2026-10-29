@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 90 14% 96%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -24,30 +24,29 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 142 76% 36%;
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 8% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 142 70% 45%;
-    /* Plutus Green adjusted for dark */
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 70%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 150 11% 4%;
+    --foreground: 100 14% 96%;
+    --card: 165 11% 12%;
+    --card-foreground: 100 14% 96%;
+    --popover: 165 11% 12%;
+    --popover-foreground: 100 14% 96%;
+    --primary: 72 95% 63%;
+    --primary-foreground: 90 41% 7%;
+    --secondary: 165 9% 20%;
+    --secondary-foreground: 100 14% 96%;
+    --muted: 165 9% 20%;
+    --muted-foreground: 140 5% 70%;
+    --accent: 165 9% 20%;
+    --accent-foreground: 100 14% 96%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 18%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 70% 45%;
+    --border: 165 8% 23%;
+    --input: 165 8% 23%;
+    --ring: 72 95% 63%;
   }
 }
 
@@ -109,7 +108,7 @@
   }
 
   .glass-card {
-    @apply bg-card/50 backdrop-blur-md border border-white/5 shadow-lg hover:shadow-xl transition-all duration-300;
+    @apply bg-card border border-border shadow-none transition-colors;
   }
 
   .glass-hover {
@@ -121,7 +120,7 @@
   }
 
   .premium-gradient {
-    @apply bg-gradient-to-br from-background via-background to-secondary/30;
+    @apply bg-card;
   }
 
   .text-glow {

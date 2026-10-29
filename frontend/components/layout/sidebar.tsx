@@ -19,7 +19,7 @@ export function Sidebar() {
   }
 
   return (
-    <div className="hidden border-r bg-card md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-50">
+    <div className="hidden border-r bg-background md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-50">
       <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-6 mb-8">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
@@ -36,7 +36,7 @@ export function Sidebar() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all relative",
+                  "group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-colors relative",
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
                   isActive
                     ? "bg-primary/10 text-primary before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary before:rounded-r"

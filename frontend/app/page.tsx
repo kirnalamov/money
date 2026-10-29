@@ -31,7 +31,7 @@ export default function OverviewPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6 md:space-y-8 pb-10">
+      <div className="space-y-4 md:space-y-5 pb-10">
         {/* Header & Filter */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -62,19 +62,19 @@ export default function OverviewPage() {
         <QuickActions />
 
         {/* Main Charts Area */}
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
-          <div className="col-span-1 lg:col-span-4 space-y-6">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+          <div className="col-span-1 lg:col-span-4 space-y-4">
             <NetWorthChart dateRange={dateRange} />
           </div>
-          <div className="col-span-1 lg:col-span-3 space-y-6 h-full flex flex-col">
+          <div className="col-span-1 lg:col-span-3 space-y-4 h-full flex flex-col">
             <ExpensesDonut dateRange={dateRange} />
             <RecentTransactions />
           </div>
         </div>
 
         {/* Secondary Info Area */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-1 lg:col-span-2 space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-1 lg:col-span-2 space-y-4">
             <GoalsSummary />
             <MandatoryExpensesList />
           </div>

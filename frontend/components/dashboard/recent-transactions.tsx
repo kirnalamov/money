@@ -18,7 +18,7 @@ export function RecentTransactions() {
 
     if (recent.length === 0) {
         return (
-            <div className="rounded-xl border bg-card text-card-foreground shadow h-full flex flex-col items-center justify-center p-8 text-muted-foreground">
+            <div className="rounded-[1.5rem] border bg-card text-card-foreground h-full flex flex-col items-center justify-center p-8 text-muted-foreground">
                 <div className="p-3 bg-muted rounded-full mb-3">
                     <ArrowRightLeft className="h-6 w-6" />
                 </div>
@@ -28,28 +28,28 @@ export function RecentTransactions() {
     }
 
     return (
-        <div className="rounded-xl border glass-card premium-gradient flex flex-col flex-1 min-h-[300px]">
+        <div className="rounded-[1.5rem] border bg-card flex flex-col flex-1 min-h-[300px]">
             <div className="p-6 pb-2 flex items-center justify-between">
                 <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.recent_transactions")}</h3>
                 <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8" asChild>
                     <Link href="/transactions">{t("common.view_all")}</Link>
                 </Button>
             </div>
-            <div className="p-6 pt-2 space-y-4">
+            <div className="p-4 pt-2 space-y-2">
                 {recent.map((tx) => {
                     const isExpense = tx.type === 'expense';
                     const convertedAmount = convertCurrency(tx.amount, tx.currency, defaultCurrency);
 
                     return (
-                        <div key={tx.id} className="flex items-center justify-between group">
-                            <div className="flex items-center gap-3">
-                                <div className={cn("p-2 rounded-lg transition-colors",
+                        <div key={tx.id} className="flex items-center justify-between gap-3 rounded-2xl bg-muted/50 p-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                                <div className={cn("p-2.5 rounded-xl transition-colors",
                                     isExpense ? "bg-red-100/50 text-red-600 dark:bg-red-900/10" : "bg-green-100/50 text-green-600 dark:bg-green-900/10"
                                 )}>
                                     {isExpense ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium leading-none">{tx.description || t(tx.category)}</p>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium leading-snug break-words">{tx.description || t(tx.category)}</p>
                                     <p className="text-xs text-muted-foreground mt-1">
                                         {format(new Date(tx.date), i18n.language === "ru" ? "d MMM" : "MMM d", {
                                             locale: i18n.language === "ru" ? ru : enUS,
@@ -57,7 +57,7 @@ export function RecentTransactions() {
                                     </p>
                                 </div>
                             </div>
-                            <div className={cn("font-semibold text-sm tabular-nums",
+                            <div className={cn("shrink-0 text-right font-semibold text-sm tabular-nums",
                                 isExpense ? "text-foreground" : "text-green-600"
                             )}>
                                 <div>{isExpense ? "-" : "+"}{formatCurrency(tx.amount, tx.currency)}</div>

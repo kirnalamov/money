@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export function KpiCardsGrid() {
   const { accounts, positions, defaultCurrency } = useStore();
@@ -63,25 +64,25 @@ export function KpiCardsGrid() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {kpis.map((kpi) => (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {kpis.map((kpi, index) => (
         <Link
           key={kpi.title}
           href={kpi.href}
-          className="block"
+          className="block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <div
-            className="rounded-xl border glass-card premium-gradient p-6 group cursor-pointer hover:-translate-y-1 h-full"
+            className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "border-transparent bg-gradient-to-br from-[#d9fa46] to-[#8edc55] text-[#11180a] hover:from-[#e4ff70] hover:to-[#a1e66c]")}
           >
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">{kpi.title}</h3>
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <kpi.icon className="h-5 w-5 text-primary" />
+              <h3 className={cn("tracking-tight text-sm font-medium text-muted-foreground", index === 0 && "text-[#263718]")}>{kpi.title}</h3>
+              <div className={cn("h-10 w-10 rounded-2xl bg-muted flex items-center justify-center", index === 0 && "bg-black/10")}>
+                <kpi.icon aria-hidden="true" className={cn("h-5 w-5 text-foreground", index === 0 && "text-[#11180a]")} />
               </div>
             </div>
             <div className="pt-2">
-              <div className="text-2xl md:text-3xl font-bold group-hover:text-glow transition-all duration-300">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+              <div className="text-2xl md:text-3xl font-bold tracking-tight break-words">{kpi.value}</div>
+              <p className={cn("text-xs text-muted-foreground mt-1", index === 0 && "text-[#263718]")}>{kpi.change}</p>
             </div>
           </div>
         </Link>

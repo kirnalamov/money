@@ -209,7 +209,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   return (
     <div
       onClick={() => router.push("/analytics")}
-      className="rounded-xl border glass-card premium-gradient h-[350px] md:h-full md:min-h-[350px] flex flex-col transition-all duration-200 hover:shadow-lg cursor-pointer group"
+      className="rounded-[1.5rem] border bg-card h-[350px] md:h-full md:min-h-[350px] flex flex-col transition-colors cursor-pointer group"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
