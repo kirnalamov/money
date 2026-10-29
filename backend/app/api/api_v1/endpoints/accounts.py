@@ -53,12 +53,18 @@ async def update_account(
     """
     Update an account.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(select(AccountModel).where(AccountModel.id == id).with_for_update())).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     if account.user_id != current_user.id:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    return await crud_account.update(db=db, db_obj=account, obj_in=item_in)
+    if item_in.balance is not None:
+        if item_in.expected_balance is None or item_in.expected_balance != float(account.balance):
+            raise HTTPException(status_code=409, detail="Account balance has changed; reload before editing")
+    if item_in.currency is not None and item_in.currency != account.currency:
+        if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
+            raise HTTPException(status_code=409, detail="Cannot change currency of an account with transactions")
+    return await crud_account.update(db=db, db_obj=account, obj_in=item_in.model_dump(exclude_unset=True, exclude={"expected_balance"}))
 
 @router.get("/{id}", response_model=Account)
 async def read_account(

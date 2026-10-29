@@ -17,7 +17,7 @@ export const createAccount = async (account: Omit<Account, 'id' | 'lastSync' | '
     return response.data;
 };
 
-export const updateAccount = async (id: number, account: Partial<Account>): Promise<Account> => {
+export const updateAccount = async (id: number, account: Partial<Account> & { expected_balance?: number }): Promise<Account> => {
     const response = await apiClient.put<Account>(`/accounts/${id}`, account);
     return response.data;
 };

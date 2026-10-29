@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import Optional
 from app.schemas.core import Currency
@@ -15,7 +15,8 @@ class AccountCreate(AccountBase):
 class AccountUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
-    balance: Optional[float] = None
+    balance: Optional[float] = Field(None, allow_inf_nan=False)
+    expected_balance: Optional[float] = Field(None, allow_inf_nan=False)
     currency: Optional[Currency] = None
 
 class AccountInDBBase(AccountBase):

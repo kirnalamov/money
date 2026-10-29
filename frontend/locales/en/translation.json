@@ -347,6 +347,7 @@
     "provider_placeholder": "e.g. Chase, Sberbank",
     "last_updated": "Last updated",
     "balance_change_warning": "Changing an account balance manually can conflict with its transactions. Continue?",
+    "edit_conflict": "The account balance has changed, or its currency cannot be changed because it has transactions. Refresh the page and check the details.",
     "no_accounts": "No accounts yet. Add one to get started.",
     "validation": {
       "name": "Enter an account name.",

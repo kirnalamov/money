@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Wallet } from "lucide-react";
 import { Account, AccountType, Currency } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import axios from "axios";
 
 export default function AccountsPage() {
   const { t, i18n } = useTranslation();
@@ -76,7 +77,7 @@ export default function AccountsPage() {
       setError(t("accounts.validation.name"));
       return;
     }
-    if (!Number.isFinite(balance) || balance < 0) {
+    if (!Number.isFinite(balance) || (balance < 0 && balance !== editingAccount?.balance)) {
       setError(t("accounts.validation.balance"));
       return;
     }
@@ -94,7 +95,10 @@ export default function AccountsPage() {
 
     try {
       if (editingAccount) {
-        await updateAccount(editingAccount.id, accountData);
+        const { balance: _balance, ...details } = accountData;
+        await updateAccount(editingAccount.id, balance === editingAccount.balance
+          ? details
+          : { ...details, balance, expected_balance: editingAccount.balance });
       } else {
         await addAccount(accountData);
       }
@@ -102,7 +106,9 @@ export default function AccountsPage() {
       setIsDialogOpen(false);
       resetForm();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t("common.error"));
+      setError(axios.isAxiosError(saveError) && saveError.response?.status === 409
+        ? t("accounts.edit_conflict")
+        : saveError instanceof Error ? saveError.message : t("common.error"));
     }
   };
 

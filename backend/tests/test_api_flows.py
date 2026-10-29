@@ -60,6 +60,13 @@ async def check_money_ownership_and_refresh():
             transfer = await client.post("/api/v1/transactions/", headers=headers, json={"accountId": account["id"], "toAccountId": destination["id"], "type": "transfer", "amount": 0.1})
             assert transfer.status_code == 200, transfer.text
             assert (await client.get(f"/api/v1/accounts/{destination['id']}", headers=headers)).json()["balance"] == 0.1
+            url = f"/api/v1/accounts/{destination['id']}"
+            assert (await client.put(url, headers=headers, json={"name": "Renamed"})).json()["balance"] == 0.1
+            assert (await client.put(url, headers=headers, json={"balance": 10})).status_code == 409
+            assert (await client.put(url, headers=headers, json={"balance": 10, "expected_balance": 0})).status_code == 409
+            assert (await client.put(url, headers=headers, json={"currency": "EUR"})).status_code == 409
+            assert (await client.put(url, headers=headers, json={"balance": 10, "expected_balance": 0.1})).json()["balance"] == 10
+            assert (await client.put(url, headers=headers, json={"balance": 0.1, "expected_balance": 10})).status_code == 200
             assert (await client.delete(f"/api/v1/accounts/{account['id']}", headers=headers)).status_code == 409
             other = (await client.post("/api/v1/auth/login", data={"username": "bobby", "password": "Password123"})).json()
             other_headers = {"Authorization": f"Bearer {other['access_token']}"}

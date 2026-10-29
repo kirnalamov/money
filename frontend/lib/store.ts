@@ -34,7 +34,7 @@ interface AppState {
   refreshExchangeRates: () => Promise<void>;
 
   addAccount: (account: Omit<Account, 'id' | 'lastSync'>) => Promise<void>;
-  updateAccount: (id: number, account: Partial<Account>) => Promise<void>;
+  updateAccount: (id: number, account: Partial<Account> & { expected_balance?: number }) => Promise<void>;
   deleteAccount: (id: number) => Promise<void>;
 
   addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
@@ -168,7 +168,7 @@ export const useStore = create<AppState>()(
           throw e;
         }
       },
-      updateAccount: async (id: number, updates: Partial<Account>) => {
+      updateAccount: async (id: number, updates: Partial<Account> & { expected_balance?: number }) => {
         try {
           // Convert to string for API if needed, or update API client
           const updated = await updateAccountApi(id, updates);
