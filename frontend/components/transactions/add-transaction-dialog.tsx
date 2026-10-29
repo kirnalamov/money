@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { TransactionType } from '@/types';
-import { Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, convertCurrency } from '@/lib/utils';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
@@ -60,9 +60,6 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
   const [isRecurring, setIsRecurring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Update type when defaultType changes (only if not user-modified? typically reset on open)
-  // useEffect(() => setType(defaultType), [defaultType, open]); 
 
   const { accounts, categories, tags: tagsList, addTransaction, defaultCurrency } = useStore();
   const selectedAccount = accounts.find(a => a.id === Number(accountId));
@@ -141,6 +138,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
 
   return (
     <Dialog open={open} onOpenChange={(val) => {
+      if (isSubmitting && !val) return;
       setOpen?.(val);
       if (val) {
         setType(defaultType);
@@ -157,72 +155,57 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('transactions.add_dialog_title')}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="flex max-h-[min(90dvh,850px)] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[560px]">
+        <DialogHeader className="border-b px-6 pb-5 pt-6 pr-12 text-left">
+          <DialogTitle className="text-xl">{t('transactions.add_dialog_title')}</DialogTitle>
+          <DialogDescription className="leading-relaxed">
             {t('transactions.add_dialog_desc')}
           </DialogDescription>
         </DialogHeader>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {accounts.length === 0 && (
-          <Alert>
-            <AlertDescription>{t('transactions.validation.no_accounts')}</AlertDescription>
-          </Alert>
-        )}
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="type">
-              {t('transactions.type')}
-            </Label>
-            <Select
-              value={type}
-              onValueChange={(value: TransactionType) => {
-                setType(value);
-                if (value !== 'transfer') setToAccountId('');
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('transactions.placeholders.select_type')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expense">{t('transactions.types.expense')}</SelectItem>
-                <SelectItem value="income">{t('transactions.types.income')}</SelectItem>
-                <SelectItem value="transfer">{t('transactions.types.transfer')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 space-y-5 overflow-y-auto px-6 py-5">
+          {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
+          {accounts.length === 0 && <Alert><AlertDescription>{t('transactions.validation.no_accounts')}</AlertDescription></Alert>}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">{t('transactions.type')}</legend>
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+              {([
+                ['expense', ArrowUpRight],
+                ['income', ArrowDownLeft],
+                ['transfer', ArrowLeftRight],
+              ] as const).map(([value, Icon]) => (
+                <label key={value} className="relative cursor-pointer">
+                  <input type="radio" name="transaction-type" value={value} checked={type === value}
+                    onChange={() => { setType(value); if (value !== 'transfer') setToAccountId(''); }} className="peer sr-only" />
+                  <span className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-1 text-xs font-medium text-muted-foreground transition-colors peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-ring sm:text-sm">
+                    <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    {t(`transactions.types.${value}`)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-          <div className="grid gap-2">
-            <Label htmlFor="amount">
-              {t('transactions.amount')}
-            </Label>
+          <div className="rounded-xl border bg-muted/30 p-4">
+            <Label htmlFor="amount" className="text-muted-foreground">{t('transactions.amount')}</Label>
+            <div className="mt-2 flex items-center gap-3">
             <Input
               id="amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               min="0.01"
               required
+              placeholder="0.00"
+              className="h-12 min-w-0 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
+            <span className="shrink-0 rounded-lg bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground" aria-live="polite">{selectedAccount?.currency || t('transactions.currency_after_account')}</span>
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="date">{t('common.date')}</Label>
-            <Input
-              id="date"
-              type="datetime-local"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </div>
-
+          <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="account">
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
@@ -235,7 +218,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                 setToAccountId('');
               }
             }}>
-              <SelectTrigger>
+              <SelectTrigger id="account" className="h-11">
                 <SelectValue placeholder={t('transactions.placeholders.select_account')} />
               </SelectTrigger>
               <SelectContent>
@@ -258,7 +241,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                 {t('transactions.to_account')}
               </Label>
               <Select value={toAccountId} onValueChange={setToAccountId}>
-                <SelectTrigger>
+                <SelectTrigger id="toAccount" className="h-11">
                   <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,28 +270,33 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="category">
+            <Label htmlFor="date">{t('common.date')}</Label>
+            <Input id="date" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="h-11 min-w-0" />
+          </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label id="new-transaction-category-label">
               {t('transactions.category')}
             </Label>
             <CreatableCombobox
               options={categories.map(c => ({ label: c.name, value: c.name }))}
               value={category}
               onChange={setCategory}
+              aria-labelledby="new-transaction-category-label"
               placeholder={type === 'income' ? t('transactions.placeholders.category_income') : t('transactions.placeholders.category')}
-              onCreate={() => {
-                // Optionally could dispatch create action here immediately if desired
-              }}
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="tags">
+            <Label id="new-transaction-tags-label">
               {t('transactions.tags') || 'Tags'}
             </Label>
             <MultiSelectCreatable
               options={tagsList.map(t => ({ label: t.name, value: t.name }))}
               values={tags}
               onChange={setTags}
+              aria-labelledby="new-transaction-tags-label"
               placeholder={t('transactions.placeholders.tags') || 'fun, jokes, entertainment'}
             />
           </div>
@@ -326,9 +314,9 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           </div>
 
           {type !== 'income' && type !== 'transfer' && (
-            <div className="flex items-center justify-between border p-3 rounded-md mt-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="recurring" className="text-base">{t('transactions.recurring_label')}</Label>
+            <div className="flex items-center justify-between gap-4 rounded-xl border bg-muted/20 p-4">
+              <div className="space-y-1">
+                <Label htmlFor="recurring" className="text-sm font-medium">{t('transactions.recurring_label')}</Label>
                 <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc')}</p>
               </div>
               <Switch
@@ -339,8 +327,10 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             </div>
           )}
 
-          <DialogFooter className="mt-4">
-            <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
+          </div>
+          <DialogFooter className="gap-2 border-t bg-background px-6 py-4 sm:space-x-0">
+            <Button type="button" variant="outline" onClick={() => setOpen?.(false)} disabled={isSubmitting} className="w-full sm:w-auto">{t('common.cancel')}</Button>
+            <Button type="submit" className="w-full sm:min-w-36 sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
               {isSubmitting ? t('common.loading') : t('transactions.save_changes')}
             </Button>
           </DialogFooter>

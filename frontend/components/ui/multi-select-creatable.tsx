@@ -20,6 +20,7 @@ export interface MultiSelectCreatableProps {
   placeholder?: string
   emptyText?: string
   onCreate?: (value: string) => void
+  'aria-labelledby'?: string
 }
 
 export function MultiSelectCreatable({
@@ -29,6 +30,7 @@ export function MultiSelectCreatable({
   placeholder = "Select options...",
   emptyText = "No results found.",
   onCreate,
+  'aria-labelledby': labelledBy,
 }: MultiSelectCreatableProps) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
@@ -71,6 +73,7 @@ export function MultiSelectCreatable({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-labelledby={labelledBy}
           className="w-full justify-between font-normal text-left h-auto min-h-10 py-1.5 px-3"
         >
           <div className="flex flex-wrap gap-1 items-center">

@@ -19,6 +19,7 @@ export interface CreatableComboboxProps {
   placeholder?: string
   emptyText?: string
   onCreate?: (value: string) => void
+  'aria-labelledby'?: string
 }
 
 export function CreatableCombobox({
@@ -28,6 +29,7 @@ export function CreatableCombobox({
   placeholder = "Select an option...",
   emptyText = "No results found.",
   onCreate,
+  'aria-labelledby': labelledBy,
 }: CreatableComboboxProps) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
@@ -62,6 +64,7 @@ export function CreatableCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-labelledby={labelledBy}
           className="w-full justify-between font-normal text-left truncate"
         >
           {displayLabel ? displayLabel : <span className="text-muted-foreground">{placeholder}</span>}
