@@ -6,7 +6,6 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Check, MoreHorizontal } from "lucide-react";
-import { isSameMonth, parseISO } from "date-fns";
 import { RecurringExpense } from "@/types";
 import {
     Dialog,
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import axios from "axios";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -34,10 +34,13 @@ export function MandatoryExpensesList() {
     const [selectedAccount, setSelectedAccount] = useState<string>("");
     const [isPayDialogOpen, setIsPayDialogOpen] = useState(false);
     const [paymentError, setPaymentError] = useState<string | null>(null);
+    const [paying, setPaying] = useState(false);
 
     const isPaidThisMonth = (dateString?: string) => {
         if (!dateString) return false;
-        return isSameMonth(parseISO(dateString), new Date());
+        const paid = new Date(dateString);
+        const now = new Date();
+        return paid.getUTCFullYear() === now.getUTCFullYear() && paid.getUTCMonth() === now.getUTCMonth();
     };
 
     const handlePayClick = (expense: RecurringExpense) => {
@@ -48,14 +51,17 @@ export function MandatoryExpensesList() {
     };
 
     const confirmPayment = async () => {
-        if (selectedExpense && selectedAccount) {
+        if (selectedExpense && selectedAccount && !paying) {
             try {
+                setPaying(true);
                 setPaymentError(null);
                 await payRecurringExpense(selectedExpense.id, parseInt(selectedAccount));
                 setIsPayDialogOpen(false);
                 setSelectedExpense(null);
-            } catch {
-                setPaymentError(t('common.error'));
+            } catch (error) {
+                setPaymentError(axios.isAxiosError(error) && error.response?.status === 409 ? t('dashboard.mandatory_expenses.already_paid') : t('common.error'));
+            } finally {
+                setPaying(false);
             }
         }
     };
@@ -155,7 +161,7 @@ export function MandatoryExpensesList() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPayDialogOpen(false)}>{t('common.cancel')}</Button>
-                        <Button onClick={confirmPayment}>{t('common.confirm')}</Button>
+                        <Button onClick={confirmPayment} disabled={paying}>{t('common.confirm')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

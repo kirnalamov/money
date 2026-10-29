@@ -9,7 +9,7 @@ import { getCategories, createCategory as createCategoryApi, updateCategory as u
 import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTag as deleteTagApi } from './api/tags';
 import { getExchangeRates as getExchangeRatesApi } from './api/exchange-rates';
 import { updateExchangeRates } from './utils';
-import { getUserItems, saveUserItem, deleteUserItem } from './api/user-items';
+import { getUserItems, saveUserItem, deleteUserItem, payUserExpense } from './api/user-items';
 
 const getRandomHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
@@ -64,7 +64,7 @@ interface AppState {
   addRecurringExpense: (expense: RecurringExpense) => Promise<void>;
   updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => Promise<void>;
   deleteRecurringExpense: (id: string) => Promise<void>;
-  payRecurringExpense: (id: string, accountId: number, date?: string) => Promise<void>;
+  payRecurringExpense: (id: string, accountId: number) => Promise<void>;
   toggleRecurringExpense: (id: string) => Promise<void>;
   reset: () => void;
 }
@@ -458,26 +458,9 @@ export const useStore = create<AppState>()(
       addRecurringExpense: async (expense) => { await saveUserItem('recurringExpenses', expense.id, expense); set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })); },
       updateRecurringExpense: async (id, updates) => { const item = get().recurringExpenses.find(e => e.id === id); if (!item) return; const updated = { ...item, ...updates }; await saveUserItem('recurringExpenses', id, updated); set((state) => ({ recurringExpenses: state.recurringExpenses.map(e => e.id === id ? updated : e) })); },
       deleteRecurringExpense: async (id) => { await deleteUserItem('recurringExpenses', id); set((state) => ({ recurringExpenses: state.recurringExpenses.filter(e => e.id !== id) })); },
-      payRecurringExpense: async (id: string, accountId: number, dateStr?: string) => {
-        const state = get();
-        const expense = state.recurringExpenses.find(e => e.id === id);
-        if (!expense) return;
-
-        const date = dateStr || new Date().toISOString();
-
-        // 1. Create Transaction to sync with backend
-        await state.addTransaction({
-          amount: expense.amount,
-          currency: expense.currency,
-          description: expense.name,
-          date: date,
-          type: 'expense',
-          category: expense.category,
-          accountId: accountId,
-        } as Transaction);
-
-        try { await get().updateRecurringExpense(id, { lastPaidDate: date }); }
-        catch { window.alert('Операция сохранена, но отметку оплаты не удалось сохранить.'); }
+      payRecurringExpense: async (id: string, accountId: number) => {
+        await payUserExpense(id, accountId);
+        await get().fetchAllData();
       },
       toggleRecurringExpense: async (id) => { const expense = get().recurringExpenses.find(e => e.id === id); if (expense) await get().updateRecurringExpense(id, { lastPaidDate: expense.lastPaidDate ? undefined : new Date().toISOString() }); },
       reset: () => set({

@@ -72,6 +72,7 @@
       "subtitle": "Track recurring bills",
       "empty": "No recurring expenses set.",
       "pay_title": "Pay",
+      "already_paid": "This expense is marked as paid or a transaction was already created this month. Refresh and check your history.",
       "pay_description": "This will create a transaction and mark this bill as paid for the current month.",
       "pay_with_transaction": "Pay (Create Transaction)"
     },

@@ -82,6 +82,15 @@ async def check_money_ownership_and_refresh():
             assert (await client.get(f"/api/v1/transactions/{transfer.json()['id']}", headers=other_headers)).status_code == 404
             assert (await client.delete(f"/api/v1/transactions/{transfer.json()['id']}", headers=headers)).status_code == 200
             assert (await client.get(f"/api/v1/accounts/{destination['id']}", headers=headers)).json()["balance"] == 0
+            expense = {"id": "monthly", "name": "Rent", "amount": 5, "currency": "USD", "category": "Housing", "dueDay": 1}
+            assert (await client.put("/api/v1/user-items/recurringExpenses/monthly", headers=headers, json=expense)).status_code == 200
+            pay_url = "/api/v1/user-items/recurringExpenses/monthly/pay"
+            assert (await client.post(pay_url, headers=other_headers, json={"account_id": destination["id"]})).status_code == 404
+            assert (await client.post(pay_url, headers=headers, json={"account_id": destination["id"]})).status_code == 200
+            assert (await client.post(pay_url, headers=headers, json={"account_id": destination["id"]})).status_code == 409
+            assert (await client.put("/api/v1/user-items/recurringExpenses/monthly", headers=headers, json=expense)).status_code == 200
+            assert (await client.post(pay_url, headers=headers, json={"account_id": destination["id"]})).status_code == 409
+            assert (await client.get(f"/api/v1/accounts/{destination['id']}", headers=headers)).json()["balance"] == -5
             refresh = await client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
             assert refresh.status_code == 200, refresh.text
             assert (await client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})).status_code == 401

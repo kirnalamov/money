@@ -9,3 +9,6 @@ export const saveUserItem = async (kind: keyof UserItems, key: string, value: Li
 export const deleteUserItem = async (kind: keyof UserItems, key: string) => {
   await apiClient.delete(`/user-items/${kind}/${encodeURIComponent(key)}`);
 };
+export const payUserExpense = async (key: string, accountId: number) => {
+  await apiClient.post(`/user-items/recurringExpenses/${encodeURIComponent(key)}/pay`, { account_id: accountId });
+};
