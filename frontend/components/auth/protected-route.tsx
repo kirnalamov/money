@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { getLegacyBackup } from "@/lib/legacy-backup";
+import { saveUserItem, type UserItems } from "@/lib/api/user-items";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -21,8 +22,31 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const pathname = usePathname();
     const { fetchAllData, seedDemoPositions, isLoading: dataLoading, dataReady, dataError } = useStore();
     const [backup, setBackup] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<string | null>(null);
 
     useEffect(() => { setBackup(getLegacyBackup(localStorage)); }, []);
+
+    const importBackup = async () => {
+        if (!backup || !window.confirm(t("common.backup_confirm", { username: user?.username }))) return;
+        setImporting(true);
+        let imported = 0, failed = 0;
+        try {
+            const state = JSON.parse(backup).state as UserItems;
+            for (const kind of ["limits", "recurringExpenses"] as const) {
+                if (!Array.isArray(state?.[kind])) continue;
+                for (const item of state[kind]) {
+                    const key = item.id;
+                    try { await saveUserItem(kind, key, item, true); imported++; }
+                    catch { failed++; }
+                }
+            }
+            setImportResult(t("common.backup_result", { imported, failed }));
+            await fetchAllData();
+        } catch {
+            setImportResult(t("common.error"));
+        } finally { setImporting(false); }
+    };
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -77,6 +101,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
             <AlertTitle>{t("common.backup_title")}</AlertTitle>
             <AlertDescription className="mt-2 flex flex-col gap-3">
                 <span>{t("common.backup_description")}</span>
+                {importResult && <span role="status">{importResult}</span>}
+                <Button variant="outline" className="w-fit" disabled={importing} onClick={() => void importBackup()}>{t("common.backup_import")}</Button>
                 <Button variant="outline" className="w-fit" onClick={() => {
                     const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
                     const link = document.createElement('a');

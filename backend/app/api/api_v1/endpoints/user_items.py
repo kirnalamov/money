@@ -100,7 +100,7 @@ async def pay_recurring(key: str, payment: Payment, db: AsyncSession = Depends(g
 
 
 @router.put("/{kind}/{key}")
-async def put_item(kind: Kind, key: str, value: dict, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_active_user)):
+async def put_item(kind: Kind, key: str, value: dict, only_if_missing: bool = False, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_active_user)):
     model = {"limits": Limit, "positions": Position, "recurringExpenses": RecurringExpense}[kind]
     try:
         item = model.model_validate(value)
@@ -119,6 +119,12 @@ async def put_item(kind: Kind, key: str, value: dict, db: AsyncSession = Depends
         if current and current.value.get("lastTransactionDate"):
             value["lastTransactionDate"] = current.value["lastTransactionDate"]
     statement = insert(UserItem).values(user_id=user.id, kind=kind, key=key, value=value)
+    if only_if_missing:
+        result = await db.execute(statement.on_conflict_do_nothing(index_elements=["user_id", "kind", "key"]))
+        await db.commit()
+        if not result.rowcount:
+            raise HTTPException(status_code=409, detail="Item already exists")
+        return item
     await db.execute(statement.on_conflict_do_update(index_elements=["user_id", "kind", "key"], set_={"value": value}))
     await db.commit()
     return item

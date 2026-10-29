@@ -77,6 +77,8 @@ async def check_money_ownership_and_refresh():
             other_headers = {"Authorization": f"Bearer {other['access_token']}"}
             limit = {"id": "rent", "category": "Housing", "period": "monthly", "amount": 100, "currency": "USD", "spent": 0}
             assert (await client.put("/api/v1/user-items/limits/rent", headers=headers, json=limit)).status_code == 200
+            changed_limit = {**limit, "amount": 999}
+            assert (await client.put("/api/v1/user-items/limits/rent?only_if_missing=true", headers=headers, json=changed_limit)).status_code == 409
             assert (await client.get("/api/v1/user-items/", headers=headers)).json()["limits"] == [limit]
             assert (await client.get("/api/v1/user-items/", headers=other_headers)).json()["limits"] == []
             position = {"symbol": "ABC", "name": "Stock", "quantity": 1, "avgPrice": 5, "currentPrice": 6, "currency": "USD", "accountId": account["id"]}
