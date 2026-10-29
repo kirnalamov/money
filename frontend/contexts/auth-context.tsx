@@ -7,6 +7,7 @@ import * as usersApi from '@/lib/api/users';
 import { hasTokens, getRefreshToken, clearTokens } from '@/lib/auth/token-manager';
 import { useStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { preserveLegacyData } from '@/lib/legacy-backup';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -31,6 +32,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Load user on mount if tokens exist
     const loadUser = useCallback(async () => {
+        try {
+            preserveLegacyData(localStorage);
+        } catch (error) {
+            console.error('Не удалось сохранить резервную копию:', error);
+            setIsLoading(false);
+            return;
+        }
         // Never render persisted financial data before the current session is known.
         resetStore();
 

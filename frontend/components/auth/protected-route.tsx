@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useStore } from "@/lib/store";
 import { useRouter, usePathname } from "next/navigation";
@@ -8,6 +8,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { getLegacyBackup } from "@/lib/legacy-backup";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -19,6 +20,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { fetchAllData, seedDemoPositions, isLoading: dataLoading, dataReady, dataError } = useStore();
+    const [backup, setBackup] = useState<string | null>(null);
+
+    useEffect(() => { setBackup(getLegacyBackup(localStorage)); }, []);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -68,5 +72,21 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         );
     }
 
-    return <>{children}</>;
+    return <>
+        {backup && <Alert className="mb-4">
+            <AlertTitle>{t("common.backup_title")}</AlertTitle>
+            <AlertDescription className="mt-2 flex flex-col gap-3">
+                <span>{t("common.backup_description")}</span>
+                <Button variant="outline" className="w-fit" onClick={() => {
+                    const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'plutus-backup.json';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }}>{t("common.backup_download")}</Button>
+            </AlertDescription>
+        </Alert>}
+        {children}
+    </>;
 }
