@@ -55,12 +55,10 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
         return (
             <div
                 onClick={() => router.push("/analytics")}
-                className="rounded-xl border glass-card premium-gradient h-[350px] md:h-[350px] flex flex-col items-center justify-center transition-all duration-200 hover:shadow-lg cursor-pointer group"
+                className="rounded-[1.5rem] border bg-card p-5 flex flex-col gap-5 cursor-pointer"
             >
-                <div className="p-6 pb-0 mb-4 absolute top-0 left-0">
-                    <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
-                </div>
-                <div className="text-muted-foreground text-sm">{t("dashboard.empty.expenses_title")}</div>
+                <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
+                <div className="rounded-2xl bg-muted/50 px-4 py-5 text-muted-foreground text-sm">{t("dashboard.empty.expenses_title")}</div>
             </div>
         );
     }
@@ -68,7 +66,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     return (
         <div
             onClick={() => router.push("/analytics")}
-            className="rounded-xl border glass-card premium-gradient h-[350px] md:h-[350px] flex flex-col transition-all duration-200 hover:shadow-lg cursor-pointer group"
+            className="rounded-[1.5rem] border bg-card h-[320px] flex flex-col cursor-pointer"
         >
             <div className="p-6 pb-0 mb-4">
                 <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>

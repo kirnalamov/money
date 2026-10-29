@@ -23,8 +23,8 @@ export function DashboardFilter({ dateRange, setDateRange }: DashboardFilterProp
   };
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-card p-4 rounded-lg border shadow-sm">
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
+    <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between bg-card p-2 rounded-2xl border">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setPreset(7)}>{t("dashboard.date_filters.7d")}</Button>
         <Button variant="outline" size="sm" onClick={() => setPreset(30)}>{t("dashboard.date_filters.1m")}</Button>
         <Button variant="outline" size="sm" onClick={() => setPreset(90)}>{t("dashboard.date_filters.3m")}</Button>

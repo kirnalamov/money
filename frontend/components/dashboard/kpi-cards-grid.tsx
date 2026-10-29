@@ -64,12 +64,12 @@ export function KpiCardsGrid() {
   ];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
       {kpis.map((kpi, index) => (
         <Link
           key={kpi.title}
           href={kpi.href}
-          className="block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={cn("block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", index === 0 && "col-span-2 sm:col-span-3 lg:col-span-2")}
         >
           <div
             className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "border-transparent bg-gradient-to-br from-[#d9fa46] to-[#8edc55] text-[#11180a] hover:from-[#e4ff70] hover:to-[#a1e66c]")}
@@ -81,7 +81,7 @@ export function KpiCardsGrid() {
               </div>
             </div>
             <div className="pt-2">
-              <div className="text-2xl md:text-3xl font-bold tracking-tight break-words">{kpi.value}</div>
+              <div className={cn("text-2xl md:text-3xl font-bold tracking-tight break-words", index === 0 && "md:text-4xl")}>{kpi.value}</div>
               <p className={cn("text-xs text-muted-foreground mt-1", index === 0 && "text-[#263718]")}>{kpi.change}</p>
             </div>
           </div>

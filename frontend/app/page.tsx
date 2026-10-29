@@ -33,7 +33,7 @@ export default function OverviewPage() {
     <ProtectedRoute>
       <div className="space-y-4 md:space-y-5 pb-10">
         {/* Header & Filter */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h2>
             <div className="flex items-center gap-2 mt-1">
@@ -62,11 +62,11 @@ export default function OverviewPage() {
         <QuickActions />
 
         {/* Main Charts Area */}
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
-          <div className="col-span-1 lg:col-span-4 space-y-4">
+        <div className="grid gap-3 lg:grid-cols-12 items-start">
+          <div className="min-w-0 lg:col-span-7">
             <NetWorthChart dateRange={dateRange} />
           </div>
-          <div className="col-span-1 lg:col-span-3 space-y-4 h-full flex flex-col">
+          <div className="min-w-0 lg:col-span-5 space-y-3">
             <ExpensesDonut dateRange={dateRange} />
             <RecentTransactions />
           </div>

@@ -183,15 +183,15 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   };
   // Dynamic colors based on trend
   const dynamicColor = useMemo(() => {
-    if (data.length < 2) return 'hsl(142, 76%, 36%)';
+    if (data.length < 2) return 'hsl(var(--primary))';
     const start = data[0].total || 0;
     const end = data[data.length - 1].total || 0;
     const diff = end - start;
 
     // "Yellow border" logic: +/- 1000 threshold for neutral/stable
     // Make updates more responsive by checking absolute difference
-    if (Math.abs(diff) <= 1000) return '#FFB300'; // Amber/Yellow (Stable)
-    if (diff > 0) return 'hsl(142, 76%, 36%)'; // Green (Gain)
+    if (Math.abs(diff) <= 1000) return 'hsl(var(--primary))';
+    if (diff > 0) return 'hsl(var(--primary))';
     return '#ef4444'; // Red (Loss)
   }, [data]);
 
@@ -209,7 +209,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   return (
     <div
       onClick={() => router.push("/analytics")}
-      className="rounded-[1.5rem] border bg-card h-[350px] md:h-full md:min-h-[350px] flex flex-col transition-colors cursor-pointer group"
+      className="rounded-[1.5rem] border bg-card h-[320px] sm:h-[360px] flex flex-col transition-colors cursor-pointer group"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
@@ -303,7 +303,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
               <defs>
                 {displayMode === 'combined' ? (
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.3} />
+                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.18} />
                     <stop offset="95%" stopColor={dynamicColor} stopOpacity={0} />
                   </linearGradient>
                 ) : (
