@@ -37,6 +37,11 @@ interface AddTransactionDialogProps {
   trigger?: React.ReactNode;
 }
 
+function toLocalDateTimeInput(date: Date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+
 export function AddTransactionDialog({ defaultType = 'expense', open: controlledOpen, onOpenChange: setControlledOpen, trigger }: AddTransactionDialogProps) {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -50,33 +55,64 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [category, setCategory] = useState('');
+  const [date, setDate] = useState(() => toLocalDateTimeInput(new Date()));
   const [tags, setTags] = useState<string[]>([]);
   const [isRecurring, setIsRecurring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update type when defaultType changes (only if not user-modified? typically reset on open)
   // useEffect(() => setType(defaultType), [defaultType, open]); 
 
   const { accounts, categories, tags: tagsList, addTransaction, defaultCurrency } = useStore();
+  const selectedAccount = accounts.find(a => a.id === Number(accountId));
+  const destinationAccounts = accounts.filter((account) => (
+    account.id !== Number(accountId) &&
+    (!selectedAccount || account.currency === selectedAccount.currency)
+  ));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!amount || !accountId) return;
+    const parsedAmount = Number(amount);
+    const parsedDate = new Date(date);
+    const destinationAccount = accounts.find(a => a.id === Number(toAccountId));
 
-    if (type === 'transfer' && !toAccountId) return;
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setError(t('transactions.validation.amount'));
+      return;
+    }
+    if (!selectedAccount) {
+      setError(t('transactions.validation.account'));
+      return;
+    }
+    if (type === 'transfer' && !destinationAccount) {
+      setError(t('transactions.validation.destination'));
+      return;
+    }
+    if (type === 'transfer' && destinationAccount?.currency !== selectedAccount.currency) {
+      setError(t('transactions.validation.transfer_currency'));
+      return;
+    }
+    if (!category.trim()) {
+      setError(t('transactions.validation.category'));
+      return;
+    }
+    if (Number.isNaN(parsedDate.getTime())) {
+      setError(t('transactions.validation.date'));
+      return;
+    }
 
-    const selectedAccount = accounts.find(a => a.id === parseInt(accountId));
-    
+    setIsSubmitting(true);
     try {
       await addTransaction({
       type,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       currency: selectedAccount?.currency || defaultCurrency,
       accountId: parseInt(accountId),
       toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
-      category: category || 'Uncategorized',
-      date: new Date().toISOString(),
+      category: category.trim(),
+      date: parsedDate.toISOString(),
       description,
       tags: tags.length > 0 ? tags : undefined,
       isRecurring,
@@ -87,13 +123,18 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
       resetForm();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t('common.error'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setAmount('');
     setDescription('');
+    setAccountId('');
+    setToAccountId('');
     setCategory('');
+    setDate(toLocalDateTimeInput(new Date()));
     setTags([]);
     setIsRecurring(false);
   };
@@ -128,6 +169,11 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+        {accounts.length === 0 && (
+          <Alert>
+            <AlertDescription>{t('transactions.validation.no_accounts')}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">
@@ -135,7 +181,10 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             </Label>
             <Select
               value={type}
-              onValueChange={(value: TransactionType) => setType(value)}
+              onValueChange={(value: TransactionType) => {
+                setType(value);
+                if (value !== 'transfer') setToAccountId('');
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_type')} />
@@ -158,6 +207,18 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              min="0.01"
+              required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="date">{t('common.date')}</Label>
+            <Input
+              id="date"
+              type="datetime-local"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               required
             />
           </div>
@@ -166,7 +227,14 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             <Label htmlFor="account">
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
             </Label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={(value) => {
+              setAccountId(value);
+              const nextAccount = accounts.find((account) => account.id === Number(value));
+              const currentDestination = accounts.find((account) => account.id === Number(toAccountId));
+              if (!nextAccount || !currentDestination || currentDestination.id === nextAccount.id || currentDestination.currency !== nextAccount.currency) {
+                setToAccountId('');
+              }
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_account')} />
               </SelectTrigger>
@@ -194,9 +262,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                   <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts
-                    .filter(acc => acc.id !== parseInt(accountId))
-                    .map((acc) => {
+                  {destinationAccounts.map((acc) => {
                       const convertedBalance = convertCurrency(acc.balance, acc.currency, defaultCurrency);
                       return (
                         <SelectItem key={acc.id} value={acc.id.toString()}>
@@ -205,8 +271,18 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                         </SelectItem>
                       );
                     })}
+                  {destinationAccounts.length === 0 && (
+                    <SelectItem value="no-destination" disabled>
+                      {t('transactions.validation.no_destination')}
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {selectedAccount && (
+                <p className="text-xs text-muted-foreground">
+                  {t('transactions.transfer_currency_hint', { currency: selectedAccount.currency })}
+                </p>
+              )}
             </div>
           )}
 
@@ -264,7 +340,9 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
 
           <DialogFooter className="mt-4">
-            <Button type="submit" className="w-full sm:w-auto">{t('transactions.save_changes')}</Button>
+            <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
+              {isSubmitting ? t('common.loading') : t('transactions.save_changes')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

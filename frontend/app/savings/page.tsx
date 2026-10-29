@@ -18,12 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Goal } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function SavingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { goals, addGoal, updateGoal, deleteGoal, defaultCurrency } = useStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Calculator State
   const [calcMonthly, setCalcMonthly] = useState("500");
@@ -38,13 +41,14 @@ export default function SavingsPage() {
   });
 
   const handleOpenDialog = (goal?: Goal) => {
+    setError(null);
     if (goal) {
       setEditingGoal(goal);
       setFormData({
         name: goal.name,
         targetAmount: goal.targetAmount.toString(),
         currentAmount: goal.currentAmount.toString(),
-        deadline: goal.deadline || "",
+        deadline: goal.deadline ? new Date(goal.deadline).toISOString().slice(0, 10) : "",
       });
     } else {
       setEditingGoal(null);
@@ -58,42 +62,67 @@ export default function SavingsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.targetAmount) return;
+  const handleSave = async () => {
+    const targetAmount = Number(formData.targetAmount);
+    const currentAmount = Number(formData.currentAmount || "0");
+    if (!formData.name.trim()) {
+      setError(t("savings.validation.name"));
+      return;
+    }
+    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+      setError(t("savings.validation.target"));
+      return;
+    }
+    if (!Number.isFinite(currentAmount) || currentAmount < 0) {
+      setError(t("savings.validation.current"));
+      return;
+    }
 
     const goalData = {
-      name: formData.name,
-      targetAmount: parseFloat(formData.targetAmount),
-      currentAmount: parseFloat(formData.currentAmount || "0"),
-      deadline: formData.deadline,
+      name: formData.name.trim(),
+      targetAmount,
+      currentAmount,
+      deadline: formData.deadline ? new Date(`${formData.deadline}T00:00:00`).toISOString() : undefined,
       currency: defaultCurrency,
     };
 
-    if (editingGoal) {
-      updateGoal(editingGoal.id, goalData);
-    } else {
-      addGoal({
-        ...goalData,
-      });
+    setIsSaving(true);
+    try {
+      if (editingGoal) {
+        await updateGoal(editingGoal.id, goalData);
+      } else {
+        await addGoal(goalData);
+      }
+      setIsDialogOpen(false);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t("common.error"));
+    } finally {
+      setIsSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm(t("savings.delete_confirm"))) {
-      deleteGoal(id);
+      try {
+        await deleteGoal(id);
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t("common.error"));
+      }
     }
   };
 
   // Calculator Logic
   const calculateSavings = () => {
-    const r = parseFloat(calcInterest) / 100 / 12;
-    const n = parseFloat(calcYears) * 12;
-    const pmt = parseFloat(calcMonthly);
+    const r = Math.max(0, Number(calcInterest) || 0) / 100 / 12;
+    const n = Math.max(1, Number(calcYears) || 1) * 12;
+    const pmt = Math.max(0, Number(calcMonthly) || 0);
 
     // FV = PMT * (((1 + r)^n - 1) / r)
     return r === 0 ? pmt * n : pmt * ((Math.pow(1 + r, n) - 1) / r);
   };
+  const monthlyContribution = Math.max(0, Number(calcMonthly) || 0);
+  const years = Math.max(1, Number(calcYears) || 1);
+  const totalContributed = monthlyContribution * 12 * years;
 
   return (
     <ProtectedRoute>
@@ -109,11 +138,28 @@ export default function SavingsPage() {
           </Button>
         </div>
 
+        {error && !isDialogOpen && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {goals.length === 0 && (
+          <div className="rounded-xl border border-dashed bg-muted/10 p-6 text-center">
+            <Target className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <p className="font-medium">{t("savings.empty.title")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("savings.empty.description")}</p>
+          </div>
+        )}
+
         {/* Goals Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {goals.map((goal) => {
-            const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
+            const progress = goal.targetAmount > 0
+              ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
+              : 0;
             const isCompleted = progress >= 100;
+            const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
 
             return (
               <div key={goal.id} className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
@@ -131,12 +177,12 @@ export default function SavingsPage() {
                   </div>
                 </div>
 
-                <h3 className="font-semibold text-lg mb-1">{goal.name}</h3>
+                <h3 className="mb-1 truncate text-lg font-semibold" title={goal.name}>{goal.name}</h3>
                 <p className="text-muted-foreground text-sm mb-4 flex items-center gap-1">
                   {goal.deadline && (
                     <>
                       <Calendar className="h-3 w-3" />
-                      {new Date(goal.deadline).toLocaleDateString()}
+                      {new Date(goal.deadline).toLocaleDateString(i18n.language)}
                     </>
                   )}
                 </p>
@@ -154,6 +200,10 @@ export default function SavingsPage() {
                 </div>
                 <div className="mt-2 text-right text-sm font-medium text-muted-foreground">
                   {progress}%
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{t("savings.remaining")}: {formatCurrency(remaining, goal.currency)}</span>
+                  <span>{goal.currency}</span>
                 </div>
               </div>
             );
@@ -193,6 +243,7 @@ export default function SavingsPage() {
                     type="number"
                     value={calcMonthly}
                     onChange={(e) => setCalcMonthly(e.target.value)}
+                    min="0"
                     className="pl-8"
                   />
                 </div>
@@ -204,6 +255,7 @@ export default function SavingsPage() {
                   value={calcYears}
                   onChange={(e) => setCalcYears(e.target.value)}
                   max={50}
+                  min={1}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground px-1">
                   <span>{t("savings.calculator.year_1")}</span>
@@ -225,6 +277,7 @@ export default function SavingsPage() {
                     type="number"
                     value={calcInterest}
                     onChange={(e) => setCalcInterest(e.target.value)}
+                    min="0"
                     className="pr-8"
                   />
                   <span className="absolute right-3 top-2.5 text-muted-foreground">%</span>
@@ -238,10 +291,10 @@ export default function SavingsPage() {
                 {formatCurrency(calculateSavings(), defaultCurrency)}
               </span>
               <span className="text-sm text-muted-foreground">
-                {t("savings.calculator.total_contributed")}: {formatCurrency(parseFloat(calcMonthly) * 12 * parseFloat(calcYears), defaultCurrency)}
+                {t("savings.calculator.total_contributed")}: {formatCurrency(totalContributed, defaultCurrency)}
               </span>
               <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
-                +{formatCurrency(calculateSavings() - (parseFloat(calcMonthly) * 12 * parseFloat(calcYears)), defaultCurrency)} {t("savings.calculator.interest_earned")}
+                +{formatCurrency(Math.max(0, calculateSavings() - totalContributed), defaultCurrency)} {t("savings.calculator.interest_earned")}
               </div>
             </div>
           </div>
@@ -253,6 +306,11 @@ export default function SavingsPage() {
               <DialogTitle>{editingGoal ? t("savings.dialog.edit_title") : t("savings.dialog.create_title")}</DialogTitle>
               <DialogDescription>{t("savings.dialog.description")}</DialogDescription>
             </DialogHeader>
+            {error && isDialogOpen && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">{t("savings.dialog.name_label")}</Label>
@@ -275,7 +333,9 @@ export default function SavingsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
-              <Button onClick={handleSave}>{t("savings.dialog.save")}</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? t("common.loading") : t("savings.dialog.save")}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -13,9 +13,9 @@ export function LimitList({ onEdit }: LimitListProps) {
     const { limits, deleteLimit } = useStore();
     const { t } = useTranslation();
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm(t("limits.delete_confirm"))) {
-            deleteLimit(id);
+            try { await deleteLimit(id); } catch { alert(t('common.error')); }
         }
     };
 

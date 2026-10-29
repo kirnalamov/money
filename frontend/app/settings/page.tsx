@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -24,6 +24,35 @@ export default function SettingsPage() {
   const [tagError, setTagError] = useState("");
   const [editingCategory, setEditingCategory] = useState<{ id: number; name: string; color: string } | null>(null);
   const [editingTag, setEditingTag] = useState<{ id: number; name: string; color: string } | null>(null);
+  const hasUnsavedChanges = Boolean(
+    (editingCategory && categories.some((category) => category.id === editingCategory.id && (category.name !== editingCategory.name || (category.color || "#cccccc") !== editingCategory.color))) ||
+    (editingTag && tags.some((tag) => tag.id === editingTag.id && (tag.name !== editingTag.name || (tag.color || "#cccccc") !== editingTag.color)))
+  );
+
+  const getOperationError = (error: unknown) => {
+    const response = typeof error === "object" && error !== null && "response" in error
+      ? (error as { response?: { data?: { detail?: unknown } } }).response
+      : undefined;
+    const detail = response?.data?.detail;
+    if (typeof detail === "string") {
+      return detail.toLowerCase().includes("already exists")
+        ? t("settings.name_conflict")
+        : detail;
+    }
+    return error instanceof Error ? error.message : t("common.error");
+  };
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = t("settings.unsaved_warning");
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges, t]);
 
 
   const handleAddCategory = async () => {
@@ -32,8 +61,8 @@ export default function SettingsPage() {
       try {
         await addCategory({ name: newCategoryName.trim() });
         setNewCategoryName("");
-      } catch (e: any) {
-        setCatError("Failed to add category. Please try again.");
+      } catch (error) {
+        setCatError(getOperationError(error));
       }
     }
   };
@@ -44,9 +73,53 @@ export default function SettingsPage() {
       try {
         await addTag({ name: newTagName.trim() });
         setNewTagName("");
-      } catch (e: any) {
-        setTagError("Failed to add tag. Please try again.");
+      } catch (error) {
+        setTagError(getOperationError(error));
       }
+    }
+  };
+
+  const handleUpdateCategory = async (id: number) => {
+    if (!editingCategory || !editingCategory.name.trim()) return;
+    setCatError("");
+    try {
+      await updateCategory(id, { name: editingCategory.name.trim(), color: editingCategory.color });
+      setEditingCategory(null);
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    } catch (error) {
+      setCatError(getOperationError(error));
+    }
+  };
+
+  const handleUpdateTag = async (id: number) => {
+    if (!editingTag || !editingTag.name.trim()) return;
+    setTagError("");
+    try {
+      await updateTag(id, { name: editingTag.name.trim(), color: editingTag.color });
+      setEditingTag(null);
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    } catch (error) {
+      setTagError(getOperationError(error));
+    }
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    if (!confirm(t("settings.delete_category_confirm"))) return;
+    setCatError("");
+    try {
+      await deleteCategory(id);
+    } catch (error) {
+      setCatError(getOperationError(error));
+    }
+  };
+
+  const handleDeleteTag = async (id: number) => {
+    if (!confirm(t("settings.delete_tag_confirm"))) return;
+    setTagError("");
+    try {
+      await deleteTag(id);
+    } catch (error) {
+      setTagError(getOperationError(error));
     }
   };
 
@@ -171,21 +244,16 @@ export default function SettingsPage() {
                               onChange={(e) => setEditingCategory(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
-                          <Button 
-                            size="sm" 
-                            className="w-full" 
-                            onClick={() => {
-                              if (editingCategory && editingCategory.name.trim()) {
-                                updateCategory(cat.id, { name: editingCategory.name.trim(), color: editingCategory.color });
-                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); // Close popover
-                              }
-                            }}
+                            <Button
+                              size="sm"
+                              className="w-full"
+                            onClick={() => void handleUpdateCategory(cat.id)}
                           >
                             {t('common.save')}
                           </Button>
                         </div>
                         <Separator />
-                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteCategory(cat.id)}>
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => void handleDeleteCategory(cat.id)}>
                           <Trash2 className="h-4 w-4 mr-2" /> Delete Category
                         </Button>
                       </PopoverContent>
@@ -241,21 +309,16 @@ export default function SettingsPage() {
                               onChange={(e) => setEditingTag(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
-                          <Button 
+                          <Button
                             size="sm" 
                             className="w-full" 
-                            onClick={() => {
-                              if (editingTag && editingTag.name.trim()) {
-                                updateTag(tag.id, { name: editingTag.name.trim(), color: editingTag.color });
-                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); // Close popover
-                              }
-                            }}
+                            onClick={() => void handleUpdateTag(tag.id)}
                           >
                             {t('common.save')}
                           </Button>
                         </div>
                         <Separator />
-                        <Button variant="destructive" size="sm" className="w-full" onClick={() => deleteTag(tag.id)}>
+                        <Button variant="destructive" size="sm" className="w-full" onClick={() => void handleDeleteTag(tag.id)}>
                           <Trash2 className="h-4 w-4 mr-2" /> Delete Tag
                         </Button>
                       </PopoverContent>

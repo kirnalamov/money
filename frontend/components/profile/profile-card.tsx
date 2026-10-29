@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,23 +14,39 @@ export function ProfileCard() {
     const { t } = useTranslation();
     const { user, updateProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState(t('profile.card.placeholder_name'));
-    const [bio, setBio] = useState(t('profile.card.placeholder_bio'));
-
-    useEffect(() => {
-        if (user) {
-            setName(user.full_name || user.username || t('profile.card.placeholder_name'));
-            setBio(user.financial_goal || t('profile.card.placeholder_bio'));
-        }
-    }, [user, t]);
+    const [name, setName] = useState(user?.full_name || user?.username || t('profile.card.placeholder_name'));
+    const [bio, setBio] = useState(user?.financial_goal || t('profile.card.placeholder_bio'));
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const handleSave = async () => {
+        setError(null);
+        if (!name.trim()) {
+            setError(t('profile.card.name_required'));
+            return;
+        }
+        if (newPassword && newPassword !== confirmPassword) {
+            setError(t('profile.passwords_do_not_match'));
+            return;
+        }
+        if (newPassword && !currentPassword) {
+            setError(t('profile.current_password_required'));
+            return;
+        }
         try {
-            await updateProfile({ full_name: name, financial_goal: bio });
+            await updateProfile({
+                full_name: name.trim(),
+                financial_goal: bio.trim(),
+                ...(newPassword ? { current_password: currentPassword, password: newPassword } : {}),
+            });
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
             setIsEditing(false);
         } catch (error) {
-            console.error("Failed to update profile", error);
-            setIsEditing(false);
+            setError(error instanceof Error ? error.message : t('common.error'));
         }
     };
 
@@ -41,19 +57,26 @@ export function ProfileCard() {
 
     const memberSince = user?.created_at
         ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-        : 'Jan 2024';
+        : t('profile.card.unknown_date');
 
     return (
         <Card className="h-full">
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     <span>{t('profile.card.personal_details')}</span>
-                    <Button variant="ghost" size="icon" onClick={() => isEditing ? handleSave() : setIsEditing(true)}>
+                    <Button variant="ghost" size="icon" onClick={() => {
+                        if (isEditing) void handleSave();
+                        else {
+                            setError(null);
+                            setIsEditing(true);
+                        }
+                    }} title={isEditing ? t('common.save') : t('common.edit')} aria-label={isEditing ? t('common.save') : t('common.edit')}>
                         {isEditing ? <Check className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
                     </Button>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 <div className="flex flex-col items-center gap-4">
                     <Avatar className="h-24 w-24">
                         <AvatarFallback className="text-2xl bg-primary/10 text-primary">
@@ -83,10 +106,47 @@ export function ProfileCard() {
                         />
                     ) : (
                         <div className="p-3 bg-muted/50 rounded-lg text-sm italic">
-                            "{bio}"
+                            &quot;{bio}&quot;
                         </div>
                     )}
                 </div>
+
+                {isEditing && (
+                    <div className="space-y-3 border-t pt-4">
+                        <p className="text-sm font-medium">{t('profile.change_password')}</p>
+                        <div className="space-y-2">
+                            <Label htmlFor="current-password">{t('profile.current_password')}</Label>
+                            <Input
+                                id="current-password"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(event) => setCurrentPassword(event.target.value)}
+                                autoComplete="current-password"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password">{t('profile.new_password')}</Label>
+                            <Input
+                                id="new-password"
+                                type="password"
+                                value={newPassword}
+                                onChange={(event) => setNewPassword(event.target.value)}
+                                autoComplete="new-password"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirm-password">{t('profile.confirm_password')}</Label>
+                            <Input
+                                id="confirm-password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(event) => setConfirmPassword(event.target.value)}
+                                autoComplete="new-password"
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{t('profile.password_hint')}</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

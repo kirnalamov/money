@@ -2,8 +2,14 @@ import apiClient from './client';
 import { Transaction } from '@/types';
 
 export const getTransactions = async (): Promise<Transaction[]> => {
-    const response = await apiClient.get<Transaction[]>('/transactions/');
-    return response.data;
+    const transactions: Transaction[] = [];
+    let page: Transaction[];
+    do {
+        const response = await apiClient.get<Transaction[]>('/transactions/', { params: { skip: transactions.length, limit: 100 } });
+        page = response.data;
+        transactions.push(...page);
+    } while (page.length === 100);
+    return transactions;
 };
 
 export const createTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction> => {

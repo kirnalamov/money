@@ -66,6 +66,24 @@ EXCHANGE_RATES_TTL_MINUTES=60
 docker-compose up --build
 ```
 
+### Локальный demo-пользователь
+
+Для просмотра приложения с готовыми счетами, операциями, целями и инвестиционными позициями включите demo-режим в `.env`:
+
+```env
+DEMO_DATA_ENABLED=true
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+После запуска `docker-compose up --build` backend автоматически создаст demo-пользователя и данные. Вход:
+
+```text
+Логин: demo
+Пароль: DemoPass123!
+```
+
+На странице входа появится кнопка `Use demo account`. Demo-режим предназначен только для локальной разработки. Перед публикацией приложения оставьте `DEMO_DATA_ENABLED=false` и `NEXT_PUBLIC_DEMO_MODE=false`.
+
 После успешного запуска:
 
 Frontend:

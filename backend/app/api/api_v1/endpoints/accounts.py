@@ -1,6 +1,10 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, delete
+from app.models.transaction import Transaction
+from app.models.account import Account as AccountModel
+from app.models.user_item import UserItem
 from app.schemas.account import Account, AccountCreate, AccountUpdate
 from app.crud.crud_account import account as crud_account
 from app.api.api_v1.endpoints import auth
@@ -83,9 +87,12 @@ async def delete_account(
     """
     Delete an account.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(select(AccountModel).where(AccountModel.id == id).with_for_update())).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     if account.user_id != current_user.id:
         raise HTTPException(status_code=400, detail="Not enough permissions")
+    if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
+        raise HTTPException(status_code=409, detail="Cannot delete an account with transactions")
+    await db.execute(delete(UserItem).where(UserItem.user_id == current_user.id, UserItem.kind == "positions", UserItem.key.like(f"{id}:%")))
     return await crud_account.remove(db=db, id=id)

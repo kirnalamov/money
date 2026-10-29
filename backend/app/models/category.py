@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base_class import Base
@@ -11,7 +11,7 @@ class Category(Base):
     icon = Column(String, nullable=True) # e.g. material icon name
     color = Column(String, nullable=True) # Hex code
     
-    limit = Column(Float, default=0.0) # Monthly limit
+    limit = Column(Numeric, default=0) # Monthly limit
     
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     

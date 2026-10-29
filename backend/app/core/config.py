@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_USERNAME: str | None = None
     FIRST_SUPERUSER_PASSWORD: str | None = None
     FIRST_SUPERUSER_FULL_NAME: str | None = None
+
+    # Local-only demo dataset. Keep disabled for non-development deployments.
+    DEMO_DATA_ENABLED: bool = False
+    DEMO_USER_EMAIL: str = "demo@example.com"
+    DEMO_USER_USERNAME: str = "demo"
+    DEMO_USER_PASSWORD: str = "DemoPass123!"
+    DEMO_USER_FULL_NAME: str = "Demo User"
     
     # CORS
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []

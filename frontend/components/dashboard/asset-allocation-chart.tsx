@@ -3,9 +3,8 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, convertCurrency, formatCurrency } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { Position } from "@/types";
 
 interface AssetAllocationChartProps {
     className?: string;
@@ -20,26 +19,19 @@ export function AssetAllocationChart({ className }: AssetAllocationChartProps) {
     // Calculate allocation by asset class
     const data = React.useMemo(() => {
         const allocation: Record<string, number> = {};
-        let totalValue = 0;
 
         // Add positions
         positions.forEach(pos => {
             const value = pos.quantity * pos.currentPrice;
-            // Convert to default currency (simplified for demo, ideally use convertCurrency utils with rates)
-            // For now assuming same currency or ignoring rate diff for speed if rates unavailable
-            // But we should try to match the KpiCards logic if possible. 
-            // Let's use the simple value for now as the utils import might be complex in this context without robust rates
-            // Actually, let's just use raw value logic matching KPI grid if possible.
-            // We will assume 1:1 for simplicity in this chart unless we import convertCurrency
-            allocation[pos.assetClass || 'stock'] = (allocation[pos.assetClass || 'stock'] || 0) + value;
-            totalValue += value;
+            const valueInDefault = convertCurrency(value, pos.currency, defaultCurrency);
+            allocation[pos.assetClass || 'stock'] = (allocation[pos.assetClass || 'stock'] || 0) + valueInDefault;
         });
 
         // Add Cash from accounts
         const cashAccounts = accounts.filter(a => a.type === 'cash' || a.type === 'bank' || a.type === 'savings');
         cashAccounts.forEach(acc => {
-            allocation['cash'] = (allocation['cash'] || 0) + acc.balance;
-            totalValue += acc.balance;
+            const balanceInDefault = convertCurrency(acc.balance, acc.currency, defaultCurrency);
+            allocation['cash'] = (allocation['cash'] || 0) + balanceInDefault;
         });
 
         // Transform to array
@@ -58,7 +50,7 @@ export function AssetAllocationChart({ className }: AssetAllocationChartProps) {
             assetClass: key
         })).sort((a, b) => b.value - a.value);
 
-    }, [positions, accounts]);
+    }, [positions, accounts, defaultCurrency]);
 
     const total = data.reduce((acc, curr) => acc + curr.value, 0);
 

@@ -43,6 +43,7 @@ export default function LimitsPage() {
         <LimitList onEdit={handleOpenDialog} />
 
         <AddLimitDialog
+          key={`${isDialogOpen}-${editingLimit?.id ?? "new"}`}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           editingLimit={editingLimit}

@@ -7,7 +7,6 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { useStore } from "@/lib/store";
 
 interface LimitCardProps {
     limit: LimitRule;
@@ -17,9 +16,7 @@ interface LimitCardProps {
 
 export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
     const { t } = useTranslation();
-    const { defaultCurrency } = useStore();
-
-    const percentage = Math.min(100, (limit.spent / limit.amount) * 100);
+    const percentage = limit.amount > 0 ? Math.min(100, (limit.spent / limit.amount) * 100) : 0;
     const remaining = Math.max(0, limit.amount - limit.spent);
 
     // Determine color based on percentage
@@ -32,16 +29,16 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
         <Card className="overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                    {t(limit.category)}
+                    <span className="max-w-[180px] truncate" title={limit.category}>{t(limit.category, { defaultValue: limit.category })}</span>
                     <span className="ml-2 text-xs text-muted-foreground font-normal">
                         ({t(`limits.periods.${limit.period}`)})
                     </span>
                 </CardTitle>
                 <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(limit)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(limit)} title={t("common.edit")} aria-label={t("common.edit")}>
                         <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(limit.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(limit.id)} title={t("common.delete")} aria-label={t("common.delete")}>
                         <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
@@ -53,6 +50,7 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
                         / {formatCurrency(limit.amount, limit.currency)}
                     </span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">{limit.currency}</p>
 
                 <div className="mt-4 space-y-2">
                     <div className="flex justify-between text-xs">

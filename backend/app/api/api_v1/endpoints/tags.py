@@ -1,6 +1,7 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from app.schemas.core import Tag, TagCreate, TagUpdate
 from app.db.session import get_db
@@ -34,7 +35,11 @@ async def create_tag(
 ) -> Any:
     db_obj = TagModel(**item_in.model_dump(), user_id=current_user.id)
     db.add(db_obj)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A tag with this name already exists")
     await db.refresh(db_obj)
     return db_obj
 
@@ -56,7 +61,11 @@ async def update_tag(
         setattr(item, field, value)
         
     db.add(item)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A tag with this name already exists")
     await db.refresh(item)
     return item
 

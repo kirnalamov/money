@@ -15,6 +15,13 @@ export default function LoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const demoModeEnabled = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+    const fillDemoCredentials = () => {
+        setUsername("demo");
+        setPassword("DemoPass123!");
+        setError("");
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,8 +34,8 @@ export default function LoginPage() {
 
         try {
             await login(username, password);
-        } catch (err: any) {
-            setError(err.message || "Login failed. Please check your credentials.");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Login failed. Please check your credentials.");
         }
     };
 
@@ -92,8 +99,20 @@ export default function LoginPage() {
                             )}
                         </Button>
 
+                        {demoModeEnabled && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={fillDemoCredentials}
+                                disabled={isLoading}
+                            >
+                                Use demo account
+                            </Button>
+                        )}
+
                         <p className="text-sm text-center text-muted-foreground">
-                            Don't have an account?{" "}
+                            Don&apos;t have an account?{" "}
                             <Link href="/register" className="text-primary hover:underline font-medium">
                                 Sign up
                             </Link>

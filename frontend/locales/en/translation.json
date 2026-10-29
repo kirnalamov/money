@@ -8,7 +8,18 @@
     "savings": "Savings",
     "limits": "Limits",
     "accounts": "Accounts",
+    "profile": "My Profile",
     "settings": "Settings",
+    "admin": "Admin",
+    "more": "More",
+    "primary_navigation": "Primary navigation",
+    "more_navigation": "More navigation",
+    "loading": "Loading your data...",
+    "error": "Something went wrong.",
+    "data_load_failed_title": "We could not load your data",
+    "data_load_failed": "Check that the backend is running and try again.",
+    "retry": "Try again",
+    "view_all": "View all",
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",
@@ -30,8 +41,29 @@
   },
   "dashboard": {
     "title": "Overview",
+    "subtitle": "Your financial health at a glance",
     "net_worth_total": "Total Net Worth",
+    "current_snapshot": "Current snapshot; history is not available yet",
     "vs_last_month": "vs last month",
+    "goals_title": "Goals",
+    "empty": {
+      "accounts_title": "No accounts yet",
+      "accounts_description": "Add your first account to see balances and net worth metrics.",
+      "accounts_action": "Add account",
+      "transactions_title": "No recent transactions",
+      "goals_title": "No goals set",
+      "goals_description": "Start saving for something important to you.",
+      "goals_action": "Create goal",
+      "limits_title": "No monthly limits set",
+      "limits_action": "Set a limit",
+      "expenses_title": "No expense data for this period"
+    },
+    "data_status": {
+      "title": "Some dashboard data could not be loaded",
+      "description": "Open an affected section or retry loading the dashboard.",
+      "categories": "Categories",
+      "tags": "Tags"
+    },
     "mandatory_expenses": {
       "title": "Monthly Obligations",
       "subtitle": "Track recurring bills",
@@ -100,6 +132,7 @@
   },
   "transactions": {
     "title": "Transactions",
+    "results_count": "{{count}} transactions found",
     "add_button": "Add Transaction",
     "add_dialog_title": "Add New Transaction",
     "add_dialog_desc": "Enter transaction details below.",
@@ -111,6 +144,7 @@
     "account": "Account",
     "from_account": "From Account",
     "to_account": "To Account",
+    "transfer_currency_hint": "Transfers are available only between accounts in {{currency}}.",
     "category": "Category",
     "description": "Description",
     "tags": "Tags",
@@ -130,27 +164,78 @@
       "tags": "e.g. fun, entertainment"
     },
     "empty_state": "No transactions yet. Add one to get started.",
+    "no_matches": "No transactions match the selected filters.",
     "save_changes": "Save changes",
+    "undo_deleted": "Transaction deleted.",
+    "undo": "Undo",
+    "restore_error": "Could not restore the transaction.",
     "recurring_label": "Recurring / Mandatory",
     "recurring_desc": "Is this a fixed monthly cost?",
-    "filters": {
-      "search_placeholder": "Search transactions...",
-      "all_types": "All Types",
-      "all_accounts": "All Accounts"
+      "filters": {
+        "title": "Filter transactions",
+        "description": "Search, narrow down, and sort your activity",
+        "active_count": "{{count}} active",
+        "search_placeholder": "Search transactions...",
+        "all_types": "All Types",
+        "all_categories": "All Categories",
+        "all_accounts": "All Accounts",
+        "sort": "Sort by",
+        "sort_newest": "Newest first",
+        "sort_oldest": "Oldest first",
+        "sort_largest": "Largest amount",
+        "sort_smallest": "Smallest amount"
+      },
+      "summary": {
+        "total_income": "Total Income",
+        "total_expense": "Total Expense",
+        "net_result": "Net Result",
+        "transactions_count": "{{count}} transactions in view"
+      },
+      "unknown_account": "Unknown account",
+    "validation": {
+      "amount": "Enter an amount greater than zero.",
+      "account": "Select an account.",
+      "destination": "Select a destination account for the transfer.",
+      "transfer_currency": "Transfer accounts must use the same currency.",
+      "category": "Select or enter a category.",
+      "date": "Enter a valid date.",
+      "no_accounts": "Add an account before creating a transaction.",
+      "no_destination": "No compatible destination accounts."
     },
-    "summary": {
-      "total_income": "Total Income",
-      "total_expense": "Total Expense",
-      "net_result": "Net Result"
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{total}}"
     }
   },
   "portfolio": {
     "title": "Portfolio Analytics",
     "allocation_title": "Asset Allocation",
     "total_value": "Total Value",
+    "invested_capital": "Invested Capital",
     "day_pnl": "Day PnL",
     "total_pnl": "Total PnL",
+    "return_on_cost": "Return on Cost",
     "ytd_return": "YTD Return",
+    "forecast": {
+      "title": "Investment Forecast",
+      "description": "Explore how regular contributions may grow your current portfolio. Values are estimates, not a guarantee.",
+      "monthly_contribution": "Monthly contribution",
+      "annual_return": "Expected annual return (%)",
+      "inflation": "Inflation (%)",
+      "horizon": "Horizon (years)",
+      "projected_value": "Nominal value",
+      "real_value": "Value after inflation",
+      "invested": "Total invested",
+      "inflation_impact": "Inflation impact",
+      "year": "Year",
+      "note": "After {{years}} years, the estimated profit above contributions is {{profit}}. The chart starts from the current portfolio snapshot.",
+      "series": {
+        "invested": "Invested capital",
+        "nominal": "Nominal forecast",
+        "real": "After inflation"
+      }
+    },
     "chart_placeholder": "Performance Chart Placeholder",
     "add_position": "Add Position",
     "edit_position": "Edit Position",
@@ -184,6 +269,16 @@
     "add_goal": "New Goal",
     "create_new_card": "Create New Goal",
     "delete_confirm": "Are you sure you want to delete this goal?",
+    "remaining": "Remaining",
+    "empty": {
+      "title": "No goals yet",
+      "description": "Create a goal to track progress and a target date."
+    },
+    "validation": {
+      "name": "Enter a goal name.",
+      "target": "Enter a target amount greater than zero.",
+      "current": "Enter a valid non-negative current amount."
+    },
     "progress": {
       "of": "of"
     },
@@ -227,6 +322,11 @@
     "add_hint": "Set limits to track your spending and save more.",
     "subtitle": "Track your spending limits and goals",
     "remaining": "remaining",
+    "validation": {
+      "category": "Select a category.",
+      "amount": "Enter an amount greater than zero.",
+      "no_categories": "No categories available."
+    },
     "periods": {
       "daily": "Daily",
       "weekly": "Weekly",
@@ -238,12 +338,20 @@
     "add_account": "Add Account",
     "edit_account": "Edit Account",
     "delete_account": "Delete Account",
+    "delete_confirmation": "Are you sure you want to delete this account?",
     "account_name": "Account Name",
     "account_type": "Account Type",
     "balance": "Balance",
     "currency": "Currency",
     "provider": "Provider",
+    "provider_placeholder": "e.g. Chase, Sberbank",
+    "last_updated": "Last updated",
+    "balance_change_warning": "Changing an account balance manually can conflict with its transactions. Continue?",
     "no_accounts": "No accounts yet. Add one to get started.",
+    "validation": {
+      "name": "Enter an account name.",
+      "balance": "Enter a valid non-negative balance."
+    },
     "types": {
       "bank": "Bank Account",
       "savings": "Savings Account",
@@ -258,7 +366,11 @@
     "language": "Language",
     "interface_language": "Interface Language",
     "currency": "Currency",
-    "default_currency": "Default Currency"
+    "default_currency": "Default Currency",
+    "unsaved_warning": "You have unsaved changes. Leave this page?",
+    "name_conflict": "An item with this name already exists.",
+    "delete_category_confirm": "Delete this category? Existing transactions may keep its name.",
+    "delete_tag_confirm": "Delete this tag? Existing transactions may keep its name."
   },
   "analytics": {
     "habits": {
@@ -307,6 +419,7 @@
       "liquid_assets": "Liquid Assets",
       "active_accounts": "Active Accounts",
       "of_total": "of total",
+      "current_snapshot": "Current snapshot; history is not available yet",
       "fixed_costs": "Fixed Costs (Mandatory)",
       "discretionary": "Discretionary (Variable)",
       "of_total_spending": "% of total spending"
@@ -332,6 +445,13 @@
     }
   },
   "profile": {
+    "change_password": "Change password",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "confirm_password": "Confirm new password",
+    "password_hint": "Use at least 8 characters with uppercase, lowercase, and a number.",
+    "passwords_do_not_match": "The new passwords do not match.",
+    "current_password_required": "Enter your current password to set a new one.",
     "page": {
       "title": "My Profile",
       "subtitle": "Your personal financial hub and achievements."
@@ -340,8 +460,10 @@
       "personal_details": "Personal Details",
       "financial_goal": "Financial Goal",
       "member_since": "Member since {{date}}",
+      "unknown_date": "Recently",
       "placeholder_name": "Your Name",
-      "placeholder_bio": "Saving for a dream home 🏠"
+      "placeholder_bio": "Saving for a dream home 🏠",
+      "name_required": "Enter your name."
     }
   }
 }

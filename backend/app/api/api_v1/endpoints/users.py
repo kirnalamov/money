@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, require_role
-from app.core.security import validate_password_strength
+from app.core.security import validate_password_strength, verify_password
 from app.crud.crud_user import user as crud_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
@@ -41,12 +41,15 @@ async def update_current_user(
             )
 
     if user_in.password is not None:
+        if not user_in.current_password or not verify_password(user_in.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
         is_valid, error_msg = validate_password_strength(user_in.password)
         if not is_valid:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
     try:
-        user = await crud_user.update(db, db_obj=current_user, obj_in=user_in)
+        update_data = user_in.model_dump(exclude_unset=True, exclude={"current_password"})
+        user = await crud_user.update(db, db_obj=current_user, obj_in=update_data)
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

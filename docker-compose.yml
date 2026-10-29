@@ -39,22 +39,33 @@ services:
       FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME:-}
       FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:-}
       FIRST_SUPERUSER_FULL_NAME: ${FIRST_SUPERUSER_FULL_NAME:-}
+      DEMO_DATA_ENABLED: ${DEMO_DATA_ENABLED:-false}
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@example.com}
+      DEMO_USER_USERNAME: ${DEMO_USER_USERNAME:-demo}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-DemoPass123!}
+      DEMO_USER_FULL_NAME: ${DEMO_USER_FULL_NAME:-Demo User}
     depends_on:
       db:
         condition: service_healthy
     command: >
-      sh -c "alembic upgrade head &&
+       sh -c "alembic upgrade head &&
+              python init_docker_db.py &&
+              python scripts/seed_demo.py &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-false}
     restart: always
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE:-false}
     depends_on:
       - backend
 

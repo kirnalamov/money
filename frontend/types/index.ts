@@ -26,6 +26,8 @@ export interface Account {
   currency: Currency;
   provider?: string; // e.g., 'Chase', 'Binance'
   lastSync?: string; // ISO date
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type TransactionType = 'income' | 'expense' | 'transfer';

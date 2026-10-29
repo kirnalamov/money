@@ -25,8 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import { Position, Currency, AccountType } from "@/types";
+import { Position, Currency } from "@/types";
 import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-chart";
+import { InvestmentForecastCard } from "@/components/portfolio/investment-forecast-card";
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
@@ -79,7 +80,7 @@ export default function PortfolioPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.symbol || !formData.name || !formData.quantity || !formData.avgPrice || !formData.currentPrice || !formData.accountId) return;
 
     const positionData: Position = {
@@ -93,19 +94,22 @@ export default function PortfolioPage() {
       assetClass: formData.assetClass,
     };
 
-    if (editingPosition) {
-      updatePosition(editingPosition.symbol, editingPosition.accountId, positionData);
-    } else {
-      addPosition(positionData);
+    if (editingPosition && (editingPosition.symbol !== positionData.symbol || editingPosition.accountId !== positionData.accountId)) {
+      alert(t('common.error'));
+      return;
     }
+    try {
+      if (editingPosition) await updatePosition(editingPosition.symbol, editingPosition.accountId, positionData);
+      else await addPosition(positionData);
+    } catch { alert(t('common.error')); return; }
 
     setIsDialogOpen(false);
     resetForm();
   };
 
-  const handleDelete = (symbol: string, accountId: string | number) => {
+  const handleDelete = async (symbol: string, accountId: string | number) => {
     if (confirm(t("portfolio.delete_position") + "?")) {
-      deletePosition(symbol, Number(accountId));
+      try { await deletePosition(symbol, Number(accountId)); } catch { alert(t('common.error')); }
     }
   };
 
@@ -113,8 +117,6 @@ export default function PortfolioPage() {
   const portfolioMetrics = useMemo(() => {
     let totalValue = 0;
     let totalCost = 0;
-    let dayPnL = 0;
-    let totalPnL = 0;
 
     positions.forEach((position) => {
       const value = position.quantity * position.currentPrice;
@@ -125,22 +127,18 @@ export default function PortfolioPage() {
 
       totalValue += valueInDefault;
       totalCost += costInDefault;
-
-      // Assuming 2% daily change for demo (in real app, fetch from API)
-      const dailyChange = value * 0.02;
-      dayPnL += convertCurrency(dailyChange, position.currency, defaultCurrency);
     });
 
-    totalPnL = totalValue - totalCost;
-    const ytdReturn = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+    const totalPnL = totalValue - totalCost;
+    const returnPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
     return {
       totalValue,
       totalCost,
-      dayPnL,
       totalPnL,
-      ytdReturn,
+      returnPercent,
     };
+
   }, [positions, defaultCurrency]);
 
   // Group positions by account
@@ -325,7 +323,6 @@ export default function PortfolioPage() {
 
         {/* Portfolio Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          {/* Main Metrics - Left Side */}
           <div className="lg:col-span-4 space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
@@ -333,10 +330,8 @@ export default function PortfolioPage() {
                 <p className="text-3xl font-bold">{formatCurrency(portfolioMetrics.totalValue, defaultCurrency)}</p>
               </div>
               <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.day_pnl")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.dayPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {portfolioMetrics.dayPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.dayPnL, defaultCurrency)}
-                </p>
+                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.invested_capital")}</p>
+                <p className="text-3xl font-bold">{formatCurrency(portfolioMetrics.totalCost, defaultCurrency)}</p>
               </div>
               <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
@@ -345,9 +340,9 @@ export default function PortfolioPage() {
                 </p>
               </div>
               <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.ytd_return")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.ytdReturn >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {portfolioMetrics.ytdReturn >= 0 ? '+' : ''}{portfolioMetrics.ytdReturn.toFixed(2)}%
+                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.return_on_cost")}</p>
+                <p className={`text-3xl font-bold ${portfolioMetrics.returnPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {portfolioMetrics.returnPercent >= 0 ? '+' : ''}{portfolioMetrics.returnPercent.toFixed(2)}%
                 </p>
               </div>
             </div>
@@ -358,6 +353,8 @@ export default function PortfolioPage() {
             <AssetAllocationChart />
           </div>
         </div>
+
+        <InvestmentForecastCard initialValue={portfolioMetrics.totalValue} />
 
         {/* Positions List */}
         {positions.length === 0 ? (

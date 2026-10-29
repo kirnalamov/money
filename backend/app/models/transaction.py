@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum, Table
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Enum, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -19,7 +19,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
-    amount = Column(Float, nullable=False)
+    amount = Column(Numeric, nullable=False)
     description = Column(String, nullable=True)
     date = Column(DateTime(timezone=True), server_default=func.now())
     type = Column(String, nullable=False, default=TransactionType.EXPENSE) # stored as string to avoid enum issues in migration sometimes, but generic Enum is fine.

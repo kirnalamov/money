@@ -15,18 +15,20 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
+    const dateRangeFrom = dateRange?.from?.getTime() ?? null;
+    const dateRangeTo = dateRange?.to?.getTime() ?? null;
     const data = React.useMemo(() => {
         const categoryMap = new Map<string, number>();
 
         transactions
             .filter(t => t.type === 'expense')
             .filter(t => {
-                if (!dateRange?.from) return true;
+                if (dateRangeFrom === null) return true;
                 const txDate = new Date(t.date);
-                if (dateRange.to) {
-                    return isWithinInterval(txDate, { start: dateRange.from, end: dateRange.to });
+                if (dateRangeTo !== null) {
+                    return isWithinInterval(txDate, { start: new Date(dateRangeFrom), end: new Date(dateRangeTo) });
                 }
-                return txDate >= dateRange.from;
+                return txDate.getTime() >= dateRangeFrom;
             })
             .forEach(t => {
                 const amount = convertCurrency(t.amount, t.currency, defaultCurrency);
@@ -45,7 +47,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
             ...item,
             color: colors[index % colors.length]
         }));
-    }, [transactions, defaultCurrency]);
+    }, [transactions, defaultCurrency, dateRangeFrom, dateRangeTo]);
 
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
 
@@ -58,7 +60,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                 <div className="p-6 pb-0 mb-4 absolute top-0 left-0">
                     <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
                 </div>
-                <div className="text-muted-foreground text-sm">No expense data</div>
+                <div className="text-muted-foreground text-sm">{t("dashboard.empty.expenses_title")}</div>
             </div>
         );
     }

@@ -5,10 +5,12 @@ import { useStore } from "@/lib/store";
 import { convertCurrency, formatCurrency, cn } from "@/lib/utils";
 import { ArrowRightLeft, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { format } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
 
 export function RecentTransactions() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { transactions, defaultCurrency } = useStore();
 
     // Sort by date desc and take top 5
@@ -20,7 +22,7 @@ export function RecentTransactions() {
                 <div className="p-3 bg-muted rounded-full mb-3">
                     <ArrowRightLeft className="h-6 w-6" />
                 </div>
-                <p className="text-sm">No recent transactions</p>
+                <p className="text-sm">{t("dashboard.empty.transactions_title")}</p>
             </div>
         )
     }
@@ -28,8 +30,10 @@ export function RecentTransactions() {
     return (
         <div className="rounded-xl border glass-card premium-gradient flex flex-col flex-1 min-h-[300px]">
             <div className="p-6 pb-2 flex items-center justify-between">
-                <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.recent_transactions") || "Recent Activity"}</h3>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8">View All</Button>
+                <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.recent_transactions")}</h3>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8" asChild>
+                    <Link href="/transactions">{t("common.view_all")}</Link>
+                </Button>
             </div>
             <div className="p-6 pt-2 space-y-4">
                 {recent.map((tx) => {
@@ -47,7 +51,9 @@ export function RecentTransactions() {
                                 <div>
                                     <p className="text-sm font-medium leading-none">{tx.description || t(tx.category)}</p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        {format(new Date(tx.date), 'MMM d')}
+                                        {format(new Date(tx.date), i18n.language === "ru" ? "d MMM" : "MMM d", {
+                                            locale: i18n.language === "ru" ? ru : enUS,
+                                        })}
                                     </p>
                                 </div>
                             </div>

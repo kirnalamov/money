@@ -26,12 +26,14 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Wallet } from "lucide-react";
 import { Account, AccountType, Currency } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AccountsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { accounts, defaultCurrency, addAccount, updateAccount, deleteAccount } = useStore();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "bank" as AccountType,
@@ -52,6 +54,7 @@ export default function AccountsPage() {
   };
 
   const handleOpenDialog = (account?: Account) => {
+    setError(null);
     if (account) {
       setEditingAccount(account);
       setFormData({
@@ -67,33 +70,50 @@ export default function AccountsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.balance) return;
+  const handleSave = async () => {
+    const balance = Number(formData.balance);
+    if (!formData.name.trim()) {
+      setError(t("accounts.validation.name"));
+      return;
+    }
+    if (!Number.isFinite(balance) || balance < 0) {
+      setError(t("accounts.validation.balance"));
+      return;
+    }
+    if (editingAccount && balance !== editingAccount.balance && !window.confirm(t("accounts.balance_change_warning"))) {
+      return;
+    }
 
-    const accountData: Partial<Account> = {
-      name: formData.name,
+    const accountData = {
+      name: formData.name.trim(),
       type: formData.type,
-      balance: parseFloat(formData.balance),
+      balance,
       currency: formData.currency,
       provider: formData.provider || undefined,
     };
 
-    if (editingAccount) {
-      updateAccount(editingAccount.id, accountData);
-    } else {
-      addAccount({
-        ...(accountData as Omit<Account, "id">),
-        id: Math.floor(Math.random() * 1000000),
-      });
-    }
+    try {
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, accountData);
+      } else {
+        await addAccount(accountData);
+      }
 
-    setIsDialogOpen(false);
-    resetForm();
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t("common.error"));
+    }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm(t("accounts.delete_account") + "?")) {
-      deleteAccount(id);
+  const handleDelete = async (id: number) => {
+    if (confirm(t("accounts.delete_confirmation"))) {
+      setError(null);
+      try {
+        await deleteAccount(id);
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t("common.error"));
+      }
     }
   };
 
@@ -109,7 +129,7 @@ export default function AccountsPage() {
                 {t("accounts.add_account")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>
                   {editingAccount ? t("accounts.edit_account") : t("accounts.add_account")}
@@ -118,21 +138,26 @@ export default function AccountsPage() {
                   {editingAccount ? t("accounts.edit_account") : t("accounts.add_account")}
                 </DialogDescription>
               </DialogHeader>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                  <Label htmlFor="name" className="sm:text-right">
                     {t("accounts.account_name")}
                   </Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="col-span-3"
+                    className="sm:col-span-3"
                   />
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                  <Label htmlFor="type" className="sm:text-right">
                     {t("accounts.account_type")}
                   </Label>
                   <Select
@@ -141,7 +166,7 @@ export default function AccountsPage() {
                       setFormData({ ...formData, type: value })
                     }
                   >
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger className="sm:col-span-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -153,8 +178,8 @@ export default function AccountsPage() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="balance" className="text-right">
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                  <Label htmlFor="balance" className="sm:text-right">
                     {t("accounts.balance")}
                   </Label>
                   <Input
@@ -163,12 +188,13 @@ export default function AccountsPage() {
                     step="0.01"
                     value={formData.balance}
                     onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                    className="col-span-3"
+                    className="sm:col-span-3"
+                    min="0"
                   />
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="currency" className="text-right">
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                  <Label htmlFor="currency" className="sm:text-right">
                     {t("accounts.currency")}
                   </Label>
                   <Select
@@ -177,7 +203,7 @@ export default function AccountsPage() {
                       setFormData({ ...formData, currency: value })
                     }
                   >
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger className="sm:col-span-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -189,16 +215,16 @@ export default function AccountsPage() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="provider" className="text-right">
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                  <Label htmlFor="provider" className="sm:text-right">
                     {t("accounts.provider")}
                   </Label>
                   <Input
                     id="provider"
                     value={formData.provider}
                     onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                    className="col-span-3"
-                    placeholder="e.g. Chase, Sberbank"
+                    className="sm:col-span-3"
+                    placeholder={t("accounts.provider_placeholder")}
                   />
                 </div>
               </div>
@@ -211,6 +237,11 @@ export default function AccountsPage() {
             </DialogContent>
           </Dialog>
         </div>
+        {error && !isDialogOpen && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {accounts.length === 0 ? (
           <div className="border rounded-xl p-6 flex items-center justify-center text-muted-foreground">
@@ -224,12 +255,12 @@ export default function AccountsPage() {
                 : null;
 
               return (
-                <div key={account.id} className="border rounded-xl p-6 bg-card">
+                  <div key={account.id} className="min-w-0 rounded-xl border bg-card p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <Wallet className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <h3 className="font-semibold">{account.name}</h3>
+                        <h3 className="max-w-[180px] truncate font-semibold" title={account.name}>{account.name}</h3>
                         <p className="text-sm text-muted-foreground">
                           {t(`accounts.types.${account.type}`)}
                         </p>
@@ -240,6 +271,8 @@ export default function AccountsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenDialog(account)}
+                        title={t("common.edit")}
+                        aria-label={t("common.edit")}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -247,6 +280,8 @@ export default function AccountsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(account.id)}
+                        title={t("common.delete")}
+                        aria-label={t("common.delete")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -258,7 +293,8 @@ export default function AccountsPage() {
                       <p className="text-2xl font-bold">
                         {formatCurrency(account.balance, account.currency)}
                       </p>
-                      {convertedBalance && (
+                      <p className="text-xs font-medium text-muted-foreground">{account.currency}</p>
+                      {convertedBalance !== null && (
                         <p className="text-xs text-muted-foreground">
                           ≈ {formatCurrency(convertedBalance, defaultCurrency)}
                         </p>
@@ -269,6 +305,11 @@ export default function AccountsPage() {
                         <p className="text-sm text-muted-foreground">{t("accounts.provider")}</p>
                         <p className="text-sm">{account.provider}</p>
                       </div>
+                    )}
+                    {(account.updated_at || account.lastSync) && (
+                      <p className="text-xs text-muted-foreground">
+                        {t("accounts.last_updated")}: {new Date(account.updated_at || account.lastSync || "").toLocaleDateString(i18n.language)}
+                      </p>
                     )}
                   </div>
                 </div>

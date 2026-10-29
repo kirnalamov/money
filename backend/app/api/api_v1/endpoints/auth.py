@@ -3,6 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete, select
+from app.models.account import Account
+from app.models.refresh_token import RefreshToken
 
 from app.core.config import settings
 from app.core.deps import get_current_active_user
@@ -57,21 +60,19 @@ async def register(
     
     # Create new user
     user_create = UserCreate(**user_in.model_dump())
-    user = await crud_user.create(db, obj_in=user_create)
+    user = await crud_user.create(db, obj_in=user_create, commit=False)
 
     # Create initial account for new user
-    from app.crud.crud_account import account as crud_account
     from app.schemas.account import AccountCreate
-    await crud_account.create_with_owner(
-        db, 
-        obj_in=AccountCreate(
+    db.add(Account(
+        **AccountCreate(
             name="Main Account",
             type="cash",
             currency="USD",
             balance=0.0
-        ),
-        user_id=user.id
-    )
+        ).model_dump(), user_id=user.id
+    ))
+    await db.commit()
 
     return user
 
@@ -104,6 +105,7 @@ async def login(
             detail="Inactive user"
         )
     
+    await db.execute(delete(RefreshToken).where(RefreshToken.expires_at < datetime.utcnow()))
     # Create tokens
     access_token = create_access_token(subject=str(user.id))
     refresh_token_str = create_refresh_token(subject=str(user.id))
@@ -139,8 +141,8 @@ async def refresh_access_token(
             detail="Invalid refresh token"
         )
     
-    # Check if token exists and is not revoked
-    token_obj = await crud_refresh_token.get_by_token(db, token=token_data.refresh_token)
+    # Check and lock the token until its replacement is stored.
+    token_obj = (await db.execute(select(RefreshToken).where(RefreshToken.token == token_data.refresh_token).with_for_update())).scalar_one_or_none()
     if not token_obj or token_obj.revoked:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -168,13 +170,14 @@ async def refresh_access_token(
     new_refresh_token = create_refresh_token(subject=str(user.id))
     
     # Revoke old refresh token and create new one (token rotation)
-    await crud_refresh_token.revoke_token(db, token=token_data.refresh_token)
-    refresh_token_obj = RefreshTokenCreate(
+    token_obj.revoked = True
+    refresh_token_obj = RefreshToken(
         token=new_refresh_token,
         user_id=user.id,  # type: ignore
         expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
-    await crud_refresh_token.create(db, obj_in=refresh_token_obj)
+    db.add(refresh_token_obj)
+    await db.commit()
     
     return {
         "access_token": access_token,
@@ -192,8 +195,10 @@ async def logout(
     """
     Logout by revoking the refresh token.
     """
-    token_obj = await crud_refresh_token.get_by_token(db, token=token_data.refresh_token)
+    token_obj = (await db.execute(select(RefreshToken).where(RefreshToken.token == token_data.refresh_token).with_for_update())).scalar_one_or_none()
     if token_obj and token_obj.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not belong to this user")
-    await crud_refresh_token.revoke_token(db, token=token_data.refresh_token)
+    if token_obj:
+        token_obj.revoked = True
+        await db.commit()
     return None

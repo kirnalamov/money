@@ -45,6 +45,7 @@ export interface UserUpdateRequest {
     email?: string;
     full_name?: string;
     financial_goal?: string;
+    current_password?: string;
     password?: string;
 }
 

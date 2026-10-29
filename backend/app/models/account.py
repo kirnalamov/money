@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base_class import Base
@@ -9,7 +9,7 @@ class Account(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # bank, savings, cash, investment, etc.
-    balance = Column(Float, default=0.0)
+    balance = Column(Numeric, default=0)
     currency = Column(String, default="USD", nullable=False)
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

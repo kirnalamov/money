@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
 import { formatCurrencyCompact, convertCurrency } from "@/lib/utils";
@@ -26,13 +25,9 @@ export function NetWorthHeader() {
         </div>
         <div className="mt-4 flex items-baseline space-x-3">
           <span className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">{formatCurrencyCompact(totalNetWorth, defaultCurrency)}</span>
-          <div className="flex items-center text-sm text-plutus-green font-medium">
-            <ArrowUpRight className="mr-1 h-4 w-4" />
-            +2.5%
-            <span className="ml-1 text-muted-foreground text-xs font-normal">
-              {t("dashboard.vs_last_month")}
-            </span>
-          </div>
+          <span className="text-muted-foreground text-xs font-normal">
+            {t("dashboard.current_snapshot")}
+          </span>
         </div>
       </div>
     </div>

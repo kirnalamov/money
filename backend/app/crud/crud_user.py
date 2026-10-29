@@ -18,7 +18,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         result = await db.execute(select(User).filter(User.username == username))
         return result.scalar_one_or_none()
     
-    async def create(self, db: AsyncSession, *, obj_in: UserCreate) -> User:
+    async def create(self, db: AsyncSession, *, obj_in: UserCreate, commit: bool = True) -> User:
         """Create new user with hashed password"""
         db_obj = User(
             email=obj_in.email,
@@ -32,8 +32,11 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             updated_at=datetime.utcnow()
         )
         db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
+        if commit:
+            await db.commit()
+            await db.refresh(db_obj)
+        else:
+            await db.flush()
         return db_obj
     
     async def create_superuser(

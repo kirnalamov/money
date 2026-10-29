@@ -30,6 +30,12 @@ import {
 
 type DisplayMode = 'combined' | 'separate';
 type ChartType = 'area' | 'bar' | 'line';
+type ChartPoint = {
+  date: string;
+  fullDate: string;
+  total?: number;
+  [key: string]: string | number | undefined;
+};
 
 interface NetWorthChartProps {
   dateRange: DateRange | undefined;
@@ -40,7 +46,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   const { accounts, transactions, defaultCurrency } = useStore();
   const locale = localeMap[i18n.language] || enUS;
   const router = useRouter();
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ChartPoint[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
   const [chartType, setChartType] = useState<ChartType>('area');
 
@@ -95,11 +101,9 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   );
 
   // Стабильные значения дат для зависимостей
-  const dateRangeKey = useMemo(() => {
-    const from = dateRange?.from?.getTime() ?? null;
-    const to = dateRange?.to?.getTime() ?? null;
-    return `${from}-${to}`;
-  }, [dateRange?.from?.getTime(), dateRange?.to?.getTime()]);
+  const dateRangeFrom = dateRange?.from?.getTime() ?? null;
+  const dateRangeTo = dateRange?.to?.getTime() ?? null;
+  const dateRangeKey = `${dateRangeFrom}-${dateRangeTo}`;
 
   useEffect(() => {
     // Пересоздаем filteredAccounts внутри useEffect для избежания проблем с зависимостями
@@ -122,14 +126,14 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
     const count = isLargeRange ? Math.ceil(days / step) : days;
 
     // Start with current balances
-    let accBalances = Object.fromEntries(accounts.map(a => [a.id, a.balance]));
+    const accBalances = Object.fromEntries(accounts.map(a => [a.id, a.balance]));
 
     // Sort transactions descending (newest to oldest)
     const sortedTx = [...transactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const getBalanceAtEndOfDay = (targetDate: Date) => {
-      let balances = { ...accBalances };
+      const balances = { ...accBalances };
       const targetTime = new Date(targetDate);
       targetTime.setHours(23, 59, 59, 999);
 
@@ -160,13 +164,13 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       return balances;
     };
 
-    const points: any[] = [];
+    const points: ChartPoint[] = [];
 
     for (let i = count; i >= 0; i--) {
       const date = subDays(endDate, i * step);
       const pastBalances = getBalanceAtEndOfDay(date);
 
-      const point: any = {
+      const point: ChartPoint = {
         date: format(date, 'dd.MM', { locale }),
         fullDate: date.toISOString(),
       };
@@ -174,13 +178,13 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       if (displayMode === 'combined') {
         let total = 0;
         currentFilteredAccounts.forEach(acc => {
-          let val = pastBalances[acc.id] || 0;
+          const val = pastBalances[acc.id] || 0;
           total += convertCurrency(val, acc.currency, defaultCurrency);
         });
         point.total = Math.round(total);
       } else {
         currentFilteredAccounts.forEach(acc => {
-          let val = pastBalances[acc.id] || 0;
+          const val = pastBalances[acc.id] || 0;
           point[acc.id] = Math.round(convertCurrency(val, acc.currency, defaultCurrency));
         });
       }
@@ -190,7 +194,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
 
     setData(points);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey, transactions]);
+  }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey, transactions, i18n.language]);
 
   const toggleAccount = (accountId: number) => {
     setSelectedAccountIds(prev => {
@@ -203,15 +207,6 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
       return newSet;
     });
   };
-  // Calculate trend percentage to determine color
-  const trendPercentage = useMemo(() => {
-    if (data.length < 2) return 0;
-    const start = data[0].total || 0;
-    const end = data[data.length - 1].total || 0;
-    if (start === 0) return 0;
-    return (end - start) / Math.abs(start);
-  }, [data]);
-
   // Dynamic colors based on trend
   const dynamicColor = useMemo(() => {
     if (data.length < 2) return 'hsl(142, 76%, 36%)';
@@ -252,7 +247,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 : t("dashboard.charts.net_worth_subtitle")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-8 w-8">
@@ -271,7 +266,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                       onCheckedChange={() => toggleAccount(acc.id)}
                       className="pl-8 pr-2 py-1.5"
                     >
-                      {acc.name}
+                      <span className="block max-w-[190px] truncate" title={acc.name}>{acc.name}</span>
                     </DropdownMenuCheckboxItem>
                   ))}
                 </div>
@@ -327,7 +322,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
           </div>
         </div>
       </div>
-      <div className="flex-1 w-full min-h-[200px] pb-4 px-2">
+      <div className="flex-1 w-full min-w-0 min-h-[200px] overflow-x-auto pb-4 px-2">
         <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
           {chartType === 'area' && (
             <AreaChart data={data}>
@@ -499,8 +494,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 />
               ) : (
                 <>
-                  {filteredAccounts.map((acc, index) => {
-                    const color = accountColors[index % accountColors.length];
+                  {filteredAccounts.map((acc) => {
                     const gradientId = `barColor-${acc.id}`;
                     return (
                       <Bar

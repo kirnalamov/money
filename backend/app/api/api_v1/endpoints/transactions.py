@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,8 +29,9 @@ async def _get_owned_transaction(
     db: AsyncSession,
     transaction_id: int,
     user_id: int,
+    lock: bool = False,
 ) -> TransactionModel | None:
-    result = await db.execute(
+    query = (
         select(TransactionModel)
         .join(Account, TransactionModel.account_id == Account.id)
         .where(
@@ -41,6 +43,9 @@ async def _get_owned_transaction(
             selectinload(TransactionModel.tags),
         )
     )
+    if lock:
+        query = query.with_for_update(of=TransactionModel)
+    result = await db.execute(query)
     return result.scalars().first()
 
 
@@ -53,7 +58,7 @@ async def _get_owned_accounts(
         select(Account).where(
             Account.id.in_(account_ids),
             Account.user_id == user_id,
-        )
+        ).order_by(Account.id).with_for_update()
     )
     accounts = {account.id: account for account in result.scalars().all()}
     if len(accounts) != len(account_ids):
@@ -124,9 +129,10 @@ def _apply_transaction_effect(
     if reverse:
         source_sign *= -1
 
-    source.balance = (source.balance or 0.0) + source_sign * amount
+    amount = Decimal(str(amount))
+    source.balance = Decimal(str(source.balance or 0)) + source_sign * amount
     if type_value == TransactionType.TRANSFER.value and destination is not None:
-        destination.balance = (destination.balance or 0.0) - source_sign * amount
+        destination.balance = Decimal(str(destination.balance or 0)) - source_sign * amount
 
 
 def _validate_transaction_accounts(
@@ -242,7 +248,7 @@ async def update_transaction(
     item_in: TransactionUpdate,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    item = await _get_owned_transaction(db, id, current_user.id)
+    item = await _get_owned_transaction(db, id, current_user.id, lock=True)
     if not item:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
@@ -357,7 +363,7 @@ async def delete_transaction(
     id: int,
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    item = await _get_owned_transaction(db, id, current_user.id)
+    item = await _get_owned_transaction(db, id, current_user.id, lock=True)
     if not item:
         raise HTTPException(status_code=404, detail="Transaction not found")
 

@@ -3,18 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import { ArrowUpRight, ArrowDownRight, Wallet, Landmark, PiggyBank } from "lucide-react";
+import { Wallet, Landmark, PiggyBank } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useMemo } from "react";
 
 export function NetWorthStats() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { accounts, defaultCurrency } = useStore();
 
     const stats = useMemo(() => {
         let total = 0;
         let liquid = 0;
-        let lastMonthTotal = 0;
 
         accounts.forEach(acc => {
             const amount = convertCurrency(acc.balance, acc.currency, defaultCurrency);
@@ -24,15 +23,9 @@ export function NetWorthStats() {
                 liquid += amount;
             }
 
-            // Simulating last month's value for demo purposes (usually would come from DB)
-            //Let's assume a slight growth 
-            lastMonthTotal += amount * 0.98;
         });
 
-        const change = total - lastMonthTotal;
-        const changePercent = lastMonthTotal !== 0 ? (change / lastMonthTotal) * 100 : 0;
-
-        return { total, liquid, change, changePercent };
+        return { total, liquid };
     }, [accounts, defaultCurrency]);
 
     return (
@@ -49,14 +42,7 @@ export function NetWorthStats() {
                         {formatCurrency(stats.total, defaultCurrency)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
-                        {stats.change >= 0 ?
-                            <ArrowUpRight className="h-3 w-3 text-emerald-500 mr-1" /> :
-                            <ArrowDownRight className="h-3 w-3 text-red-500 mr-1" />
-                        }
-                        <span className={stats.change >= 0 ? "text-emerald-500" : "text-red-500"}>
-                            {stats.changePercent.toFixed(1)}%
-                        </span>
-                        <span className="ml-1 opacity-70">{t('dashboard.vs_last_month')}</span>
+                        {t('analytics.stats.current_snapshot')}
                     </p>
                 </CardContent>
             </Card>
@@ -73,7 +59,7 @@ export function NetWorthStats() {
                         {formatCurrency(stats.liquid, defaultCurrency)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                        {((stats.liquid / stats.total) * 100).toFixed(1)}% {t('analytics.stats.of_total')}
+                        {stats.total > 0 ? `${((stats.liquid / stats.total) * 100).toFixed(1)}% ` : ""}{t('analytics.stats.of_total')}
                     </p>
                 </CardContent>
             </Card>

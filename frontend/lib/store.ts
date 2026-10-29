@@ -9,8 +9,11 @@ import { getCategories, createCategory as createCategoryApi, updateCategory as u
 import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTag as deleteTagApi } from './api/tags';
 import { getExchangeRates as getExchangeRatesApi } from './api/exchange-rates';
 import { updateExchangeRates } from './utils';
+import { getUserItems, saveUserItem, deleteUserItem } from './api/user-items';
 
 const getRandomHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+
+export type DataSource = 'accounts' | 'transactions' | 'goals' | 'categories' | 'tags';
 
 interface AppState {
   accounts: Account[];
@@ -23,11 +26,14 @@ interface AppState {
   setDefaultCurrency: (currency: Currency) => void;
 
   isLoading: boolean;
+  dataReady: boolean;
+  dataError: string | null;
+  dataErrors: Partial<Record<DataSource, string>>;
   fetchAllData: () => Promise<void>;
   exchangeRatesUpdatedAt: string | null;
   refreshExchangeRates: () => Promise<void>;
 
-  addAccount: (account: Account) => Promise<void>;
+  addAccount: (account: Omit<Account, 'id' | 'lastSync'>) => Promise<void>;
   updateAccount: (id: number, account: Partial<Account>) => Promise<void>;
   deleteAccount: (id: number) => Promise<void>;
 
@@ -43,22 +49,23 @@ interface AppState {
   updateTag: (id: number, tag: Partial<Tag>) => Promise<void>;
   deleteTag: (id: number) => Promise<void>;
 
-  addLimit: (limit: LimitRule) => void;
-  updateLimit: (id: string, limit: Partial<LimitRule>) => void;
-  deleteLimit: (id: string) => void;
-  addPosition: (position: Position) => void;
-  updatePosition: (symbol: string, accountId: number, position: Partial<Position>) => void;
-  deletePosition: (symbol: string, accountId: number) => void;
+  addLimit: (limit: LimitRule) => Promise<void>;
+  updateLimit: (id: string, limit: Partial<LimitRule>) => Promise<void>;
+  deleteLimit: (id: string) => Promise<void>;
+  addPosition: (position: Position) => Promise<void>;
+  updatePosition: (symbol: string, accountId: number, position: Partial<Position>) => Promise<void>;
+  deletePosition: (symbol: string, accountId: number) => Promise<void>;
+  seedDemoPositions: () => void;
   goals: Goal[];
   addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
   updateGoal: (id: number, goal: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: number) => Promise<void>;
   recurringExpenses: RecurringExpense[];
-  addRecurringExpense: (expense: RecurringExpense) => void;
-  updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => void;
-  deleteRecurringExpense: (id: string) => void;
-  payRecurringExpense: (id: string, accountId: number, date?: string) => void;
-  toggleRecurringExpense: (id: string) => void;
+  addRecurringExpense: (expense: RecurringExpense) => Promise<void>;
+  updateRecurringExpense: (id: string, expense: Partial<RecurringExpense>) => Promise<void>;
+  deleteRecurringExpense: (id: string) => Promise<void>;
+  payRecurringExpense: (id: string, accountId: number, date?: string) => Promise<void>;
+  toggleRecurringExpense: (id: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -81,6 +88,9 @@ export const useStore = create<AppState>()(
       recurringExpenses: initialRecurringExpenses,
       defaultCurrency: 'USD',
       isLoading: false,
+      dataReady: false,
+      dataError: null,
+      dataErrors: {},
       exchangeRatesUpdatedAt: null,
 
       setDefaultCurrency: (currency) => set({ defaultCurrency: currency }),
@@ -96,10 +106,11 @@ export const useStore = create<AppState>()(
       },
 
       fetchAllData: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, dataReady: false, dataError: null, dataErrors: {} });
         try {
+          const userItems = await getUserItems();
           const exchangeRatesPromise = get().refreshExchangeRates();
-          const [accounts, transactions, goals, categories, tags] = await Promise.all([
+          const results = await Promise.allSettled([
             getAccounts(),
             getTransactions(),
             getGoals(),
@@ -107,30 +118,65 @@ export const useStore = create<AppState>()(
             getTags()
           ]);
           await exchangeRatesPromise;
+
+          const sourceNames: DataSource[] = ['accounts', 'transactions', 'goals', 'categories', 'tags'];
+          const dataErrors: Partial<Record<DataSource, string>> = {};
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              dataErrors[sourceNames[index]] = 'common.data_source_failed';
+              console.error(`Failed to load ${sourceNames[index]}:`, result.reason);
+            }
+          });
+
           set((state) => {
+            const accounts = results[0].status === 'fulfilled' ? results[0].value : state.accounts;
+            const transactions = results[1].status === 'fulfilled' ? results[1].value : state.transactions;
+            const goals = results[2].status === 'fulfilled' ? results[2].value : state.goals;
+            const categories = results[3].status === 'fulfilled' ? results[3].value : state.categories;
+            const tags = results[4].status === 'fulfilled' ? results[4].value : state.tags;
             const accountIds = new Set(accounts.map((a) => a.id));
-            const validPositions = state.positions.filter((p) => accountIds.has(p.accountId));
-            return { accounts, transactions, goals, categories, tags, positions: validPositions, isLoading: false };
+            const validPositions = results[0].status === 'fulfilled' ? userItems.positions.filter((p) => accountIds.has(p.accountId)) : userItems.positions;
+            const allSourcesFailed = sourceNames.every((source) => dataErrors[source]);
+            return {
+              accounts,
+              transactions,
+              goals,
+              categories,
+              tags,
+              positions: validPositions,
+              limits: userItems.limits,
+              recurringExpenses: userItems.recurringExpenses,
+              isLoading: false,
+              dataReady: true,
+              dataError: allSourcesFailed ? 'common.data_load_failed' : null,
+              dataErrors,
+            };
           });
         } catch (error) {
           console.error("Failed to fetch data:", error);
-          set({ isLoading: false });
+          set({ isLoading: false, dataReady: true, dataError: "common.data_load_failed", dataErrors: {} });
         }
       },
 
       // ... Account actions ...
-      addAccount: async (account: Account) => {
+      addAccount: async (account: Omit<Account, 'id' | 'lastSync'>) => {
         try {
           const newAccount = await createAccount(account);
           set((state) => ({ accounts: [...state.accounts, newAccount] }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       updateAccount: async (id: number, updates: Partial<Account>) => {
         try {
           // Convert to string for API if needed, or update API client
           const updated = await updateAccountApi(id, updates);
           set((state) => ({ accounts: state.accounts.map(acc => acc.id === id ? updated : acc) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       deleteAccount: async (id: number) => {
         try {
@@ -139,7 +185,10 @@ export const useStore = create<AppState>()(
             accounts: state.accounts.filter(acc => acc.id !== id),
             positions: state.positions.filter(p => p.accountId !== id),
           }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       // ... Goal actions ...
@@ -148,53 +197,103 @@ export const useStore = create<AppState>()(
         try {
           const newGoal = await createGoal(goal);
           set((state) => ({ goals: [...state.goals, newGoal] }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       updateGoal: async (id: number, updates: Partial<Goal>) => {
         try {
           const updated = await updateGoalApi(id, updates);
           set((state) => ({ goals: state.goals.map(g => g.id === id ? updated : g) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       deleteGoal: async (id: number) => {
         try {
           await deleteGoalApi(id);
           set((state) => ({ goals: state.goals.filter(g => g.id !== id) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       // ... Limit actions ...
-      addLimit: (limit: LimitRule) => set((state) => ({ limits: [...state.limits, limit] })),
-      updateLimit: (id: string, updates: Partial<LimitRule>) => set((state) => ({ limits: state.limits.map(l => l.id === id ? { ...l, ...updates } : l) })),
-      deleteLimit: (id: string) => set((state) => ({ limits: state.limits.filter(l => l.id !== id) })),
+      addLimit: async (limit) => { await saveUserItem('limits', limit.id, limit); set((state) => ({ limits: [...state.limits, limit] })); },
+      updateLimit: async (id, updates) => { const item = get().limits.find(l => l.id === id); if (!item) return; const updated = { ...item, ...updates }; await saveUserItem('limits', id, updated); set((state) => ({ limits: state.limits.map(l => l.id === id ? updated : l) })); },
+      deleteLimit: async (id) => { await deleteUserItem('limits', id); set((state) => ({ limits: state.limits.filter(l => l.id !== id) })); },
 
       // ... Position actions ...
-      addPosition: (position: Position) => set((state) => {
+      addPosition: async (position: Position) => { await saveUserItem('positions', `${position.accountId}:${position.symbol}`, position); set((state) => {
         const existingIndex = state.positions.findIndex(p => p.symbol === position.symbol && p.accountId === position.accountId);
         if (existingIndex >= 0) {
           return { positions: state.positions.map((p, idx) => idx === existingIndex ? { ...p, ...position } : p) };
         }
         return { positions: [...state.positions, position] };
+      }); },
+      updatePosition: async (symbol, accountId, updates) => { const item = get().positions.find(p => p.symbol === symbol && p.accountId === accountId); if (!item) return; const updated = { ...item, ...updates, symbol, accountId }; await saveUserItem('positions', `${accountId}:${symbol}`, updated); set((state) => ({ positions: state.positions.map(p => p.symbol === symbol && p.accountId === accountId ? updated : p) })); },
+      deletePosition: async (symbol, accountId) => { await deleteUserItem('positions', `${accountId}:${symbol}`); set((state) => ({ positions: state.positions.filter(p => !(p.symbol === symbol && p.accountId === accountId)) })); },
+      seedDemoPositions: () => set((state) => {
+        if (state.positions.length > 0) return state;
+
+        const brokerageAccount = state.accounts.find((account) => account.type === 'brokerage');
+        if (!brokerageAccount) return state;
+
+        return {
+          positions: [
+            {
+              symbol: 'VOO',
+              name: 'Vanguard S&P 500 ETF',
+              quantity: 8,
+              avgPrice: 450,
+              currentPrice: 508,
+              currency: 'USD',
+              accountId: brokerageAccount.id,
+              assetClass: 'etf',
+            },
+            {
+              symbol: 'SBER',
+              name: 'Sberbank',
+              quantity: 100,
+              avgPrice: 250,
+              currentPrice: 312,
+              currency: 'RUB',
+              accountId: brokerageAccount.id,
+              assetClass: 'stock',
+            },
+            {
+              symbol: 'BTC',
+              name: 'Bitcoin',
+              quantity: 0.05,
+              avgPrice: 58000,
+              currentPrice: 66500,
+              currency: 'USD',
+              accountId: brokerageAccount.id,
+              assetClass: 'crypto',
+            },
+          ],
+        };
       }),
-      updatePosition: (symbol: string, accountId: number, updates: Partial<Position>) => set((state) => ({ positions: state.positions.map(p => p.symbol === symbol && p.accountId === accountId ? { ...p, ...updates } : p) })),
-      deletePosition: (symbol: string, accountId: number) => set((state) => ({ positions: state.positions.filter(p => !(p.symbol === symbol && p.accountId === accountId)) })),
 
       // ... Transaction actions ...
       addTransaction: async (transaction: Omit<Transaction, 'id'>) => {
         try {
           const newTx = await createTransaction(transaction);
-          const [accounts, categories, tags] = await Promise.all([
+          const [accounts, categories, tags] = await Promise.allSettled([
             getAccounts(),
             getCategories(),
             getTags(),
           ]);
-          
+          let recurringToSave: RecurringExpense | undefined;
           set((state) => {
             const updatedState: Partial<AppState> = {
               transactions: [newTx, ...state.transactions], 
-              accounts,
-              categories, 
-              tags 
+              accounts: accounts.status === 'fulfilled' ? accounts.value : state.accounts,
+              categories: categories.status === 'fulfilled' ? categories.value : state.categories,
+              tags: tags.status === 'fulfilled' ? tags.value : state.tags,
             };
             
             // If isRecurring is true, also add to recurringExpenses if not already there
@@ -213,12 +312,17 @@ export const useStore = create<AppState>()(
                   dueDay: new Date(transaction.date).getDate(),
                   lastPaidDate: transaction.date
                 };
+                recurringToSave = newRecurring;
                 updatedState.recurringExpenses = [...state.recurringExpenses, newRecurring];
               }
             }
             
             return updatedState;
           });
+          if (recurringToSave) {
+            try { await saveUserItem('recurringExpenses', recurringToSave.id, recurringToSave); }
+            catch { window.alert('Операция сохранена, но регулярный расход не удалось сохранить.'); }
+          }
         } catch (e) {
           console.error(e);
           throw e;
@@ -305,13 +409,19 @@ export const useStore = create<AppState>()(
         try {
           const updated = await updateCategoryApi(id, updates);
           set((state) => ({ categories: state.categories.map(c => c.id === id ? updated : c) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       deleteCategory: async (id) => {
         try {
           await deleteCategoryApi(id);
           set((state) => ({ categories: state.categories.filter(c => c.id !== id) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       addTag: async (tag) => {
@@ -328,20 +438,26 @@ export const useStore = create<AppState>()(
         try {
           const updated = await updateTagApi(id, updates);
           set((state) => ({ tags: state.tags.map(t => t.id === id ? updated : t) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
       deleteTag: async (id) => {
         try {
           await deleteTagApi(id);
           set((state) => ({ tags: state.tags.filter(t => t.id !== id) }));
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
       },
 
       // ... Recurring Expense actions ...
       // recurringExpenses property is already initialized in state object above
-      addRecurringExpense: (expense: RecurringExpense) => set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })),
-      updateRecurringExpense: (id: string, updates: Partial<RecurringExpense>) => set((state) => ({ recurringExpenses: state.recurringExpenses.map(e => e.id === id ? { ...e, ...updates } : e) })),
-      deleteRecurringExpense: (id: string) => set((state) => ({ recurringExpenses: state.recurringExpenses.filter(e => e.id !== id) })),
+      addRecurringExpense: async (expense) => { await saveUserItem('recurringExpenses', expense.id, expense); set((state) => ({ recurringExpenses: [...state.recurringExpenses, expense] })); },
+      updateRecurringExpense: async (id, updates) => { const item = get().recurringExpenses.find(e => e.id === id); if (!item) return; const updated = { ...item, ...updates }; await saveUserItem('recurringExpenses', id, updated); set((state) => ({ recurringExpenses: state.recurringExpenses.map(e => e.id === id ? updated : e) })); },
+      deleteRecurringExpense: async (id) => { await deleteUserItem('recurringExpenses', id); set((state) => ({ recurringExpenses: state.recurringExpenses.filter(e => e.id !== id) })); },
       payRecurringExpense: async (id: string, accountId: number, dateStr?: string) => {
         const state = get();
         const expense = state.recurringExpenses.find(e => e.id === id);
@@ -356,26 +472,14 @@ export const useStore = create<AppState>()(
           description: expense.name,
           date: date,
           type: 'expense',
-          category: 'Housing', // Default category for mandatory expenses
+          category: expense.category,
           accountId: accountId,
         } as Transaction);
 
-        // 2. Update local state
-        set((currentState) => ({
-          recurringExpenses: currentState.recurringExpenses.map(e => e.id === id ? { ...e, lastPaidDate: date } : e)
-        }));
+        try { await get().updateRecurringExpense(id, { lastPaidDate: date }); }
+        catch { window.alert('Операция сохранена, но отметку оплаты не удалось сохранить.'); }
       },
-      toggleRecurringExpense: (id: string) => set((state) => {
-        return {
-          recurringExpenses: state.recurringExpenses.map(e => {
-            if (e.id === id) {
-              const date = e.lastPaidDate ? undefined : new Date().toISOString();
-              return { ...e, lastPaidDate: date };
-            }
-            return e;
-          })
-        };
-      }),
+      toggleRecurringExpense: async (id) => { const expense = get().recurringExpenses.find(e => e.id === id); if (expense) await get().updateRecurringExpense(id, { lastPaidDate: expense.lastPaidDate ? undefined : new Date().toISOString() }); },
       reset: () => set({
         accounts: [],
         transactions: [],
@@ -387,6 +491,9 @@ export const useStore = create<AppState>()(
         recurringExpenses: initialRecurringExpenses,
         defaultCurrency: 'USD',
         exchangeRatesUpdatedAt: null,
+        dataError: null,
+        dataErrors: {},
+        dataReady: false,
         isLoading: false
       }),
     }),

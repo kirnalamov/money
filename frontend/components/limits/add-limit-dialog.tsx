@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,51 +34,39 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
     const { defaultCurrency, addLimit, updateLimit, categories } = useStore();
 
     const [formData, setFormData] = useState({
-        category: "",
-        period: "monthly" as "daily" | "weekly" | "monthly",
-        amount: "",
-        currency: defaultCurrency as Currency,
+        category: editingLimit?.category || "",
+        period: editingLimit?.period || "monthly" as "daily" | "weekly" | "monthly",
+        amount: editingLimit?.amount.toString() || "",
+        currency: editingLimit?.currency || defaultCurrency as Currency,
     });
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (editingLimit) {
-            setFormData({
-                category: editingLimit.category,
-                period: editingLimit.period,
-                amount: editingLimit.amount.toString(),
-                currency: editingLimit.currency,
-            });
-        } else {
-            setFormData({
-                category: "",
-                period: "monthly",
-                amount: "",
-                currency: defaultCurrency,
-            });
+    const handleSave = async () => {
+        const amount = Number(formData.amount);
+        if (!formData.category) {
+            setError(t("limits.validation.category"));
+            return;
         }
-    }, [editingLimit, defaultCurrency, open]);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setError(t("limits.validation.amount"));
+            return;
+        }
 
-    const handleSave = () => {
-        if (!formData.category || !formData.amount) return;
-
-        const limitData: Partial<LimitRule> = {
+        const limitData: Omit<LimitRule, "id"> = {
             category: formData.category,
             period: formData.period,
-            amount: parseFloat(formData.amount),
+            amount,
             currency: formData.currency,
             spent: editingLimit?.spent || 0,
         };
 
-        if (editingLimit) {
-            updateLimit(editingLimit.id, limitData);
-        } else {
-            addLimit({
-                ...(limitData as Omit<LimitRule, "id">),
-                id: Math.random().toString(36).substr(2, 9),
-            });
+        try {
+            if (editingLimit) await updateLimit(editingLimit.id, limitData);
+            else await addLimit({ ...limitData, id: crypto.randomUUID() });
+            onOpenChange(false);
+        } catch {
+            setError(t('common.error'));
         }
-
-        onOpenChange(false);
     };
 
     return (
@@ -92,28 +80,32 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                         {editingLimit ? t("limits.edit_limit") : t("limits.add_limit")}
                     </DialogDescription>
                 </DialogHeader>
+                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="category" className="text-right">
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                        <Label htmlFor="category" className="sm:text-right">
                             {t("limits.category")}
                         </Label>
                         <Select
                             value={formData.category}
                             onValueChange={(value) => setFormData({ ...formData, category: value })}
                         >
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="sm:col-span-3">
                                 <SelectValue placeholder={t("limits.category")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {categories.map(cat => (
                                     <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                                 ))}
+                                {categories.length === 0 && (
+                                    <SelectItem value="no-category" disabled>{t("limits.validation.no_categories")}</SelectItem>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="period" className="text-right">
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                        <Label htmlFor="period" className="sm:text-right">
                             {t("limits.period")}
                         </Label>
                         <Select
@@ -122,7 +114,7 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                                 setFormData({ ...formData, period: value })
                             }
                         >
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="sm:col-span-3">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -133,8 +125,8 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="amount" className="text-right">
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                        <Label htmlFor="amount" className="sm:text-right">
                             {t("limits.limit")}
                         </Label>
                         <Input
@@ -143,12 +135,13 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                             step="0.01"
                             value={formData.amount}
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            className="col-span-3"
+                            className="sm:col-span-3"
+                            min="0.01"
                         />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="currency" className="text-right">
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                        <Label htmlFor="currency" className="sm:text-right">
                             {t("limits.currency")}
                         </Label>
                         <Select
@@ -157,7 +150,7 @@ export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDia
                                 setFormData({ ...formData, currency: value })
                             }
                         >
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="sm:col-span-3">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

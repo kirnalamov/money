@@ -33,6 +33,7 @@ interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: (transaction: Transaction) => void;
 }
 
 interface TransactionDetailsFormProps extends Omit<TransactionDetailsDialogProps, 'transaction'> {
@@ -45,7 +46,7 @@ export function TransactionDetailsDialog(props: TransactionDetailsDialogProps) {
   return <TransactionDetailsForm key={props.transaction.id} {...props} transaction={props.transaction} />;
 }
 
-function TransactionDetailsForm({ transaction, open, onOpenChange }: TransactionDetailsFormProps) {
+function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: TransactionDetailsFormProps) {
   const { t } = useTranslation();
   const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction } = useStore();
 
@@ -59,28 +60,65 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
   const [date, setDate] = useState(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
   const [isRecurring, setIsRecurring] = useState(!!transaction.isRecurring);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedAccount = accounts.find((account) => account.id === Number(accountId));
+  const destinationAccounts = accounts.filter((account) => (
+    account.id !== Number(accountId) &&
+    (!selectedAccount || account.currency === selectedAccount.currency)
+  ));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transaction || !amount || !accountId) return;
-
     setError(null);
+    const parsedAmount = Number(amount);
+    const parsedDate = new Date(date);
+    const destinationAccount = accounts.find((account) => account.id === Number(toAccountId));
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setError(t('transactions.validation.amount'));
+      return;
+    }
+    if (!selectedAccount) {
+      setError(t('transactions.validation.account'));
+      return;
+    }
+    if (type === 'transfer' && !destinationAccount) {
+      setError(t('transactions.validation.destination'));
+      return;
+    }
+    if (type === 'transfer' && destinationAccount?.currency !== selectedAccount.currency) {
+      setError(t('transactions.validation.transfer_currency'));
+      return;
+    }
+    if (!category.trim()) {
+      setError(t('transactions.validation.category'));
+      return;
+    }
+    if (Number.isNaN(parsedDate.getTime())) {
+      setError(t('transactions.validation.date'));
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       await updateTransaction(transaction.id, {
         type,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
+        currency: selectedAccount.currency,
         accountId: parseInt(accountId),
         toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
-        category,
+        category: category.trim(),
         description,
         tags,
         isRecurring,
-        date: new Date(date).toISOString(),
+        date: parsedDate.toISOString(),
       });
 
       onOpenChange(false);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t('common.error'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -90,6 +128,7 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
       setError(null);
       try {
         await deleteTransaction(transaction.id);
+        onDeleted?.(transaction);
         onOpenChange(false);
       } catch (deleteError) {
         setError(deleteError instanceof Error ? deleteError.message : t('common.error'));
@@ -119,7 +158,10 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">{t('transactions.type')}</Label>
-            <Select value={type} onValueChange={(value: TransactionType) => setType(value)}>
+            <Select value={type} onValueChange={(value: TransactionType) => {
+              setType(value);
+              if (value !== 'transfer') setToAccountId('');
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_type')} />
               </SelectTrigger>
@@ -140,6 +182,7 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                min="0.01"
                 required
                 className="pl-8"
               />
@@ -164,7 +207,14 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
             <Label htmlFor="account">
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
             </Label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={(value) => {
+              setAccountId(value);
+              const nextAccount = accounts.find((account) => account.id === Number(value));
+              const currentDestination = accounts.find((account) => account.id === Number(toAccountId));
+              if (!nextAccount || !currentDestination || currentDestination.id === nextAccount.id || currentDestination.currency !== nextAccount.currency) {
+                setToAccountId('');
+              }
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_account')} />
               </SelectTrigger>
@@ -186,15 +236,23 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
                   <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts
-                    .filter(acc => acc.id !== parseInt(accountId))
-                    .map((acc) => (
+                {destinationAccounts.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id.toString()}>
                         {acc.name} ({acc.currency})
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
+                {destinationAccounts.length === 0 && (
+                  <SelectItem value="no-destination" disabled>
+                    {t('transactions.validation.no_destination')}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            {selectedAccount && (
+              <p className="text-xs text-muted-foreground">
+                {t('transactions.transfer_currency_hint', { currency: selectedAccount.currency })}
+              </p>
+            )}
             </div>
           )}
 
@@ -246,7 +304,9 @@ function TransactionDetailsForm({ transaction, open, onOpenChange }: Transaction
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button type="submit">{t('common.save') || 'Save Changes'}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('common.loading') : t('common.save')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

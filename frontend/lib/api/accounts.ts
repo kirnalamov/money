@@ -6,7 +6,7 @@ export const getAccounts = async (): Promise<Account[]> => {
     return response.data;
 };
 
-export const createAccount = async (account: Omit<Account, 'id' | 'lastSync'>): Promise<Account> => {
+export const createAccount = async (account: Omit<Account, 'id' | 'lastSync' | 'created_at' | 'updated_at'>): Promise<Account> => {
     const response = await apiClient.post<Account>('/accounts/', account);
     return response.data;
 };

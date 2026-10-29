@@ -1,39 +1,25 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
-from typing import Dict, Tuple
-from fastapi import Request, HTTPException, status
+from datetime import datetime, timedelta, timezone
 
-class RateLimiter:
-    """Simple in-memory rate limiter for demonstration purposes."""
-    
-    def __init__(self, requests_per_minute: int = 60):
-        self.requests_per_minute = requests_per_minute
-        self.requests: Dict[str, list[datetime]] = defaultdict(list)
-    
-    async def __call__(self, request: Request):
-        """Check rate limit for the request."""
-        # Use IP address as identifier
-        client_id = request.client.host if request.client else "unknown"
-        
-        now = datetime.utcnow()
-        minute_ago = now - timedelta(minutes=1)
-        
-        # Clean up old requests
-        self.requests[client_id] = [
-            req_time for req_time in self.requests[client_id]
-            if req_time > minute_ago
-        ]
-        
-        # Check rate limit
-        if len(self.requests[client_id]) >= self.requests_per_minute:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many requests. Please try again later."
-            )
-        
-        # Add current request
-        self.requests[client_id].append(now)
+from fastapi import HTTPException, Request, status
+from sqlalchemy import text
+
+from app.db.session import AsyncSessionLocal
+
 
 def get_rate_limiter(requests_per_minute: int = 60):
-    """Factory function to create a rate limiter dependency."""
-    return RateLimiter(requests_per_minute=requests_per_minute)
+    async def rate_limiter(request: Request):
+        key = f"{request.url.path}:{request.client.host if request.client else 'unknown'}"
+        async with AsyncSessionLocal() as db:
+            if db.bind.dialect.name == "sqlite":
+                await db.execute(text("BEGIN IMMEDIATE"))
+            else:
+                await db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": key})
+            cutoff = datetime.now(timezone.utc) - timedelta(minutes=1)
+            await db.execute(text("DELETE FROM auth_attempts WHERE created_at < :cutoff"), {"cutoff": cutoff})
+            count = (await db.execute(text("SELECT count(*) FROM auth_attempts WHERE client_key = :key AND created_at >= :cutoff"), {"key": key, "cutoff": cutoff})).scalar_one()
+            if count >= requests_per_minute:
+                await db.commit()
+                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests. Please try again later.")
+            await db.execute(text("INSERT INTO auth_attempts (client_key) VALUES (:key)"), {"key": key})
+            await db.commit()
+    return rate_limiter

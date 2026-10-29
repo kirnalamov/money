@@ -49,7 +49,7 @@ apiClient.interceptors.response.use(
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
         // If error is 401 and we haven't tried to refresh yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login')) {
             if (isRefreshing) {
                 // If already refreshing, queue this request
                 return new Promise((resolve, reject) => {
@@ -70,6 +70,7 @@ apiClient.interceptors.response.use(
             const refreshToken = getRefreshToken();
 
             if (!refreshToken) {
+                isRefreshing = false;
                 // No refresh token, clear auth and redirect to login
                 clearTokens();
                 // Avoid redirect loop or clearing state if already on login page

@@ -10,16 +10,18 @@ import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { GoalsSummary } from "@/components/dashboard/goals-summary";
 import { MandatoryExpensesList } from "@/components/dashboard/mandatory-expenses-list";
+import { DashboardDataSourceStatus } from "@/components/dashboard/data-source-status";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
 import { useStore } from "@/lib/store";
-import { Account, Transaction } from "@/types";
+import { Wallet } from "lucide-react";
 
 export default function OverviewPage() {
   const { t } = useTranslation();
-  const { addAccount, addTransaction } = useStore();
+  const { accounts } = useStore();
 
   // Default range: Last 30 days
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -35,11 +37,23 @@ export default function OverviewPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-muted-foreground">Your financial health at a glance</p>
+              <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
             </div>
           </div>
           <DashboardFilter dateRange={dateRange} setDateRange={setDateRange} />
         </div>
+
+        <DashboardDataSourceStatus />
+
+        {accounts.length === 0 && (
+          <DashboardEmptyState
+            icon={Wallet}
+            title={t("dashboard.empty.accounts_title")}
+            description={t("dashboard.empty.accounts_description")}
+            href="/accounts"
+            action={t("dashboard.empty.accounts_action")}
+          />
+        )}
 
         {/* KPI Cards */}
         <KpiCardsGrid />

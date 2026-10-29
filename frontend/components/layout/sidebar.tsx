@@ -5,37 +5,18 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import LogoutButton from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  ArrowRightLeft,
-  Briefcase,
-  PiggyBank,
-  Gauge,
-  Settings,
-  Wallet,
-  User
-} from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Wallet } from "lucide-react";
+import { isNavigationItemActive, navigationItems } from "./navigation";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (!isAuthenticated) {
+  if (isLoading || !isAuthenticated || !user) {
     return null;
   }
-
-  const navItems = [
-    { name: t("common.overview"), href: "/", icon: LayoutDashboard },
-    { name: t("common.transactions"), href: "/transactions", icon: ArrowRightLeft },
-    { name: t("common.portfolio"), href: "/portfolio", icon: Briefcase },
-    { name: t("common.savings"), href: "/savings", icon: PiggyBank },
-    { name: t("common.limits"), href: "/limits", icon: Gauge },
-    { name: t("accounts.title"), href: "/accounts", icon: Wallet },
-    { name: "My Profile", href: "/profile", icon: User },
-    { name: t("common.settings"), href: "/settings", icon: Settings },
-  ];
 
   return (
     <div className="hidden border-r bg-card md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-50">
@@ -46,13 +27,14 @@ export function Sidebar() {
           </div>
           <h1 className="text-2xl font-bold text-primary">Plutus</h1>
         </div>
-        <div className="flex flex-col flex-grow px-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
+        <nav aria-label={t("common.primary_navigation")} className="flex flex-col flex-grow px-4 space-y-1">
+          {navigationItems.map((item) => {
+            const isActive = isNavigationItemActive(pathname, item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all relative",
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
@@ -68,27 +50,25 @@ export function Sidebar() {
                   )}
                   aria-hidden="true"
                 />
-                {item.name}
+                {t(item.labelKey)}
               </Link>
             );
           })}
-        </div>
+        </nav>
 
         {/* User Info & Logout */}
-        {user && (
-          <div className="p-4 mt-auto border-t space-y-2">
+        <div className="p-4 mt-auto border-t space-y-2">
             <div className="px-3 pb-2">
               <p className="text-sm font-medium truncate">{user.full_name || user.username}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               {user.is_superuser && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary mt-1">
-                  Admin
+                  {t("common.admin")}
                 </span>
               )}
             </div>
             <LogoutButton />
           </div>
-        )}
       </div>
     </div>
   );

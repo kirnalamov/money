@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link"; // Assuming next/link is available, or use router
 
 export function GoalsSummary() {
-    const { goals, defaultCurrency } = useStore();
+    const { goals } = useStore();
     const { t } = useTranslation();
 
     // Take top 3 goals by priority (or just first 3 for now)
@@ -21,11 +21,11 @@ export function GoalsSummary() {
                     <Target className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                    <h3 className="font-semibold">No Goals Set</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Start saving for your dreams today.</p>
+                    <h3 className="font-semibold">{t("dashboard.empty.goals_title")}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{t("dashboard.empty.goals_description")}</p>
                 </div>
                 <Link href="/savings">
-                    <Button variant="outline" size="sm">Create Goal</Button>
+                    <Button variant="outline" size="sm">{t("dashboard.empty.goals_action")}</Button>
                 </Link>
             </div>
         )
@@ -34,7 +34,7 @@ export function GoalsSummary() {
     return (
         <div className="rounded-xl border glass-card premium-gradient px-4 py-3">
             <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold leading-none tracking-tight">{t("savings.title") || "Goals"}</h3>
+                <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.goals_title")}</h3>
                 <Link href="/savings">
                     <Button variant="ghost" size="icon" className="h-6 w-6">
                         <ChevronRight className="h-4 w-4" />

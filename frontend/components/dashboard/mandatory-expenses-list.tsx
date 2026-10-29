@@ -33,6 +33,7 @@ export function MandatoryExpensesList() {
     const [selectedExpense, setSelectedExpense] = useState<RecurringExpense | null>(null);
     const [selectedAccount, setSelectedAccount] = useState<string>("");
     const [isPayDialogOpen, setIsPayDialogOpen] = useState(false);
+    const [paymentError, setPaymentError] = useState<string | null>(null);
 
     const isPaidThisMonth = (dateString?: string) => {
         if (!dateString) return false;
@@ -46,11 +47,16 @@ export function MandatoryExpensesList() {
         setIsPayDialogOpen(true);
     };
 
-    const confirmPayment = () => {
+    const confirmPayment = async () => {
         if (selectedExpense && selectedAccount) {
-            payRecurringExpense(selectedExpense.id, parseInt(selectedAccount));
-            setIsPayDialogOpen(false);
-            setSelectedExpense(null);
+            try {
+                setPaymentError(null);
+                await payRecurringExpense(selectedExpense.id, parseInt(selectedAccount));
+                setIsPayDialogOpen(false);
+                setSelectedExpense(null);
+            } catch {
+                setPaymentError(t('common.error'));
+            }
         }
     };
 
@@ -67,6 +73,7 @@ export function MandatoryExpensesList() {
                 <CardTitle className="text-base font-semibold">{t('dashboard.mandatory_expenses.title')}</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-3">
+                {paymentError && <p role="alert">{paymentError}</p>}
                 {sortedExpenses.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground text-xs">
                         {t('dashboard.mandatory_expenses.empty')}
@@ -80,7 +87,7 @@ export function MandatoryExpensesList() {
                                     <div className="flex items-center gap-3">
                                         <Checkbox
                                             checked={isPaid}
-                                            onCheckedChange={() => toggleRecurringExpense(expense.id)}
+                                            onCheckedChange={() => void toggleRecurringExpense(expense.id).catch(() => setPaymentError(t('common.error')))}
                                             className="h-4 w-4"
                                         />
                                         <div className="flex flex-col">
@@ -127,6 +134,7 @@ export function MandatoryExpensesList() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                        {paymentError && <p role="alert">{paymentError}</p>}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="account" className="text-right">
                                 {t('common.account')}
