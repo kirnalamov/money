@@ -29,7 +29,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         if (isAuthenticated) {
             void (async () => {
                 await fetchAllData();
-                if (user?.username === "demo") {
+                if (process.env.NEXT_PUBLIC_DEMO_MODE === "true" && user?.username === "demo") {
                     seedDemoPositions();
                 }
             })();

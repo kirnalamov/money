@@ -54,6 +54,9 @@ async def check_money_ownership_and_refresh():
             headers = {"Authorization": f"Bearer {tokens['access_token']}"}
             account = (await client.get("/api/v1/accounts/", headers=headers)).json()[0]
             destination = (await client.post("/api/v1/accounts/", headers=headers, json={"name": "Second", "type": "cash"})).json()
+            first_page = (await client.get("/api/v1/accounts/", headers=headers, params={"skip": 0, "limit": 1})).json()
+            second_page = (await client.get("/api/v1/accounts/", headers=headers, params={"skip": 1, "limit": 1})).json()
+            assert [first_page[0]["id"], second_page[0]["id"]] == [account["id"], destination["id"]]
             transfer = await client.post("/api/v1/transactions/", headers=headers, json={"accountId": account["id"], "toAccountId": destination["id"], "type": "transfer", "amount": 0.1})
             assert transfer.status_code == 200, transfer.text
             assert (await client.get(f"/api/v1/accounts/{destination['id']}", headers=headers)).json()["balance"] == 0.1
