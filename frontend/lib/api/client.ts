@@ -82,13 +82,23 @@ apiClient.interceptors.response.use(
 
 
             try {
-                // Try to refresh the access token
-                const response = await axios.post(`${API_URL}/auth/refresh`, {
-                    refresh_token: refreshToken,
-                });
-
-                const { access_token, refresh_token: new_refresh_token } = response.data;
-                setTokens(access_token, new_refresh_token);
+                const requestAccessToken = originalRequest.headers?.Authorization?.toString().replace(/^Bearer /, '');
+                const refresh = async () => {
+                    const currentRefreshToken = getRefreshToken();
+                    if (!currentRefreshToken) throw new Error('Сессия завершена');
+                    if (currentRefreshToken !== refreshToken || getAccessToken() !== requestAccessToken) {
+                        const currentAccessToken = getAccessToken();
+                        if (!currentAccessToken) throw new Error('Сессия завершена');
+                        return currentAccessToken;
+                    }
+                    const response = await axios.post(`${API_URL}/auth/refresh`, { refresh_token: currentRefreshToken });
+                    if (getRefreshToken() !== currentRefreshToken) throw new Error('Сессия изменилась');
+                    const { access_token, refresh_token: newRefreshToken } = response.data;
+                    setTokens(access_token, newRefreshToken);
+                    return access_token as string;
+                };
+                // shortcut: без Web Locks вкладки могут конфликтовать; добавить координацию для старых браузеров при их поддержке.
+                const access_token = navigator.locks ? await navigator.locks.request('plutus-token-refresh', refresh) : await refresh();
 
                 // Update the original request with new token
                 if (originalRequest.headers) {
@@ -101,8 +111,10 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                clearTokens();
-                window.location.href = '/login';
+                if (getRefreshToken() === refreshToken) {
+                    clearTokens();
+                    window.location.href = '/login';
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
