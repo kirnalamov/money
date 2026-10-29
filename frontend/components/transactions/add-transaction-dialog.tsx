@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { TransactionType } from '@/types';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CalendarDays, CircleDollarSign, FileText, Plus, Tag, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, convertCurrency } from '@/lib/utils';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
@@ -155,20 +155,23 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="flex max-h-[min(90dvh,850px)] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[560px]">
-        <DialogHeader className="border-b px-6 pb-5 pt-6 pr-12 text-left">
-          <DialogTitle className="text-xl">{t('transactions.add_dialog_title')}</DialogTitle>
-          <DialogDescription className="leading-relaxed">
+      <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-[2rem] border-border/70 bg-background p-0 shadow-2xl dark:border-white/15 dark:bg-[#141e1b] sm:max-w-[640px]">
+        <DialogHeader className="px-5 pb-4 pt-6 pr-12 text-left sm:px-7 sm:pr-12">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#d4fb58] text-[#15200b]">
+            <CircleDollarSign aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <DialogTitle className="text-2xl font-semibold tracking-tight">{t('transactions.add_dialog_title')}</DialogTitle>
+          <DialogDescription className="leading-relaxed dark:text-white/65">
             {t('transactions.add_dialog_desc')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 space-y-5 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 space-y-3 overflow-y-auto px-5 pb-5 sm:px-7">
           {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
           {accounts.length === 0 && <Alert><AlertDescription>{t('transactions.validation.no_accounts')}</AlertDescription></Alert>}
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">{t('transactions.type')}</legend>
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+            <legend className="sr-only">{t('transactions.type')}</legend>
+            <div className="grid grid-cols-3 gap-2">
               {([
                 ['expense', ArrowUpRight],
                 ['income', ArrowDownLeft],
@@ -177,8 +180,8 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                 <label key={value} className="relative cursor-pointer">
                   <input type="radio" name="transaction-type" value={value} checked={type === value}
                     onChange={() => { setType(value); if (value !== 'transfer') setToAccountId(''); }} className="peer sr-only" />
-                  <span className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-1 text-xs font-medium text-muted-foreground transition-colors peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-ring sm:text-sm">
-                    <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  <span className="flex min-h-[72px] flex-col items-start justify-between gap-2 rounded-[1.2rem] border border-border bg-muted/60 p-3 text-xs font-medium text-foreground transition-colors hover:bg-muted peer-checked:border-[#a6cd31] peer-checked:bg-[#d4fb58] peer-checked:text-[#17220c] peer-focus-visible:ring-2 peer-focus-visible:ring-ring dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 dark:peer-checked:border-[#d4fb58] dark:peer-checked:bg-[#d4fb58] dark:peer-checked:text-[#17220c] sm:min-h-[80px] sm:text-sm">
+                    <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
                     {t(`transactions.types.${value}`)}
                   </span>
                 </label>
@@ -186,8 +189,8 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             </div>
           </fieldset>
 
-          <div className="rounded-xl border bg-muted/30 p-4">
-            <Label htmlFor="amount" className="text-muted-foreground">{t('transactions.amount')}</Label>
+          <div className="rounded-[1.5rem] border border-border bg-gradient-to-br from-lime-100 to-emerald-50 p-5 dark:border-white/10 dark:from-[#3f554b] dark:to-[#263a33]">
+            <Label htmlFor="amount" className="text-muted-foreground dark:text-white/70">{t('transactions.amount')}</Label>
             <div className="mt-2 flex items-center gap-3">
             <Input
               id="amount"
@@ -199,15 +202,16 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
               min="0.01"
               required
               placeholder="0.00"
-              className="h-12 min-w-0 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="h-14 min-w-0 rounded-lg border-0 bg-transparent px-1 text-4xl font-semibold tracking-tight shadow-none placeholder:text-foreground/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 dark:text-white dark:placeholder:text-white/40"
             />
-            <span className="shrink-0 rounded-lg bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground" aria-live="polite">{selectedAccount?.currency || t('transactions.currency_after_account')}</span>
+            <span className="shrink-0 rounded-full bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground dark:bg-black/25 dark:text-white/80" aria-live="polite">{selectedAccount?.currency || t('transactions.currency_after_account')}</span>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="account">
+          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid content-start gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+            <Label htmlFor="account" className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+              <Wallet aria-hidden="true" className="h-4 w-4" />
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
             </Label>
             <Select value={accountId} onValueChange={(value) => {
@@ -218,7 +222,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
                 setToAccountId('');
               }
             }}>
-              <SelectTrigger id="account" className="h-11">
+              <SelectTrigger id="account" className="h-11 rounded-xl bg-background/80 dark:border-white/10 dark:bg-black/20">
                 <SelectValue placeholder={t('transactions.placeholders.select_account')} />
               </SelectTrigger>
               <SelectContent>
@@ -236,12 +240,13 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           </div>
 
           {type === 'transfer' && (
-            <div className="grid gap-2">
-              <Label htmlFor="toAccount">
+            <div className="grid content-start gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+              <Label htmlFor="toAccount" className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+                <ArrowLeftRight aria-hidden="true" className="h-4 w-4" />
                 {t('transactions.to_account')}
               </Label>
               <Select value={toAccountId} onValueChange={setToAccountId}>
-                <SelectTrigger id="toAccount" className="h-11">
+                <SelectTrigger id="toAccount" className="h-11 rounded-xl bg-background/80 dark:border-white/10 dark:bg-black/20">
                   <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -269,14 +274,16 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             </div>
           )}
 
-          <div className="grid gap-2">
-            <Label htmlFor="date">{t('common.date')}</Label>
-            <Input id="date" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="h-11 min-w-0" />
+          <div className="grid content-start gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+            <Label htmlFor="date" className="flex items-center gap-2 text-muted-foreground dark:text-white/70"><CalendarDays aria-hidden="true" className="h-4 w-4" />{t('common.date')}</Label>
+            <Input id="date" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="h-11 min-w-0 rounded-xl bg-background/80 dark:border-white/10 dark:bg-black/20" />
           </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label id="new-transaction-category-label">
+          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid content-start gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+            <Label id="new-transaction-category-label" className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+              <Tag aria-hidden="true" className="h-4 w-4" />
               {t('transactions.category')}
             </Label>
             <CreatableCombobox
@@ -288,8 +295,9 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label id="new-transaction-tags-label">
+          <div className="grid content-start gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+            <Label id="new-transaction-tags-label" className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+              <Tag aria-hidden="true" className="h-4 w-4" />
               {t('transactions.tags') || 'Tags'}
             </Label>
             <MultiSelectCreatable
@@ -300,9 +308,11 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
               placeholder={t('transactions.placeholders.tags') || 'fun, jokes, entertainment'}
             />
           </div>
+          </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">
+          <div className="grid gap-3 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
+            <Label htmlFor="description" className="flex items-center gap-2 text-muted-foreground dark:text-white/70">
+              <FileText aria-hidden="true" className="h-4 w-4" />
               {t('transactions.description')}
             </Label>
             <Input
@@ -310,11 +320,12 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={type === 'income' ? t('transactions.placeholders.description_income') : t('transactions.placeholders.description')}
+              className="h-11 rounded-xl bg-background/80 dark:border-white/10 dark:bg-black/20"
             />
           </div>
 
           {type !== 'income' && type !== 'transfer' && (
-            <div className="flex items-center justify-between gap-4 rounded-xl border bg-muted/20 p-4">
+            <div className="flex items-center justify-between gap-4 rounded-[1.4rem] border bg-muted/50 p-4 dark:border-white/10 dark:bg-white/[0.08]">
               <div className="space-y-1">
                 <Label htmlFor="recurring" className="text-sm font-medium">{t('transactions.recurring_label')}</Label>
                 <p className="text-xs text-muted-foreground">{t('transactions.recurring_desc')}</p>
@@ -328,9 +339,9 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
 
           </div>
-          <DialogFooter className="gap-2 border-t bg-background px-6 py-4 sm:space-x-0">
-            <Button type="button" variant="outline" onClick={() => setOpen?.(false)} disabled={isSubmitting} className="w-full sm:w-auto">{t('common.cancel')}</Button>
-            <Button type="submit" className="w-full sm:min-w-36 sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
+          <DialogFooter className="gap-2 border-t bg-background px-5 py-4 dark:border-white/10 dark:bg-[#141e1b] sm:space-x-0 sm:px-7">
+            <Button type="button" variant="outline" onClick={() => setOpen?.(false)} disabled={isSubmitting} className="h-11 w-full rounded-xl sm:w-auto">{t('common.cancel')}</Button>
+            <Button type="submit" className="h-11 w-full rounded-xl bg-[#d4fb58] text-[#17220c] hover:bg-[#c1eb43] sm:min-w-40 sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
               {isSubmitting ? t('common.loading') : t('transactions.save_changes')}
             </Button>
           </DialogFooter>
