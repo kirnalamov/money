@@ -53,34 +53,8 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   // Получаем стабильный список ID счетов
   const accountIds = useMemo(() => accounts.map(acc => acc.id), [accounts]);
 
-  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<number>>(() =>
-    new Set(accountIds)
-  );
-
-  // Обновляем выбранные счета при изменении списка счетов
-  useEffect(() => {
-    setSelectedAccountIds(prev => {
-      const newSet = new Set<number>();
-      let hasChanges = false;
-
-      accountIds.forEach(id => {
-        if (prev.has(id)) {
-          newSet.add(id);
-        } else {
-          hasChanges = true;
-        }
-      });
-
-      // Если все счета были удалены из выбора, выбираем все
-      if (newSet.size === 0 && accountIds.length > 0) {
-        accountIds.forEach(id => newSet.add(id));
-        hasChanges = true;
-      }
-
-      // Обновляем только если есть изменения
-      return hasChanges ? newSet : prev;
-    });
-  }, [accountIds]);
+  const [excludedAccountIds, setExcludedAccountIds] = useState<Set<number>>(new Set());
+  const selectedAccountIds = useMemo(() => new Set(accountIds.filter(id => !excludedAccountIds.has(id))), [accountIds, excludedAccountIds]);
 
   // Фильтруем счета по выбранным (используем useMemo для стабильности)
   const filteredAccounts = useMemo(() =>
@@ -197,7 +171,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
   }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey, transactions, i18n.language]);
 
   const toggleAccount = (accountId: number) => {
-    setSelectedAccountIds(prev => {
+    setExcludedAccountIds(prev => {
       const newSet = new Set(prev);
       if (newSet.has(accountId)) {
         newSet.delete(accountId);

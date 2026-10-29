@@ -1,4 +1,5 @@
 from typing import Any, List
+from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, delete
@@ -62,8 +63,14 @@ async def update_account(
         if item_in.expected_balance is None or item_in.expected_balance != float(account.balance):
             raise HTTPException(status_code=409, detail="Account balance has changed; reload before editing")
     if item_in.currency is not None and item_in.currency != account.currency:
+        if item_in.balance is not None and Decimal(str(item_in.balance)) != account.balance:
+            raise HTTPException(status_code=409, detail="Change balance and currency separately")
         if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
             raise HTTPException(status_code=409, detail="Cannot change currency of an account with transactions")
+    if item_in.balance is not None:
+        difference = Decimal(str(item_in.balance)) - account.balance
+        if difference:
+            db.add(Transaction(account_id=id, amount=abs(difference), type="income" if difference > 0 else "expense", currency=account.currency, description="Корректировка баланса"))
     return await crud_account.update(db=db, db_obj=account, obj_in=item_in.model_dump(exclude_unset=True, exclude={"expected_balance"}))
 
 @router.get("/{id}", response_model=Account)

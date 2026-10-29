@@ -173,6 +173,10 @@ export const useStore = create<AppState>()(
           // Convert to string for API if needed, or update API client
           const updated = await updateAccountApi(id, updates);
           set((state) => ({ accounts: state.accounts.map(acc => acc.id === id ? updated : acc) }));
+          if (updates.balance !== undefined) {
+            try { set({ transactions: await getTransactions() }); }
+            catch { await get().fetchAllData(); }
+          }
         } catch (e) {
           console.error(e);
           throw e;
