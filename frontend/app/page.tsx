@@ -55,20 +55,15 @@ export default function OverviewPage() {
           />
         )}
 
-        {/* KPI Cards */}
-        <KpiCardsGrid />
-
-        {/* Quick Actions */}
-        <QuickActions />
-
-        {/* Main Charts Area */}
         <div className="grid gap-3 lg:grid-cols-12 items-start">
-          <div className="min-w-0 lg:col-span-7">
-            <NetWorthChart dateRange={dateRange} />
-          </div>
-          <div className="min-w-0 lg:col-span-5 space-y-3">
-            <ExpensesDonut dateRange={dateRange} />
+          <div className="order-1 min-w-0 space-y-3 lg:order-2 lg:col-span-5">
+            <KpiCardsGrid />
             <RecentTransactions />
+          </div>
+          <div className="order-2 min-w-0 space-y-3 lg:order-1 lg:col-span-7">
+            <NetWorthChart dateRange={dateRange} />
+            <QuickActions />
+            <ExpensesDonut dateRange={dateRange} />
           </div>
         </div>
 

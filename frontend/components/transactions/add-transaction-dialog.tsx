@@ -155,7 +155,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-[2rem] border-border/70 bg-background p-0 shadow-2xl dark:border-white/15 dark:bg-[#141e1b] sm:max-w-[640px]">
+      <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-[2rem] border-border/70 bg-background p-0 shadow-2xl sm:max-w-[640px]">
         <DialogHeader className="px-5 pb-4 pt-6 pr-12 text-left sm:px-7 sm:pr-12">
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#d4fb58] text-[#15200b]">
             <CircleDollarSign aria-hidden="true" className="h-5 w-5" />
@@ -189,7 +189,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
             </div>
           </fieldset>
 
-          <div className="rounded-[1.5rem] border border-border bg-gradient-to-br from-lime-100 to-emerald-50 p-5 dark:border-white/10 dark:from-[#3f554b] dark:to-[#263a33]">
+          <div className="rounded-[1.5rem] border border-border bg-gradient-to-br from-lime-100 to-emerald-50 p-5 dark:from-[#2a342b] dark:to-[#202a24]">
             <Label htmlFor="amount" className="text-muted-foreground dark:text-white/70">{t('transactions.amount')}</Label>
             <div className="mt-2 flex items-center gap-3">
             <Input
@@ -339,7 +339,7 @@ export function AddTransactionDialog({ defaultType = 'expense', open: controlled
           )}
 
           </div>
-          <DialogFooter className="gap-2 border-t bg-background px-5 py-4 dark:border-white/10 dark:bg-[#141e1b] sm:space-x-0 sm:px-7">
+          <DialogFooter className="gap-2 border-t bg-background px-5 py-4 sm:space-x-0 sm:px-7">
             <Button type="button" variant="outline" onClick={() => setOpen?.(false)} disabled={isSubmitting} className="h-11 w-full rounded-xl sm:w-auto">{t('common.cancel')}</Button>
             <Button type="submit" className="h-11 w-full rounded-xl bg-[#d4fb58] text-[#17220c] hover:bg-[#c1eb43] sm:min-w-40 sm:w-auto" disabled={isSubmitting || accounts.length === 0}>
               {isSubmitting ? t('common.loading') : t('transactions.save_changes')}

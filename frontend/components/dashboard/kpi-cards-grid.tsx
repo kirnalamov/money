@@ -64,15 +64,15 @@ export function KpiCardsGrid() {
   ];
 
   return (
-    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
       {kpis.map((kpi, index) => (
         <Link
           key={kpi.title}
           href={kpi.href}
-          className={cn("block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", index === 0 && "col-span-2 sm:col-span-3 lg:col-span-2")}
+          className={cn("block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", index === 0 && "col-span-2 sm:col-span-3 lg:col-span-2", index === 3 && "col-span-2 sm:col-span-1 lg:col-span-2")}
         >
           <div
-            className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "border-transparent bg-gradient-to-br from-[#d9fa46] to-[#8edc55] text-[#11180a] hover:from-[#e4ff70] hover:to-[#a1e66c]")}
+            className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "min-h-[200px] border-transparent bg-gradient-to-br from-[#e2fa76] via-[#c8ef5c] to-[#91d95d] text-[#11180a] hover:from-[#eaff91] hover:to-[#a4e178]")}
           >
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className={cn("tracking-tight text-sm font-medium text-muted-foreground", index === 0 && "text-[#263718]")}>{kpi.title}</h3>
