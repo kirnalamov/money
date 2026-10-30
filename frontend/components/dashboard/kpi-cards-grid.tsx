@@ -57,7 +57,6 @@ export function KpiCardsGrid() {
     {
       title: t("dashboard.kpi.available_spend"),
       value: formatCurrency(totalCash, defaultCurrency),
-      change: t("dashboard.kpi.total_available"),
       icon: CreditCard,
       href: "/analytics",
     },
@@ -72,17 +71,17 @@ export function KpiCardsGrid() {
           className={cn("block rounded-[1.5rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", index === 0 && "col-span-2 sm:col-span-3 lg:col-span-2", index === 3 && "col-span-2 sm:col-span-1 lg:col-span-2")}
         >
           <div
-            className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "min-h-[200px] border-transparent bg-gradient-to-br from-[#e2fa76] via-[#c8ef5c] to-[#91d95d] text-[#11180a] hover:from-[#eaff91] hover:to-[#a4e178]")}
+            className={cn("rounded-[1.5rem] border bg-card p-5 group h-full transition-colors hover:bg-accent", index === 0 && "min-h-[200px] border-transparent bg-gradient-to-br from-[#e2fa76] via-[#c8ef5c] to-[#91d95d] text-[#11180a] hover:from-[#eaff91] hover:to-[#a4e178]", index === 3 && "flex items-center justify-between gap-4")}
           >
-            <div className="flex flex-row items-start justify-between gap-2 pb-2">
+            <div className={cn("flex flex-row items-start justify-between gap-2 pb-2", index === 3 && "items-center pb-0 gap-3")}>
               <h3 className={cn("min-w-0 text-base font-semibold leading-snug text-foreground", index === 0 && "text-[#263718]")}>{kpi.title}</h3>
-              <div className={cn("h-10 w-10 shrink-0 rounded-2xl bg-muted flex items-center justify-center", index === 0 && "bg-black/10", index === 1 && "bg-violet-500/15", index === 2 && "bg-sky-500/15")}>
-                <kpi.icon aria-hidden="true" className={cn("h-5 w-5 text-foreground", index === 0 && "text-[#11180a]", index === 1 && "text-violet-700 dark:text-violet-300", index === 2 && "text-sky-700 dark:text-sky-300")} />
+              <div className={cn("h-10 w-10 shrink-0 rounded-2xl bg-muted flex items-center justify-center", index === 0 && "bg-black/10", index === 1 && "bg-violet-500/15", index === 2 && "bg-sky-500/15", index === 3 && "order-first bg-emerald-500/15")}>
+                <kpi.icon aria-hidden="true" className={cn("h-5 w-5 text-foreground", index === 0 && "text-[#11180a]", index === 1 && "text-violet-700 dark:text-violet-300", index === 2 && "text-sky-700 dark:text-sky-300", index === 3 && "text-emerald-700 dark:text-emerald-300")} />
               </div>
             </div>
-            <div className="pt-2">
-              <div className={cn("text-2xl md:text-3xl font-bold tracking-tight break-words", index === 0 && "md:text-4xl")}>{kpi.value}</div>
-              <p className={cn("text-sm text-muted-foreground mt-1", index === 0 && "text-[#263718]")}>{kpi.change}</p>
+            <div className={cn("pt-2 min-w-0", index === 3 && "pt-0 text-right")}>
+              <div className={cn("text-2xl md:text-3xl font-bold tracking-tight break-words", index === 0 && "md:text-4xl", index === 3 && "md:text-2xl")}>{kpi.value}</div>
+              {kpi.change && <p className={cn("text-sm text-muted-foreground mt-1", index === 0 && "text-[#263718]")}>{kpi.change}</p>}
             </div>
           </div>
         </Link>

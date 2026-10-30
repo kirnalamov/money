@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { Target, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link"; // Assuming next/link is available, or use router
@@ -39,9 +39,9 @@ export function GoalsSummary() {
             </div>
 
             <div className="space-y-3 overflow-hidden">
-                {displayGoals.map(goal => {
+                {displayGoals.map((goal, index) => {
                     const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
-                    const isCompleted = progress >= 100;
+                    const color = ["#b9df61", "#83b8e8", "#c3a4e8"][index];
 
                     return (
                         <div key={goal.id} className="space-y-1">
@@ -51,8 +51,8 @@ export function GoalsSummary() {
                             </div>
                             <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                                 <div
-                                    className={cn("h-full transition-all duration-500 rounded-full", isCompleted ? "bg-green-500" : "bg-primary")}
-                                    style={{ width: `${progress}%` }}
+                                    className="h-full transition-all duration-500 rounded-full"
+                                    style={{ width: `${progress}%`, backgroundColor: color }}
                                 />
                             </div>
                             <div className="flex flex-wrap justify-between gap-x-2 text-sm text-muted-foreground">

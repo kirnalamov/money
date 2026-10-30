@@ -213,7 +213,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
 
   return (
     <div
-      className="rounded-[1.5rem] border bg-card min-h-[370px] sm:h-[400px] flex flex-col"
+      className="rounded-[1.5rem] border bg-card min-h-[370px] sm:h-[400px] flex flex-col overflow-hidden"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
@@ -302,14 +302,14 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
           </div>
         </div>
       </div>
-      <div className="flex-1 w-full min-w-0 min-h-[200px] overflow-x-auto pb-4 px-2">
+      <div className="flex-1 w-full min-w-0 min-h-[200px] pb-4 px-3">
         <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
           {chartType === 'area' && (
             <AreaChart data={data}>
               <defs>
                 {displayMode === 'combined' ? (
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.18} />
+                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.24} />
                     <stop offset="95%" stopColor={dynamicColor} stopOpacity={0} />
                   </linearGradient>
                 ) : (
@@ -325,7 +325,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                   })
                 )}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
               <XAxis
                 dataKey="date"
                 stroke="hsl(var(--muted-foreground))"
@@ -341,11 +341,12 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 axisLine={false}
                 domain={domain}
                 allowDataOverflow
+                tickCount={4}
                 tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
                 width={100}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '12px', fontSize: '13px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number, name: string) => {
                   if (displayMode === 'combined') {
@@ -361,7 +362,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                   type="linear"
                   dataKey="total"
                   stroke={dynamicColor}
-                  strokeWidth={2}
+                  strokeWidth={2.5}
+                  activeDot={{ r: 5, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
                   fillOpacity={1}
                   baseValue="dataMin"
                   fill="url(#colorTotal)"
@@ -417,7 +419,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                   })
                 )}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
               <XAxis
                 dataKey="date"
                 stroke="hsl(var(--muted-foreground))"
@@ -480,7 +482,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
           )}
           {chartType === 'line' && (
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
               <XAxis
                 dataKey="date"
                 stroke="hsl(var(--muted-foreground))"
@@ -496,6 +498,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 axisLine={false}
                 domain={domain}
                 allowDataOverflow
+                tickCount={4}
                 tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
                 width={100}
               />
@@ -517,8 +520,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                   dataKey="total"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dot={false}
+                  activeDot={{ r: 5, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
                   animationDuration={1000}
                 />
               ) : (
@@ -532,7 +535,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                         dataKey={acc.id}
                         stroke={color}
                         strokeWidth={2}
-                        dot={{ fill: color, r: 4 }}
+                        dot={false}
                         activeDot={{ r: 6 }}
                         animationDuration={1000}
                       />

@@ -40,12 +40,12 @@ export function QuickActions() {
 
     return (
         <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {actions.map((action, idx) => (
                     <Button
                         key={idx}
                         variant="outline"
-                        className="min-h-16 h-auto justify-start rounded-[1.4rem] border bg-card px-4 py-3 flex gap-3 hover:bg-accent shadow-none text-left whitespace-normal"
+                        className="min-h-14 h-auto justify-center rounded-2xl border bg-card px-3 py-2.5 flex gap-2.5 hover:bg-accent shadow-none whitespace-normal"
                         onClick={action.onClick}
                     >
                         <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", action.color)}><action.icon aria-hidden="true" className="h-5 w-5" /></span>

@@ -61,12 +61,12 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
 
     return (
         <div className="rounded-[1.5rem] border bg-card flex flex-col">
-            <div className="p-6 pb-0 mb-4 flex items-center justify-between gap-3">
+            <div className="p-5 pb-0 mb-2 flex items-center justify-between gap-3">
                 <h3 className="font-semibold leading-snug text-lg">{t("dashboard.charts.expenses_title")}</h3>
                 <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t("common.view_all")}</Link>
             </div>
-            <div className="w-full flex flex-col sm:flex-row items-center justify-center px-4 pb-6 gap-4 sm:gap-8">
-                <div ref={containerRef} className="relative w-full h-[220px] max-w-[240px] flex-shrink-0">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center px-4 pb-4 gap-3 sm:gap-6">
+                <div ref={containerRef} className="relative w-full h-[160px] max-w-[180px] flex-shrink-0">
                     {/* Center Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
                         <span className="text-2xl font-bold tracking-tight">{formatCurrency(total, defaultCurrency)}</span>
@@ -78,8 +78,8 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                                 data={data}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={65}
-                                outerRadius={95}
+                                innerRadius={48}
+                                outerRadius={70}
                                 paddingAngle={3}
                                 dataKey="value"
                                 stroke="hsl(var(--card))"
