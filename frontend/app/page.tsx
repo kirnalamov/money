@@ -64,16 +64,8 @@ export default function OverviewPage() {
             <QuickActions />
             <NetWorthChart dateRange={dateRange} showAnalyticsLink />
             <ExpensesDonut dateRange={dateRange} />
-          </div>
-        </div>
-
-        {/* Secondary Info Area */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-1 lg:col-span-2 space-y-4">
             <GoalsSummary />
             <MandatoryExpensesList />
-          </div>
-          <div className="col-span-1 lg:col-span-5">
             <LimitsSummary />
           </div>
         </div>

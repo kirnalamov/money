@@ -74,14 +74,14 @@ export function MandatoryExpensesList() {
     });
 
     return (
-        <Card className="h-full">
-            <CardHeader className="py-3 px-4">
-                <CardTitle className="text-base font-semibold">{t('dashboard.mandatory_expenses.title')}</CardTitle>
+        <Card className="rounded-[1.5rem]">
+            <CardHeader className="pt-5 pb-3 px-5">
+                <CardTitle className="text-lg font-semibold">{t('dashboard.mandatory_expenses.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
+            <CardContent className="px-5 pb-5">
                 {paymentError && <p role="alert">{paymentError}</p>}
                 {sortedExpenses.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground text-xs">
+                    <div className="py-2 text-muted-foreground text-sm">
                         {t('dashboard.mandatory_expenses.empty')}
                     </div>
                 ) : (
@@ -101,7 +101,7 @@ export function MandatoryExpensesList() {
                                                 {expense.name}
                                             </span>
                                             {!isPaid && (
-                                                <span className="text-[10px] text-muted-foreground mt-0.5">
+                                                <span className="text-xs text-muted-foreground mt-1">
                                                     {t('common.due')} {expense.dueDay}
                                                 </span>
                                             )}
@@ -113,7 +113,7 @@ export function MandatoryExpensesList() {
                                         </span>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={t('dashboard.mandatory_expenses.pay_with_transaction')}>
                                                     <MoreHorizontal className="h-3 w-3" />
                                                 </Button>
                                             </DropdownMenuTrigger>

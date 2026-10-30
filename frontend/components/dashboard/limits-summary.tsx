@@ -13,10 +13,10 @@ export function LimitsSummary() {
   const { limits, transactions, defaultCurrency, categories } = useStore();
 
   return (
-    <div className="rounded-xl border glass-card premium-gradient text-card-foreground shadow-lg px-4 py-3 transition-all duration-300 hover:shadow-xl">
-      <h3 className="font-semibold leading-none tracking-tight mb-3">{t("dashboard.charts.monthly_limits")}</h3>
+    <div className="rounded-[1.5rem] border bg-card text-card-foreground p-5">
+      <h3 className="text-lg font-semibold leading-snug mb-3">{t("dashboard.charts.monthly_limits")}</h3>
       {limits.filter(limit => limit.period === 'monthly').length === 0 ? (
-        <div className="py-4 text-center text-sm text-muted-foreground">
+        <div className="py-2 text-sm text-muted-foreground">
           <p>{t("dashboard.empty.limits_title")}</p>
           <Button variant="link" size="sm" asChild className="mt-1 h-auto px-0">
             <Link href="/limits">{t("dashboard.empty.limits_action")}</Link>

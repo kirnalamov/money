@@ -24,22 +24,18 @@ export function GoalsSummary() {
                     <h3 className="font-semibold">{t("dashboard.empty.goals_title")}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{t("dashboard.empty.goals_description")}</p>
                 </div>
-                <Link href="/savings">
-                    <Button variant="outline" size="sm">{t("dashboard.empty.goals_action")}</Button>
-                </Link>
+                <Button variant="outline" size="sm" asChild><Link href="/savings">{t("dashboard.empty.goals_action")}</Link></Button>
             </div>
         )
     }
 
     return (
-        <div className="rounded-xl border glass-card premium-gradient px-4 py-3">
+        <div className="rounded-[1.5rem] border bg-card p-5">
             <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.goals_title")}</h3>
-                <Link href="/savings">
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </Link>
+                <h3 className="text-lg font-semibold leading-snug">{t("dashboard.goals_title")}</h3>
+                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                    <Link href="/savings" aria-label={t("dashboard.goals_title")}><ChevronRight className="h-4 w-4" /></Link>
+                </Button>
             </div>
 
             <div className="space-y-3 overflow-hidden">
@@ -59,7 +55,7 @@ export function GoalsSummary() {
                                     style={{ width: `${progress}%` }}
                                 />
                             </div>
-                            <div className="flex justify-between text-xs text-muted-foreground">
+                            <div className="flex flex-wrap justify-between gap-x-2 text-sm text-muted-foreground">
                                 <span>{formatCurrency(goal.currentAmount, goal.currency)}</span>
                                 <span>{formatCurrency(goal.targetAmount, goal.currency)}</span>
                             </div>

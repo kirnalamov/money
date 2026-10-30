@@ -95,6 +95,8 @@
     },
     "charts": {
       "net_worth_title": "Net Worth Over Time",
+      "dynamic_scale": "Scale follows the values and does not start at zero",
+      "zero_scale": "Bar scale starts at zero",
       "net_worth_subtitle": "Last 7 months",
       "expenses_title": "Expenses by Category",
       "tags_title": "Spending Tags",

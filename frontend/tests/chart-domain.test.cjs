@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../lib/chart-domain.ts'), 'utf8');
+const exports_ = {};
+new Function('exports', ts.transpile(source, { module: ts.ModuleKind.CommonJS }))(exports_);
+const { chartDomain } = exports_;
+assert.deepEqual(chartDomain([10000, 10020]), [9997, 10023]);
+assert.deepEqual(chartDomain([100, 100]), [99, 101]);
+assert.deepEqual(chartDomain([-20, -10]), [-21.5, -8.5]);
+assert.deepEqual(chartDomain([]), [0, 1]);
+assert.deepEqual(chartDomain([NaN, Infinity]), [0, 1]);

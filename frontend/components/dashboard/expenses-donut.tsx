@@ -4,14 +4,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
 import { cn, formatCurrency, convertCurrency } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { DateRange } from "react-day-picker";
 import { isWithinInterval } from "date-fns";
 
 export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     const { t } = useTranslation();
     const { transactions, defaultCurrency } = useStore();
-    const router = useRouter();
     const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -53,30 +52,25 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
 
     if (data.length === 0) {
         return (
-            <div
-                onClick={() => router.push("/analytics")}
-                className="rounded-[1.5rem] border bg-card p-5 flex flex-col gap-5 cursor-pointer"
-            >
-                <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
+            <div className="rounded-[1.5rem] border bg-card p-5 flex flex-col gap-5">
+                <div className="flex items-center justify-between gap-3"><h3 className="font-semibold leading-snug text-lg">{t("dashboard.charts.expenses_title")}</h3><Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t("common.view_all")}</Link></div>
                 <div className="rounded-2xl bg-muted/50 px-4 py-5 text-muted-foreground text-sm">{t("dashboard.empty.expenses_title")}</div>
             </div>
         );
     }
 
     return (
-        <div
-            onClick={() => router.push("/analytics")}
-            className="rounded-[1.5rem] border bg-card h-[320px] flex flex-col cursor-pointer"
-        >
-            <div className="p-6 pb-0 mb-4">
-                <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.expenses_title")}</h3>
+        <div className="rounded-[1.5rem] border bg-card flex flex-col">
+            <div className="p-6 pb-0 mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-semibold leading-snug text-lg">{t("dashboard.charts.expenses_title")}</h3>
+                <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t("common.view_all")}</Link>
             </div>
-            <div className="flex-1 w-full min-h-0 flex flex-col md:flex-row items-center justify-center px-4 pb-6 gap-8">
-                <div ref={containerRef} className="relative w-full h-full max-w-[280px] max-h-[280px] flex-shrink-0">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center px-4 pb-6 gap-4 sm:gap-8">
+                <div ref={containerRef} className="relative w-full h-[220px] max-w-[240px] flex-shrink-0">
                     {/* Center Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
                         <span className="text-2xl font-bold tracking-tight">{formatCurrency(total, defaultCurrency)}</span>
-                        <span className="text-sm text-muted-foreground mt-1 font-medium transform uppercase tracking-wider text-[10px]">{t("dashboard.charts.total")}</span>
+                        <span className="text-sm text-muted-foreground mt-1">{t("dashboard.charts.total")}</span>
                     </div>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>

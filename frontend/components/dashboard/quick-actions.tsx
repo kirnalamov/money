@@ -45,11 +45,11 @@ export function QuickActions() {
                     <Button
                         key={idx}
                         variant="outline"
-                        className="h-24 items-start justify-between rounded-[1.4rem] border bg-card p-3 flex flex-col gap-2 hover:bg-accent shadow-none text-left whitespace-normal"
+                        className="min-h-16 h-auto justify-start rounded-[1.4rem] border bg-card px-4 py-3 flex gap-3 hover:bg-accent shadow-none text-left whitespace-normal"
                         onClick={action.onClick}
                     >
-                        <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl", action.color)}><action.icon aria-hidden="true" className="h-4 w-4" /></span>
-                        <span className="text-sm font-medium leading-tight">{action.label}</span>
+                        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", action.color)}><action.icon aria-hidden="true" className="h-5 w-5" /></span>
+                        <span className="text-base font-semibold leading-tight">{action.label}</span>
                     </Button>
                 ))}
             </div>

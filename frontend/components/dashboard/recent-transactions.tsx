@@ -30,8 +30,8 @@ export function RecentTransactions() {
     return (
         <div className="rounded-[1.5rem] border bg-card flex flex-col flex-1 min-h-[300px]">
             <div className="p-6 pb-2 flex items-center justify-between">
-                <h3 className="font-semibold leading-none tracking-tight">{t("dashboard.recent_transactions")}</h3>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8" asChild>
+                <h3 className="text-lg font-semibold leading-snug">{t("dashboard.recent_transactions")}</h3>
+                <Button variant="ghost" size="sm" className="text-sm text-muted-foreground h-9" asChild>
                     <Link href="/transactions">{t("common.view_all")}</Link>
                 </Button>
             </div>

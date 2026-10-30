@@ -14,7 +14,8 @@ const localeMap: Record<string, Locale> = {
   ru: ru,
   en: enUS,
 };
-import { formatCurrencyCompact, convertCurrency } from "@/lib/utils";
+import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { chartDomain } from "@/lib/chart-domain";
 import { Button } from "@/components/ui/button";
 import { Filter, Layers, Settings } from "lucide-react";
 import {
@@ -92,7 +93,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
     const today = new Date();
     const endDate = dateRange?.to || today;
     const days = dateRange?.from && dateRange?.to
-      ? differenceInDays(dateRange.to, dateRange.from) + 1
+      ? Math.max(0, differenceInDays(dateRange.to, dateRange.from))
       : 30;
 
     const isLargeRange = days > 60;
@@ -141,7 +142,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
     const points: ChartPoint[] = [];
 
     for (let i = count; i >= 0; i--) {
-      const date = subDays(endDate, i * step);
+      const date = subDays(endDate, Math.min(i * step, days));
       const pastBalances = getBalanceAtEndOfDay(date);
 
       const point: ChartPoint = {
@@ -155,11 +156,11 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
           const val = pastBalances[acc.id] || 0;
           total += convertCurrency(val, acc.currency, defaultCurrency);
         });
-        point.total = Math.round(total);
+        point.total = total;
       } else {
         currentFilteredAccounts.forEach(acc => {
           const val = pastBalances[acc.id] || 0;
-          point[acc.id] = Math.round(convertCurrency(val, acc.currency, defaultCurrency));
+          point[acc.id] = convertCurrency(val, acc.currency, defaultCurrency);
         });
       }
 
@@ -195,6 +196,10 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
     return '#ef4444'; // Red (Loss)
   }, [data]);
 
+  const domain = useMemo(() => chartDomain(data.flatMap(point =>
+    displayMode === 'combined' ? [point.total] : filteredAccounts.map(account => point[account.id])
+  ).filter((value): value is number => typeof value === 'number')), [data, displayMode, filteredAccounts]);
+
   const accountColors = [
     'hsl(var(--primary))',
     '#83b8e8',
@@ -208,7 +213,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
 
   return (
     <div
-      className="rounded-[1.5rem] border bg-card h-[320px] sm:h-[360px] flex flex-col"
+      className="rounded-[1.5rem] border bg-card min-h-[370px] sm:h-[400px] flex flex-col"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
@@ -219,7 +224,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
                 : t("dashboard.charts.net_worth_subtitle")}
             </p>
-            {showAnalyticsLink && <Link href="/analytics" className="mt-2 inline-block text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>}
+            <p className="mt-1 text-xs text-muted-foreground">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
+            {showAnalyticsLink && <Link href="/analytics" className="mt-2 inline-block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>}
           </div>
           <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
@@ -333,24 +339,26 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
-                width={80}
+                domain={domain}
+                allowDataOverflow
+                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
+                width={100}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number, name: string) => {
                   if (displayMode === 'combined') {
-                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
                     const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                    return [formatCurrency(value, defaultCurrency), account?.name || name];
                   }
                 }}
               />
               {displayMode === 'combined' ? (
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="total"
                   stroke={dynamicColor}
                   strokeWidth={2}
@@ -367,7 +375,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                     return (
                       <Area
                         key={acc.id}
-                        type="monotone"
+                        type="linear"
                         dataKey={acc.id}
                         stroke={color}
                         fillOpacity={0.6}
@@ -423,18 +431,18 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
-                width={80}
+                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
+                width={100}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number, name: string) => {
                   if (displayMode === 'combined') {
-                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
                     const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                    return [formatCurrency(value, defaultCurrency), account?.name || name];
                   }
                 }}
               />
@@ -486,24 +494,26 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
-                width={80}
+                domain={domain}
+                allowDataOverflow
+                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
+                width={100}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number, name: string) => {
                   if (displayMode === 'combined') {
-                    return [formatCurrencyCompact(value, defaultCurrency), t("dashboard.charts.total")];
+                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
                   } else {
                     const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrencyCompact(value, defaultCurrency), account?.name || name];
+                    return [formatCurrency(value, defaultCurrency), account?.name || name];
                   }
                 }}
               />
               {displayMode === 'combined' ? (
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="total"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
@@ -518,7 +528,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
                     return (
                       <Line
                         key={acc.id}
-                        type="monotone"
+                        type="linear"
                         dataKey={acc.id}
                         stroke={color}
                         strokeWidth={2}
