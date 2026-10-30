@@ -76,8 +76,8 @@ export function KpiCardsGrid() {
           >
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className={cn("tracking-tight text-sm font-medium text-muted-foreground", index === 0 && "text-[#263718]")}>{kpi.title}</h3>
-              <div className={cn("h-10 w-10 rounded-2xl bg-muted flex items-center justify-center", index === 0 && "bg-black/10")}>
-                <kpi.icon aria-hidden="true" className={cn("h-5 w-5 text-foreground", index === 0 && "text-[#11180a]")} />
+              <div className={cn("h-10 w-10 rounded-2xl bg-muted flex items-center justify-center", index === 0 && "bg-black/10", index === 1 && "bg-violet-500/15", index === 2 && "bg-sky-500/15")}>
+                <kpi.icon aria-hidden="true" className={cn("h-5 w-5 text-foreground", index === 0 && "text-[#11180a]", index === 1 && "text-violet-700 dark:text-violet-300", index === 2 && "text-sky-700 dark:text-sky-300")} />
               </div>
             </div>
             <div className="pt-2">

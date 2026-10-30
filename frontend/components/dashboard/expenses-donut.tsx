@@ -41,7 +41,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
             .sort((a, b) => b.value - a.value);
 
         // Predefined colors
-        const colors = ["#00C853", "#2979FF", "#FFB300", "#F44336", "#AB47BC", "#EC407A", "#7E57C2"];
+        const colors = ["#b9df61", "#83b8e8", "#c3a4e8", "#e88c9f", "#e4b87d", "#79c7b1", "#a6b1de"];
 
         return sorted.map((item, index) => ({
             ...item,

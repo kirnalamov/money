@@ -61,8 +61,8 @@ export default function OverviewPage() {
             <RecentTransactions />
           </div>
           <div className="order-2 min-w-0 space-y-3 lg:order-1 lg:col-span-7">
-            <NetWorthChart dateRange={dateRange} />
             <QuickActions />
+            <NetWorthChart dateRange={dateRange} showAnalyticsLink />
             <ExpensesDonut dateRange={dateRange} />
           </div>
         </div>

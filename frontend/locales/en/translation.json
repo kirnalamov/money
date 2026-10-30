@@ -34,6 +34,8 @@
     "sign_out": "Sign Out",
     "actions": "Actions",
     "pick_date": "Pick a date",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
     "reset": "Reset",
     "pay": "Pay",
     "paid": "Paid",

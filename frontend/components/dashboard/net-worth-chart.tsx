@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
@@ -39,13 +39,13 @@ type ChartPoint = {
 
 interface NetWorthChartProps {
   dateRange: DateRange | undefined;
+  showAnalyticsLink?: boolean;
 }
 
-export function NetWorthChart({ dateRange }: NetWorthChartProps) {
+export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorthChartProps) {
   const { t, i18n } = useTranslation();
   const { accounts, transactions, defaultCurrency } = useStore();
   const locale = localeMap[i18n.language] || enUS;
-  const router = useRouter();
   const [data, setData] = useState<ChartPoint[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
   const [chartType, setChartType] = useState<ChartType>('area');
@@ -197,19 +197,18 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
 
   const accountColors = [
     'hsl(var(--primary))',
-    '#2979FF', // Blue
-    '#FFB300', // Amber
-    '#F44336', // Red
-    '#AB47BC', // Purple
-    '#00C853', // Green
+    '#83b8e8',
+    '#c3a4e8',
+    '#e88c9f',
+    '#e4b87d',
+    '#79c7b1',
   ];
 
 
 
   return (
     <div
-      onClick={() => router.push("/analytics")}
-      className="rounded-[1.5rem] border bg-card h-[320px] sm:h-[360px] flex flex-col transition-colors cursor-pointer group"
+      className="rounded-[1.5rem] border bg-card h-[320px] sm:h-[360px] flex flex-col"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
@@ -220,6 +219,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
                 : t("dashboard.charts.net_worth_subtitle")}
             </p>
+            {showAnalyticsLink && <Link href="/analytics" className="mt-2 inline-block text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>}
           </div>
           <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
@@ -333,19 +333,8 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => {
-                  const currencySymbols: Record<string, string> = {
-                    'USD': '$',
-                    'EUR': '€',
-                    'GBP': '£',
-                    'RUB': '₽',
-                  };
-                  const symbol = currencySymbols[defaultCurrency] || '$';
-                  const isAfter = defaultCurrency === 'RUB';
-                  const formattedValue = (value / 1000).toFixed(0);
-                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
-                }}
-                width={40}
+                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
+                width={80}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
@@ -364,6 +353,7 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                   type="monotone"
                   dataKey="total"
                   stroke={dynamicColor}
+                  strokeWidth={2}
                   fillOpacity={1}
                   baseValue="dataMin"
                   fill="url(#colorTotal)"
@@ -433,19 +423,8 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => {
-                  const currencySymbols: Record<string, string> = {
-                    'USD': '$',
-                    'EUR': '€',
-                    'GBP': '£',
-                    'RUB': '₽',
-                  };
-                  const symbol = currencySymbols[defaultCurrency] || '$';
-                  const isAfter = defaultCurrency === 'RUB';
-                  const formattedValue = (value / 1000).toFixed(0);
-                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
-                }}
-                width={40}
+                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
+                width={80}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
@@ -507,19 +486,8 @@ export function NetWorthChart({ dateRange }: NetWorthChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => {
-                  const currencySymbols: Record<string, string> = {
-                    'USD': '$',
-                    'EUR': '€',
-                    'GBP': '£',
-                    'RUB': '₽',
-                  };
-                  const symbol = currencySymbols[defaultCurrency] || '$';
-                  const isAfter = defaultCurrency === 'RUB';
-                  const formattedValue = (value / 1000).toFixed(0);
-                  return isAfter ? `${formattedValue}k ${symbol}` : `${symbol}${formattedValue}k`;
-                }}
-                width={40}
+                tickFormatter={(value) => formatCurrencyCompact(value, defaultCurrency)}
+                width={80}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}

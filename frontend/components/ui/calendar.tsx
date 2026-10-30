@@ -42,7 +42,7 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
     dayPickerProps,
   } = useDayPicker()
 
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const locale = localeMap[i18n.language] || enUS
 
   const navStart = dayPickerProps.startMonth
@@ -103,10 +103,10 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
           type="button"
           onClick={() => previousMonth && goToMonth(previousMonth)}
           disabled={!previousMonth}
-          aria-label=""
+          aria-label={t("common.previous_month")}
           className={cn(
             buttonVariants({ variant: "outline" }),
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+            "h-9 w-9 bg-transparent p-0"
           )}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -114,7 +114,7 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
 
         {/* Month */}
         <select
-          className="bg-background border border-input h-7 px-2 rounded-md text-sm font-medium"
+          className="h-9 min-w-0 rounded-lg border border-input bg-background px-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={getMonth(calendarMonth.date)}
           onChange={onMonthChange}
           aria-label={labels.labelMonthDropdown()}
@@ -128,7 +128,7 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
 
         {/* Year */}
         <select
-          className="bg-background border border-input h-7 px-2 rounded-md text-sm font-medium"
+          className="h-9 rounded-lg border border-input bg-background px-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={getYear(calendarMonth.date)}
           onChange={onYearChange}
           aria-label={labels.labelYearDropdown()}
@@ -145,10 +145,10 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
           type="button"
           onClick={() => nextMonth && goToMonth(nextMonth)}
           disabled={!nextMonth}
-          aria-label=""
+          aria-label={t("common.next_month")}
           className={cn(
             buttonVariants({ variant: "outline" }),
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+            "h-9 w-9 bg-transparent p-0"
           )}
         >
           <ChevronRight className="h-4 w-4" />
@@ -176,7 +176,7 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       fromYear={2020}
       toYear={2030}
-      className={cn("p-3", className)}
+      className={cn("p-4", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -192,13 +192,15 @@ function Calendar({
           "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+          "h-9 w-9 rounded-lg p-0 font-normal aria-selected:opacity-100"
         ),
         selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+          "[&>button]:bg-secondary [&>button]:text-foreground",
+        range_start: "[&>button]:!bg-primary [&>button]:!text-primary-foreground",
+        range_end: "[&>button]:!bg-primary [&>button]:!text-primary-foreground",
         today: "bg-accent text-accent-foreground",
         outside:
-          "text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:opacity-30",
+          "text-muted-foreground [&:not([data-selected])]:opacity-60",
         disabled: "text-muted-foreground opacity-50",
 
         ...classNames,
