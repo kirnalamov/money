@@ -12,6 +12,8 @@
     "settings": "Settings",
     "admin": "Admin",
     "more": "More",
+    "collapse_sidebar": "Collapse menu",
+    "expand_sidebar": "Expand menu",
     "primary_navigation": "Primary navigation",
     "more_navigation": "More navigation",
     "loading": "Loading your data...",

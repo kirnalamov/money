@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export default function LogoutButton() {
+export default function LogoutButton({ collapsed = false }: { collapsed?: boolean }) {
     const { logout, isLoading } = useAuth();
     const { reset } = useStore();
     const { t } = useTranslation();
@@ -22,10 +22,12 @@ export default function LogoutButton() {
             size="sm"
             onClick={handleLogout}
             disabled={isLoading}
-            className="w-full justify-start"
+            aria-label={t("common.sign_out")}
+            title={collapsed ? t("common.sign_out") : undefined}
+            className={collapsed ? "w-full justify-center" : "w-full justify-start"}
         >
-            <LogOut className="mr-2 h-4 w-4" />
-            {t("common.sign_out")}
+            <LogOut className={collapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+            {!collapsed && t("common.sign_out")}
         </Button>
     );
 }

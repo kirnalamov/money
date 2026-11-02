@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./layout.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -42,8 +43,8 @@ export default function RootLayout({
             >
               <div className="flex min-h-screen flex-col">
                 <Sidebar />
-                <main id="main-content" className="min-w-0 flex-1 md:pl-64 pb-16 md:pb-0">
-                  <div className="container mx-auto p-4 md:p-8 max-w-[95%] xl:max-w-[1600px]">
+                <main id="main-content" className="app-main min-w-0 flex-1 pb-16 md:pb-0">
+                  <div className="mx-auto w-full max-w-[1440px] p-4 md:p-8">
                     {children}
                   </div>
                 </main>

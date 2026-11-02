@@ -12,6 +12,8 @@
     "settings": "Настройки",
     "admin": "Администратор",
     "more": "Ещё",
+    "collapse_sidebar": "Свернуть меню",
+    "expand_sidebar": "Развернуть меню",
     "primary_navigation": "Основная навигация",
     "more_navigation": "Дополнительная навигация",
     "loading": "Загрузка данных...",
