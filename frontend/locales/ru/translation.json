@@ -51,7 +51,7 @@
   },
   "dashboard": {
     "title": "Обзор",
-    "subtitle": "Финансовое состояние в одном месте",
+    "subtitle": "Ваши финансы в одном месте",
     "net_worth_total": "Общий капитал",
     "current_snapshot": "Текущее состояние; истории пока нет",
     "vs_last_month": "к прошл. месяцу",
@@ -119,6 +119,7 @@
     },
     "date_filters": {
       "7d": "7Д",
+      "30d": "30Д",
       "1m": "1М",
       "3m": "3М",
       "6m": "6М",
@@ -136,12 +137,18 @@
       "entertainment": "Развлечения"
     },
     "quick_actions": {
+      "title": "Быстрые действия",
       "new_expense": "Расход",
       "add_income": "Доход",
       "transfer": "Перевод",
       "set_goal": "Сберечь"
     },
     "recent_transactions": "Последние операции"
+    ,"growth": {
+      "title": "Ваш капитал растёт!",
+      "description": "На {{percent}}% больше, чем в прошлом месяце",
+      "action": "Подробнее"
+    }
   },
   "transactions": {
     "title": "Операции",

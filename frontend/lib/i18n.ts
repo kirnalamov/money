@@ -13,7 +13,7 @@ export function detectDefaultLanguage(): string {
     const saved = localStorage.getItem('i18nextLng');
     if (saved) return saved;
   }
-  return 'en';
+  return 'ru';
 }
 
 // Инициализируем всегда с английским, чтобы избежать проблем с гидратацией

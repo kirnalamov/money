@@ -44,7 +44,7 @@ export default function RootLayout({
               <div className="flex min-h-screen flex-col">
                 <Sidebar />
                 <main id="main-content" className="app-main min-w-0 flex-1 pb-16 md:pb-0">
-                  <div className="mx-auto w-full max-w-[1440px] p-4 md:p-8">
+                  <div className="mx-auto w-full max-w-[1600px] p-4 md:px-8 md:py-6 xl:px-10">
                     {children}
                   </div>
                 </main>

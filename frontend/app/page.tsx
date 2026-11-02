@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KpiCardsGrid } from "@/components/dashboard/kpi-cards-grid";
+import { NetWorthHeader } from "@/components/dashboard/net-worth-header";
 import { NetWorthChart } from "@/components/dashboard/net-worth-chart";
 import { ExpensesDonut } from "@/components/dashboard/expenses-donut";
 import { LimitsSummary } from "@/components/dashboard/limits-summary";
@@ -18,6 +18,10 @@ import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
 import { useStore } from "@/lib/store";
 import { Wallet } from "lucide-react";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GrowthCard } from "@/components/dashboard/growth-card";
 
 export default function OverviewPage() {
   const { t } = useTranslation();
@@ -31,16 +35,16 @@ export default function OverviewPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-4 md:space-y-5 pb-10">
+      <div className="space-y-5 pb-10">
         {/* Header & Filter */}
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h2>
+            <h2 className="text-3xl md:text-[40px] font-bold tracking-tight leading-none">{t("dashboard.title")}</h2>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
             </div>
           </div>
-          <DashboardFilter dateRange={dateRange} setDateRange={setDateRange} />
+          <div className="flex items-center gap-3"><DatePickerWithRange date={dateRange} setDate={setDateRange} compactLabel /><Button variant="outline" size="icon" className="rounded-full" aria-label="Уведомления"><Bell className="h-4 w-4" /></Button></div>
         </div>
 
         <DashboardDataSourceStatus />
@@ -55,19 +59,20 @@ export default function OverviewPage() {
           />
         )}
 
-        <div className="grid gap-3 lg:grid-cols-12 items-start">
-          <div className="order-1 min-w-0 space-y-3 lg:order-2 lg:col-span-5">
-            <KpiCardsGrid />
-            <RecentTransactions />
-          </div>
-          <div className="order-2 min-w-0 space-y-3 lg:order-1 lg:col-span-7">
-            <QuickActions />
-            <NetWorthChart dateRange={dateRange} showAnalyticsLink />
-            <ExpensesDonut dateRange={dateRange} />
-            <GoalsSummary />
-            <MandatoryExpensesList />
-            <LimitsSummary />
-          </div>
+        <NetWorthHeader />
+        <QuickActions />
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)] items-stretch">
+          <div className="min-w-0"><NetWorthChart dateRange={dateRange} showAnalyticsLink periodControls={<DashboardFilter dateRange={dateRange} setDateRange={setDateRange} />} /></div>
+          <ExpensesDonut dateRange={dateRange} />
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] items-start">
+          <RecentTransactions />
+          <GrowthCard />
+        </div>
+        <GoalsSummary />
+        <div className="grid gap-5 lg:grid-cols-2 items-start">
+          <MandatoryExpensesList />
+          <LimitsSummary />
         </div>
 
       </div>

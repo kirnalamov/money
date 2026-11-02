@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format, subDays } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 
 const localeMap: Record<string, Locale> = {
@@ -41,9 +41,10 @@ type ChartPoint = {
 interface NetWorthChartProps {
   dateRange: DateRange | undefined;
   showAnalyticsLink?: boolean;
+  periodControls?: ReactNode;
 }
 
-export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorthChartProps) {
+export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodControls }: NetWorthChartProps) {
   const { t, i18n } = useTranslation();
   const { accounts, transactions, defaultCurrency } = useStore();
   const locale = localeMap[i18n.language] || enUS;
@@ -92,9 +93,10 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
 
     const today = new Date();
     const endDate = dateRange?.to || today;
+    const earliestDate = [...transactions.map(tx => new Date(tx.date).getTime()), ...accounts.map(acc => acc.created_at ? new Date(acc.created_at).getTime() : NaN)].filter(Number.isFinite);
     const days = dateRange?.from && dateRange?.to
       ? Math.max(0, differenceInDays(dateRange.to, dateRange.from))
-      : 30;
+      : earliestDate.length ? Math.max(0, differenceInDays(endDate, new Date(Math.min(...earliestDate)))) : 30;
 
     const isLargeRange = days > 60;
     const step = isLargeRange ? 7 : 1;
@@ -213,11 +215,11 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
 
   return (
     <div
-      className="rounded-[1.5rem] border bg-card min-h-[370px] sm:h-[400px] flex flex-col overflow-hidden"
+      className="rounded-[20px] border bg-card min-h-[303px] flex flex-col overflow-hidden"
     >
       <div className="p-6 pb-0 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.net_worth_title")}</h3>
             <p className="text-sm text-muted-foreground mt-1.5">
               {dateRange?.from ?
@@ -227,6 +229,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
             <p className="mt-1 text-xs text-muted-foreground">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
             {showAnalyticsLink && <Link href="/analytics" className="mt-2 inline-block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>}
           </div>
+          {periodControls}
           <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

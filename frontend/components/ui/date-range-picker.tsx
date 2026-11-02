@@ -22,6 +22,7 @@ interface DatePickerWithRangeProps {
   setDate: (date: DateRange | undefined) => void
   disabled?: (date: Date) => boolean
   align?: "start" | "center" | "end"
+  compactLabel?: boolean
 }
 
 const localeMap: Record<string, Locale> = {
@@ -35,6 +36,7 @@ export function DatePickerWithRange({
   setDate,
   disabled,
   align = "start",
+  compactLabel = false,
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
   const locale = localeMap[i18n.language] || enUS
@@ -47,7 +49,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-full justify-start bg-card text-left font-normal",
+              "w-full justify-start rounded-full bg-card text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -55,8 +57,7 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "dd.MM.yyyy", { locale })} -{" "}
-                  {format(date.to, "dd.MM.yyyy", { locale })}
+                  {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "dd.MM.yyyy", { locale })} - ${format(date.to, "dd.MM.yyyy", { locale })}`}
                 </>
               ) : (
                 format(date.from, "dd.MM.yyyy", { locale })
