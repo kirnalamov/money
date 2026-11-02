@@ -1,6 +1,7 @@
 from typing import Annotated, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, require_role
@@ -8,6 +9,7 @@ from app.core.security import validate_password_strength, verify_password
 from app.crud.crud_user import user as crud_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
+from app.models.refresh_token import RefreshToken
 from app.schemas.user import User, UserUpdate
 
 router = APIRouter()
@@ -49,7 +51,20 @@ async def update_current_user(
 
     try:
         update_data = user_in.model_dump(exclude_unset=True, exclude={"current_password"})
-        user = await crud_user.update(db, db_obj=current_user, obj_in=update_data)
+        password_changed = user_in.password is not None
+        user = await crud_user.update(
+            db,
+            db_obj=current_user,
+            obj_in=update_data,
+            commit=not password_changed,
+        )
+        if password_changed:
+            await db.execute(
+                update(RefreshToken)
+                .where(RefreshToken.user_id == current_user.id)
+                .values(revoked=True)
+            )
+            await db.commit()
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

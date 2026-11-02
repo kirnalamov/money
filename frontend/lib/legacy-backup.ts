@@ -1,4 +1,5 @@
 const backupKey = 'plutus-legacy-backup';
+const applicationStorageKeys = ['plutus-storage', 'access_token', 'refresh_token', 'i18nextLng', 'sidebar-collapsed'];
 
 export function preserveLegacyData(storage: Storage) {
   const raw = storage.getItem('plutus-storage');
@@ -11,4 +12,8 @@ export function preserveLegacyData(storage: Storage) {
 
 export function getLegacyBackup(storage: Storage) {
   return storage.getItem(backupKey);
+}
+
+export function resetApplicationStorage(storage: Storage) {
+  for (const key of applicationStorageKeys) storage.removeItem(key);
 }

@@ -58,7 +58,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         return db_obj
     
     async def update(
-        self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any]
+        self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any], commit: bool = True
     ) -> User:
         """Update user, hashing password if provided"""
         if isinstance(obj_in, dict):
@@ -71,7 +71,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
         
-        return await super().update(db, db_obj=db_obj, obj_in=update_data)
+        return await super().update(db, db_obj=db_obj, obj_in=update_data, commit=commit)
     
     async def authenticate(
         self, db: AsyncSession, *, username: str, password: str

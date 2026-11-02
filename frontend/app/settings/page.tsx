@@ -14,6 +14,7 @@ import { useStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState } from "react";
+import { resetApplicationStorage } from "@/lib/legacy-backup";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -125,7 +126,7 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     if (confirm("Are you sure you want to reset all data? This action cannot be undone.")) {
-      localStorage.clear();
+      resetApplicationStorage(localStorage);
       window.location.reload();
     }
   };

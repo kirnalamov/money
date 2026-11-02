@@ -101,6 +101,18 @@ async def check_money_ownership_and_refresh():
             refresh = await client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
             assert refresh.status_code == 200, refresh.text
             assert (await client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})).status_code == 401
+            rotated_refresh_token = refresh.json()["refresh_token"]
+            second_session = (await client.post("/api/v1/auth/login", data={"username": "alice", "password": "Password123"})).json()
+            password_change = await client.put(
+                "/api/v1/users/me",
+                headers=headers,
+                json={"current_password": "Password123", "password": "NewPassword123"},
+            )
+            assert password_change.status_code == 200, password_change.text
+            assert (await client.post("/api/v1/auth/refresh", json={"refresh_token": rotated_refresh_token})).status_code == 401
+            assert (await client.post("/api/v1/auth/refresh", json={"refresh_token": second_session["refresh_token"]})).status_code == 401
+            assert (await client.post("/api/v1/auth/login", data={"username": "alice", "password": "Password123"})).status_code == 401
+            assert (await client.post("/api/v1/auth/login", data={"username": "alice", "password": "NewPassword123"})).status_code == 200
     finally:
         app.dependency_overrides.clear()
         await engine.dispose()

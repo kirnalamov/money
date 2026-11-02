@@ -7,11 +7,27 @@ const code = ts.transpile(fs.readFileSync(path.join(__dirname, '../lib/legacy-ba
 const api = {};
 new Function('exports', code)(api);
 const values = new Map();
-const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+const storage = {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: key => values.delete(key),
+};
 const old = JSON.stringify({ state: { limits: [{ id: 'old' }] }, version: 1 });
 values.set('plutus-storage', old);
 api.preserveLegacyData(storage);
 assert.equal(api.getLegacyBackup(storage), old);
+values.set('plutus-storage', 'current');
+values.set('access_token', 'access');
+values.set('refresh_token', 'refresh');
+values.set('i18nextLng', 'ru');
+values.set('sidebar-collapsed', 'true');
+values.set('unrelated-key', 'keep');
+api.resetApplicationStorage(storage);
+assert.equal(api.getLegacyBackup(storage), old);
+assert.equal(storage.getItem('plutus-storage'), null);
+assert.equal(storage.getItem('access_token'), null);
+assert.equal(storage.getItem('refresh_token'), null);
+assert.equal(storage.getItem('unrelated-key'), 'keep');
 values.set('plutus-storage', JSON.stringify({ state: { limits: [{ id: 'new' }] } }));
 api.preserveLegacyData(storage);
 assert.equal(api.getLegacyBackup(storage), old);
