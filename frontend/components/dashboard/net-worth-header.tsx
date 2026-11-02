@@ -107,7 +107,7 @@ export function NetWorthHeader() {
 
   return (
     <div className="relative grid overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_55%,#111311_100%)] p-6 text-card-foreground lg:h-[190px] lg:grid-cols-[30%_45%_25%] lg:p-7">
-      <div className="relative z-10 flex min-w-0 flex-col justify-center">
+      <div className="relative z-10 flex min-w-0 -translate-y-2 flex-col justify-center lg:-translate-y-3">
         <div className="flex flex-col items-start gap-2">
           <div className="flex items-center gap-2">
             <h3 className="text-[16px] font-semibold leading-5 text-[#F5F7F4]">{t("dashboard.net_worth_total")}</h3>
@@ -125,15 +125,16 @@ export function NetWorthHeader() {
           <AreaChart data={chartData} margin={{ top: 8, right: 0, bottom: 2, left: 0 }}>
             <defs>
               <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#C0F05C" stopOpacity=".28" />
-                <stop offset="55%" stopColor="#C0F05C" stopOpacity=".12" />
-                <stop offset="100%" stopColor="#C0F05C" stopOpacity=".01" />
+                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0" />
+                <stop offset="24%" stopColor="#C0F05C" stopOpacity=".08" />
+                <stop offset="52%" stopColor="#C0F05C" stopOpacity=".24" />
+                <stop offset="100%" stopColor="#C0F05C" stopOpacity=".02" />
               </linearGradient>
               <filter id="capital-mini-glow"><feGaussianBlur stdDeviation="2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
             </defs>
             <YAxis hide domain={chartBounds} />
             <Tooltip content={<MiniChartTooltip currency={defaultCurrency} />} cursor={{ stroke: "rgba(192,240,92,.35)", strokeDasharray: "3 3" }} />
-            <Area type="monotone" dataKey="value" stroke="#C0F05C" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="url(#capital-mini-fill)" filter="url(#capital-mini-glow)" dot={false} activeDot={{ r: 4, fill: "#C0F05C", stroke: "#111311", strokeWidth: 2 }} isAnimationActive animationDuration={700} />
+            <Area type="monotone" dataKey="value" baseValue={chartBounds[0]} stroke="#C0F05C" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="url(#capital-mini-fill)" filter="url(#capital-mini-glow)" dot={false} activeDot={{ r: 4, fill: "#C0F05C", stroke: "#111311", strokeWidth: 2 }} isAnimationActive animationDuration={700} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
