@@ -106,7 +106,43 @@ export function NetWorthHeader() {
   ];
 
   return (
-    <div className="relative grid overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_55%,#111311_100%)] p-6 text-card-foreground lg:h-[190px] lg:grid-cols-[30%_45%_25%] lg:p-7">
+    <div className="relative grid min-h-[190px] overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-6 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-7 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="absolute inset-y-0 left-0 right-0 z-0 md:right-[240px] xl:right-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 12, right: 0, bottom: 12, left: 0 }}>
+            <defs>
+              <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0" />
+                <stop offset="28%" stopColor="#C0F05C" stopOpacity="0.015" />
+                <stop offset="52%" stopColor="#C0F05C" stopOpacity="0.18" />
+                <stop offset="78%" stopColor="#C0F05C" stopOpacity="0.24" />
+                <stop offset="100%" stopColor="#C0F05C" stopOpacity="0.04" />
+              </linearGradient>
+              <filter id="capital-mini-glow" x="-10%" y="-20%" width="120%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            <YAxis hide domain={chartBounds} />
+            <Tooltip content={<MiniChartTooltip currency={defaultCurrency} />} cursor={{ stroke: "rgba(192,240,92,.35)", strokeDasharray: "3 3" }} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              baseValue={chartBounds[0]}
+              stroke="#C0F05C"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="url(#capital-mini-fill)"
+              filter="url(#capital-mini-glow)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#C0F05C", stroke: "#111311", strokeWidth: 2 }}
+              isAnimationActive
+              animationDuration={700}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
       <div className="relative z-10 flex min-w-0 -translate-y-2 flex-col justify-center lg:-translate-y-3">
         <div className="flex flex-col items-start gap-2">
           <div className="flex items-center gap-2">
@@ -120,25 +156,7 @@ export function NetWorthHeader() {
           <p className="text-[14px] leading-5 text-[#A0A7A2]">Изменение за месяц: <span className={isPositive ? "font-medium text-[#C0F05C]" : "font-medium text-[#F27683]"}>{isPositive ? "+" : ""}{formatCurrencyCompact(change, defaultCurrency)}</span></p>
         </div>
       </div>
-      <div className="relative h-[145px] min-w-0 self-center lg:px-3">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 8, right: 0, bottom: 2, left: 0 }}>
-            <defs>
-              <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0" />
-                <stop offset="24%" stopColor="#C0F05C" stopOpacity=".08" />
-                <stop offset="52%" stopColor="#C0F05C" stopOpacity=".24" />
-                <stop offset="100%" stopColor="#C0F05C" stopOpacity=".02" />
-              </linearGradient>
-              <filter id="capital-mini-glow"><feGaussianBlur stdDeviation="2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-            </defs>
-            <YAxis hide domain={chartBounds} />
-            <Tooltip content={<MiniChartTooltip currency={defaultCurrency} />} cursor={{ stroke: "rgba(192,240,92,.35)", strokeDasharray: "3 3" }} />
-            <Area type="monotone" dataKey="value" baseValue={chartBounds[0]} stroke="#C0F05C" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="url(#capital-mini-fill)" filter="url(#capital-mini-glow)" dot={false} activeDot={{ r: 4, fill: "#C0F05C", stroke: "#111311", strokeWidth: 2 }} isAnimationActive animationDuration={700} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="mt-5 flex h-[152px] flex-col justify-center border-l border-[#292F2B] pl-4 lg:mt-0 lg:pl-5">
+      <div className="relative z-10 mt-5 flex h-[152px] flex-col justify-center border-l border-[rgba(150,160,150,0.2)] bg-[linear-gradient(90deg,transparent,rgba(17,19,17,0.25))] pl-4 max-md:border-l-0 max-md:border-t max-md:border-t-[#292F2B] max-md:pt-3 lg:mt-0 lg:pl-5">
         {breakdown.map((item) => <Link key={item.label} href={item.href} className="group grid h-[38px] grid-cols-[11px_minmax(0,1fr)_auto_16px] items-center gap-2 rounded-lg px-2 text-[14px] transition-colors duration-150 hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <span className="h-[11px] w-[11px] shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
           <span className="truncate text-[#A0A7A2] transition-colors group-hover:text-[#F5F7F4]">{item.label}</span>
