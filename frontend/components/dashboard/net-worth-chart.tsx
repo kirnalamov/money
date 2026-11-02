@@ -230,7 +230,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
           <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
                   <Filter className="h-4 w-4" />
                   <span className="sr-only">{t("dashboard.charts.filter_accounts")}</span>
                 </Button>
@@ -254,7 +254,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
                   <Layers className="h-4 w-4" />
                   <span className="sr-only">{displayMode === 'combined' ? t("dashboard.charts.mode_combined") : t("dashboard.charts.mode_separate")}</span>
                 </Button>
@@ -276,7 +276,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
                   <Settings className="h-4 w-4" />
                   <span className="sr-only">{t("dashboard.charts.chart_style")}</span>
                 </Button>
