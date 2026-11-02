@@ -104,27 +104,23 @@ export function NetWorthHeader() {
     { label: "Инвестиции", value: investments, color: "#55BCEB", href: "/portfolio" },
     { label: "Накопления", value: savings, color: "#A987E8", href: "/savings" },
   ];
+  const mask = "linear-gradient(90deg, transparent 0%, transparent 28%, rgba(0,0,0,.25) 40%, rgba(0,0,0,.7) 52%, black 65%, black 100%)";
 
   return (
-    <div className="relative grid min-h-[190px] overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-6 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-7 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="relative grid min-h-[210px] gap-x-6 overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-6 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-8 xl:grid-cols-[minmax(0,1fr)_300px]">
       <div
-        className="absolute inset-y-0 left-0 right-0 z-0 md:right-[calc(240px+1.5rem)] lg:right-[calc(240px+1.75rem)] xl:right-[calc(300px+1.75rem)]"
-        style={{
-          maskImage: "linear-gradient(90deg, transparent 0%, transparent 38%, black 54%, black 100%)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, transparent 38%, black 54%, black 100%)",
-        }}
+        className="absolute inset-y-0 left-0 right-0 z-0 md:right-[calc(240px+1.5rem)] lg:right-[calc(240px+2rem)] xl:right-[calc(300px+2rem)]"
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 12, right: 0, bottom: 12, left: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 12, right: 8, bottom: 12, left: 0 }}>
             <defs>
-              <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0" />
-                <stop offset="38%" stopColor="#C0F05C" stopOpacity="0" />
-                <stop offset="54%" stopColor="#C0F05C" stopOpacity="0.12" />
-                <stop offset="78%" stopColor="#C0F05C" stopOpacity="0.24" />
-                <stop offset="100%" stopColor="#C0F05C" stopOpacity="0.04" />
+              <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0.28" />
+                <stop offset="60%" stopColor="#C0F05C" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="#C0F05C" stopOpacity="0" />
               </linearGradient>
-              <filter id="capital-mini-glow" x="-10%" y="-20%" width="120%" height="140%">
+              <filter id="capital-mini-glow" x="-5%" y="-30%" width="110%" height="160%">
                 <feGaussianBlur stdDeviation="2" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
@@ -135,21 +131,32 @@ export function NetWorthHeader() {
               type="monotone"
               dataKey="value"
               baseValue={chartBounds[0]}
+              stroke="none"
+              fill="url(#capital-mini-fill)"
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              baseValue={chartBounds[0]}
               stroke="#C0F05C"
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
-              fill="url(#capital-mini-fill)"
+              fill="none"
               filter="url(#capital-mini-glow)"
-              dot={false}
+              dot={({ cx, cy, index }) => index === chartData.length - 1
+                ? <circle key="end" cx={cx} cy={cy} r={4.5} fill="#F5FFD6" stroke="#C0F05C" strokeWidth={2} />
+                : <g key={index} />}
               activeDot={{ r: 4, fill: "#C0F05C", stroke: "#111311", strokeWidth: 2 }}
-              isAnimationActive
               animationDuration={700}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <div className="relative z-10 flex min-w-0 -translate-y-2 flex-col justify-center lg:-translate-y-3">
+      <div className="relative z-10 flex min-w-0 flex-col justify-center">
         <div className="flex flex-col items-start gap-2">
           <div className="flex items-center gap-2">
             <h3 className="text-[16px] font-semibold leading-5 text-[#F5F7F4]">{t("dashboard.net_worth_total")}</h3>
@@ -162,7 +169,7 @@ export function NetWorthHeader() {
           <p className="text-[14px] leading-5 text-[#A0A7A2]">Изменение за месяц: <span className={isPositive ? "font-medium text-[#C0F05C]" : "font-medium text-[#F27683]"}>{isPositive ? "+" : ""}{formatCurrencyCompact(change, defaultCurrency)}</span></p>
         </div>
       </div>
-      <div className="relative z-10 mt-5 flex h-[152px] flex-col justify-center border-l border-[rgba(150,160,150,0.2)] bg-[linear-gradient(90deg,transparent,rgba(17,19,17,0.25))] pl-4 max-md:border-l-0 max-md:border-t max-md:border-t-[#292F2B] max-md:pt-3 lg:mt-0 lg:pl-5">
+      <div className="relative z-10 mt-5 flex flex-col justify-center gap-1 self-stretch border-l border-[rgba(150,160,150,0.2)] py-2 pl-5 max-md:border-l-0 max-md:border-t max-md:border-t-[#292F2B] max-md:pt-3 lg:mt-0">
         {breakdown.map((item) => <Link key={item.label} href={item.href} className="group grid h-[38px] grid-cols-[11px_minmax(0,1fr)_auto_16px] items-center gap-2 rounded-lg px-2 text-[14px] transition-colors duration-150 hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <span className="h-[11px] w-[11px] shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
           <span className="truncate text-[#A0A7A2] transition-colors group-hover:text-[#F5F7F4]">{item.label}</span>
