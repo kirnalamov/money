@@ -15,7 +15,7 @@ const localeMap: Record<string, Locale> = {
   en: enUS,
 };
 import { formatCurrency, convertCurrency } from "@/lib/utils";
-import { chartDomain } from "@/lib/chart-domain";
+import { accountExistsAtEndOfDay, chartDomain } from "@/lib/chart-domain";
 import { Button } from "@/components/ui/button";
 import { Filter, Layers, Settings } from "lucide-react";
 import {
@@ -153,13 +153,13 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false }: NetWorth
       if (displayMode === 'combined') {
         let total = 0;
         currentFilteredAccounts.forEach(acc => {
-          const val = pastBalances[acc.id] || 0;
+          const val = accountExistsAtEndOfDay(acc.created_at, date) ? (pastBalances[acc.id] || 0) : 0;
           total += convertCurrency(val, acc.currency, defaultCurrency);
         });
         point.total = total;
       } else {
         currentFilteredAccounts.forEach(acc => {
-          const val = pastBalances[acc.id] || 0;
+          const val = accountExistsAtEndOfDay(acc.created_at, date) ? (pastBalances[acc.id] || 0) : 0;
           point[acc.id] = convertCurrency(val, acc.currency, defaultCurrency);
         });
       }
