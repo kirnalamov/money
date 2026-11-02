@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, ChevronDown } from "lucide-react"
 import { format } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { useTranslation } from "react-i18next"
@@ -49,12 +49,11 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-full justify-start rounded-full bg-card text-left font-normal",
+              "h-11 w-full justify-between rounded-full border-[#292F2B] bg-[#111311] px-4 text-left text-[13px] font-medium transition-colors hover:bg-[#191D1A]",
               !date && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
+            <span className="flex min-w-0 items-center"><CalendarIcon className="mr-2 h-[17px] w-[17px]" />{date?.from ? (
               date.to ? (
                 <>
                   {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "dd.MM.yyyy", { locale })} - ${format(date.to, "dd.MM.yyyy", { locale })}`}
@@ -64,7 +63,7 @@ export function DatePickerWithRange({
               )
             ) : (
               <span>{t("common.pick_date")}</span>
-            )}
+            )}</span><ChevronDown className="ml-3 h-4 w-4 shrink-0 text-[#89928B]" />
           </Button>
         </PopoverTrigger>
           <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] rounded-2xl p-0 shadow-xl" align={align}>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
-import { differenceInDays, format, subDays } from "date-fns";
+import { differenceInDays, endOfDay, format, startOfDay, subDays } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
 import { useEffect, useState, useMemo, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
@@ -17,7 +17,7 @@ const localeMap: Record<string, Locale> = {
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 import { accountExistsAtEndOfDay, chartDomain } from "@/lib/chart-domain";
 import { Button } from "@/components/ui/button";
-import { Filter, Layers, Settings } from "lucide-react";
+import { BarChart3, Filter, Layers, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +35,58 @@ type ChartPoint = {
   date: string;
   fullDate: string;
   total?: number;
+  dailyChange?: number;
+  dailyPercent?: number;
+  event?: string;
   [key: string]: string | number | undefined;
 };
+
+function formatCompactCurrency(value: number, currency: string) {
+  const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "RUB" ? "₽" : "$";
+  const absolute = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (absolute >= 1_000_000) return `${sign}${symbol}${(absolute / 1_000_000).toFixed(absolute >= 10_000_000 ? 0 : 1)}m`;
+  if (absolute >= 1_000) return `${sign}${symbol}${(absolute / 1_000).toFixed(absolute >= 10_000 ? 0 : 1)}k`;
+  return `${sign}${symbol}${Math.round(absolute)}`;
+}
+
+function formatSignedCurrency(value: number, currency: string) {
+  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatCurrency(Math.abs(value), currency)}`;
+}
+
+function FinancialTooltip({
+  active,
+  payload,
+  currency,
+  displayMode,
+  accounts,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number; name?: string; payload?: ChartPoint }>;
+  currency: string;
+  displayMode: DisplayMode;
+  accounts: Array<{ id: number; name: string }>;
+}) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0]?.payload;
+  if (!point) return null;
+
+  return (
+    <div className="min-w-[150px] rounded-xl border border-[#303830] bg-[#191D1A] p-3 text-xs shadow-xl">
+      <p className="text-[#A0A7A2]">{point.fullDate ? format(new Date(point.fullDate), "dd.MM.yyyy") : point.date}</p>
+      {displayMode === "combined" ? (
+        <>
+          <p className="mt-1 font-semibold tabular-nums text-[#F5F7F4]">{formatCurrency(point.total || 0, currency)}</p>
+          {typeof point.dailyChange === "number" && <p className={point.dailyChange >= 0 ? "mt-1 text-[#C0F05C]" : "mt-1 text-[#F27683]"}>{formatSignedCurrency(point.dailyChange, currency)}{typeof point.dailyPercent === "number" ? ` (${point.dailyPercent >= 0 ? "+" : ""}${point.dailyPercent.toFixed(2)}%)` : ""}</p>}
+          {point.event && <p className="mt-1 max-w-[190px] truncate text-[#89928B]">{point.event}</p>}
+        </>
+      ) : payload.map((entry) => {
+        const account = accounts.find((item) => item.id.toString() === entry.name);
+        return <p key={entry.name} className="mt-1 font-semibold tabular-nums text-[#F5F7F4]">{account?.name || entry.name}: {formatCurrency(Number(entry.value || 0), currency)}</p>;
+      })}
+    </div>
+  );
+}
 
 interface NetWorthChartProps {
   dateRange: DateRange | undefined;
@@ -98,9 +148,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
       ? Math.max(0, differenceInDays(dateRange.to, dateRange.from))
       : earliestDate.length ? Math.max(0, differenceInDays(endDate, new Date(Math.min(...earliestDate)))) : 30;
 
-    const isLargeRange = days > 60;
-    const step = isLargeRange ? 7 : 1;
-    const count = isLargeRange ? Math.ceil(days / step) : days;
+    const step = 1;
+    const count = days;
 
     // Start with current balances
     const accBalances = Object.fromEntries(accounts.map(a => [a.id, a.balance]));
@@ -169,6 +218,23 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
       points.push(point);
     }
 
+    points.forEach((point, index) => {
+      if (displayMode !== 'combined' || index === 0) return;
+      const previous = points[index - 1].total || 0;
+      point.dailyChange = (point.total || 0) - previous;
+      point.dailyPercent = previous ? (point.dailyChange / previous) * 100 : 0;
+      const pointDate = new Date(point.fullDate);
+      point.event = transactions
+        .filter((transaction) => {
+          const timestamp = new Date(transaction.date).getTime();
+          return timestamp >= startOfDay(pointDate).getTime() && timestamp <= endOfDay(pointDate).getTime();
+        })
+        .map((transaction) => transaction.description || transaction.category)
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(", ");
+    });
+
     setData(points);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRangeKey, displayMode, filteredAccountIds, defaultCurrency, accountsDataKey, transactions, i18n.language]);
@@ -201,6 +267,11 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const domain = useMemo(() => chartDomain(data.flatMap(point =>
     displayMode === 'combined' ? [point.total] : filteredAccounts.map(account => point[account.id])
   ).filter((value): value is number => typeof value === 'number')), [data, displayMode, filteredAccounts]);
+  const xTicks = useMemo(() => {
+    if (data.length <= 5) return data.map((point) => point.date);
+    const tickCount = data.length > 180 ? 5 : data.length > 60 ? 6 : 7;
+    return Array.from({ length: tickCount }, (_, index) => data[Math.round((index * (data.length - 1)) / (tickCount - 1))]?.date).filter(Boolean);
+  }, [data]);
 
   const accountColors = [
     'hsl(var(--primary))',
@@ -215,25 +286,29 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
 
   return (
     <div
-      className="rounded-[20px] border bg-card min-h-[303px] flex flex-col overflow-hidden"
+      className="flex h-[303px] flex-col overflow-hidden rounded-[20px] border border-[#262B28] bg-[#111311]"
     >
-      <div className="p-6 pb-0 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold leading-none tracking-tight text-lg">{t("dashboard.charts.net_worth_title")}</h3>
-            <p className="text-sm text-muted-foreground mt-1.5">
+      <div className="px-6 pb-1 pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <BarChart3 className="h-5 w-5 shrink-0 text-[#C0F05C]" aria-hidden="true" />
+            <div className="min-w-0">
+            <h3 className="text-[17px] font-semibold leading-none tracking-tight text-[#F5F7F4]">{t("dashboard.charts.net_worth_title")}</h3>
+            <p className="mt-1 text-xs text-[#89928B]">
               {dateRange?.from ?
                 `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
                 : t("dashboard.charts.net_worth_subtitle")}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
-            {showAnalyticsLink && <Link href="/analytics" className="mt-2 inline-block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>}
+            <p className="mt-0.5 text-[11px] text-[#89928B]">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
+            {showAnalyticsLink && <Link href="/analytics" className="sr-only">{t("common.view_all")}</Link>}
+            </div>
           </div>
+          <div className="flex shrink-0 items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
           {periodControls}
-          <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
+          <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#A0A7A2] hover:bg-white/[0.04] hover:text-[#F5F7F4]">
                   <Filter className="h-4 w-4" />
                   <span className="sr-only">{t("dashboard.charts.filter_accounts")}</span>
                 </Button>
@@ -257,7 +332,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#A0A7A2] hover:bg-white/[0.04] hover:text-[#F5F7F4]">
                   <Layers className="h-4 w-4" />
                   <span className="sr-only">{displayMode === 'combined' ? t("dashboard.charts.mode_combined") : t("dashboard.charts.mode_separate")}</span>
                 </Button>
@@ -279,7 +354,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 bg-card">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#A0A7A2] hover:bg-white/[0.04] hover:text-[#F5F7F4]">
                   <Settings className="h-4 w-4" />
                   <span className="sr-only">{t("dashboard.charts.chart_style")}</span>
                 </Button>
@@ -303,17 +378,18 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          </div>
         </div>
       </div>
-      <div className="flex-1 w-full min-w-0 min-h-[200px] pb-4 px-3">
-        <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
+      <div className="min-h-0 w-full min-w-0 flex-1 px-3 pb-2">
+        <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0}>
           {chartType === 'area' && (
-            <AreaChart data={data}>
+            <AreaChart data={data} margin={{ top: 2, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 {displayMode === 'combined' ? (
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={dynamicColor} stopOpacity={0.24} />
-                    <stop offset="95%" stopColor={dynamicColor} stopOpacity={0} />
+                    <stop offset="5%" stopColor="#C0F05C" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#C0F05C" stopOpacity={0.01} />
                   </linearGradient>
                 ) : (
                   filteredAccounts.map((acc, index) => {
@@ -328,45 +404,38 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                   })
                 )}
               </defs>
-              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
+              <CartesianGrid stroke="#30362F" strokeOpacity={0.35} vertical={false} />
               <XAxis
                 dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                ticks={xTicks}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 domain={domain}
                 allowDataOverflow
                 tickCount={4}
-                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
-                width={100}
+                tickFormatter={(value) => formatCompactCurrency(value, defaultCurrency)}
+                width={48}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '12px', fontSize: '13px' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number, name: string) => {
-                  if (displayMode === 'combined') {
-                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
-                  } else {
-                    const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrency(value, defaultCurrency), account?.name || name];
-                  }
-                }}
+                content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
+                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Area
-                  type="linear"
+                  type="monotone"
                   dataKey="total"
-                  stroke={dynamicColor}
+                  stroke="#C0F05C"
                   strokeWidth={2.5}
-                  activeDot={{ r: 5, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2 }}
                   fillOpacity={1}
                   baseValue="dataMin"
                   fill="url(#colorTotal)"
@@ -378,9 +447,9 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                     const color = accountColors[index % accountColors.length];
                     const gradientId = `color-${acc.id}`;
                     return (
-                      <Area
+                   <Area
                         key={acc.id}
-                        type="linear"
+                         type="monotone"
                         dataKey={acc.id}
                         stroke={color}
                         fillOpacity={0.6}
