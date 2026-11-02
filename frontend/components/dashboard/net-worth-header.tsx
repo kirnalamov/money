@@ -95,8 +95,8 @@ export function NetWorthHeader() {
     const min = Math.min(...values, totalNetWorth);
     const max = Math.max(...values, totalNetWorth);
     const range = max - min;
-    const padding = range > 0 ? range * 0.08 : Math.max(Math.abs(max) * 0.02, 1);
-    return [min - padding, max + padding] as [number, number];
+    const padding = range > 0 ? range * 0.25 : Math.max(Math.abs(max) * 0.02, 1);
+    return [min - padding, max + padding * 0.5] as [number, number];
   }, [chartData, totalNetWorth]);
   const breakdown = [
     { label: "Свободно", value: available, color: "#C0F05C", href: "/accounts" },
@@ -104,20 +104,21 @@ export function NetWorthHeader() {
     { label: "Инвестиции", value: investments, color: "#55BCEB", href: "/portfolio" },
     { label: "Накопления", value: savings, color: "#A987E8", href: "/savings" },
   ];
-  const mask = "linear-gradient(90deg, transparent 0%, transparent 28%, rgba(0,0,0,.25) 40%, rgba(0,0,0,.7) 52%, black 65%, black 100%)";
+  const mask = "linear-gradient(90deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.45) 25%, rgba(0,0,0,.8) 50%, black 70%, black 100%)";
 
   return (
-    <div className="relative grid min-h-[210px] gap-x-6 overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-6 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="relative grid gap-x-6 overflow-hidden rounded-[20px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-4 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+      {/* График-фон */}
       <div
-        className="absolute inset-y-0 left-0 right-0 z-0 md:right-[calc(240px+1.5rem)] lg:right-[calc(240px+2rem)] xl:right-[calc(300px+2rem)]"
+        className="absolute bottom-2 left-0 right-0 top-[25%] z-0 md:right-[240px] xl:right-[300px]"
         style={{ maskImage: mask, WebkitMaskImage: mask }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 12, right: 8, bottom: 12, left: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
             <defs>
               <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0.28" />
-                <stop offset="60%" stopColor="#C0F05C" stopOpacity="0.08" />
+                <stop offset="0%" stopColor="#C0F05C" stopOpacity="0.22" />
+                <stop offset="45%" stopColor="#C0F05C" stopOpacity="0.05" />
                 <stop offset="100%" stopColor="#C0F05C" stopOpacity="0" />
               </linearGradient>
               <filter id="capital-mini-glow" x="-5%" y="-30%" width="110%" height="160%">
@@ -156,24 +157,29 @@ export function NetWorthHeader() {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      {/* Подложка под текст, чтобы линия не рябила за цифрами */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[45%] bg-[linear-gradient(90deg,rgba(17,19,17,.55),transparent)]" />
+
+      {/* Текст */}
       <div className="relative z-10 flex min-w-0 flex-col justify-center">
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex flex-col items-start gap-1.5">
           <div className="flex items-center gap-2">
-            <h3 className="text-[16px] font-semibold leading-5 text-[#F5F7F4]">{t("dashboard.net_worth_total")}</h3>
+            <h3 className="text-[15px] font-semibold leading-5 text-[#F5F7F4]">{t("dashboard.net_worth_total")}</h3>
             {hasChange && <span className={isPositive ? "inline-flex items-center gap-1 rounded-full bg-[rgba(192,240,92,0.12)] px-2.5 py-1 text-xs font-semibold text-[#C0F05C]" : "inline-flex items-center gap-1 rounded-full bg-[rgba(242,118,131,0.12)] px-2.5 py-1 text-xs font-semibold text-[#F27683]"}>
               {isPositive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
               {isPositive ? "+" : ""}{changePercent.toFixed(2)}%
             </span>}
           </div>
-          <div className="text-[52px] font-bold leading-none tracking-[-1.8px] tabular-nums text-[#F5F7F4] md:text-[56px]">{formatCurrencyCompact(totalNetWorth, defaultCurrency)}</div>
-          <p className="text-[14px] leading-5 text-[#A0A7A2]">Изменение за месяц: <span className={isPositive ? "font-medium text-[#C0F05C]" : "font-medium text-[#F27683]"}>{isPositive ? "+" : ""}{formatCurrencyCompact(change, defaultCurrency)}</span></p>
+          <div className="text-[40px] font-bold leading-none tracking-[-1.4px] tabular-nums text-[#F5F7F4] md:text-[44px]">{formatCurrencyCompact(totalNetWorth, defaultCurrency)}</div>
+          <p className="text-[13px] leading-5 text-[#A0A7A2]">Изменение за месяц: <span className={isPositive ? "font-medium text-[#C0F05C]" : "font-medium text-[#F27683]"}>{isPositive ? "+" : ""}{formatCurrencyCompact(change, defaultCurrency)}</span></p>
         </div>
       </div>
-      <div className="relative z-10 mt-5 flex flex-col justify-center gap-1 self-stretch border-l border-[rgba(150,160,150,0.2)] py-2 pl-5 max-md:border-l-0 max-md:border-t max-md:border-t-[#292F2B] max-md:pt-3 lg:mt-0">
-        {breakdown.map((item) => <Link key={item.label} href={item.href} className="group grid h-[38px] grid-cols-[11px_minmax(0,1fr)_auto_16px] items-center gap-2 rounded-lg px-2 text-[14px] transition-colors duration-150 hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+      {/* Правая панель */}
+      <div className="relative z-10 mt-4 flex flex-col justify-center self-stretch border-l border-[rgba(150,160,150,0.2)] pl-5 max-md:border-l-0 max-md:border-t max-md:border-t-[#292F2B] max-md:pt-3 lg:mt-0">
+        {breakdown.map((item) => <Link key={item.label} href={item.href} className="group grid h-[32px] grid-cols-[11px_minmax(0,1fr)_auto_16px] items-center gap-2 rounded-lg px-2 text-[13px] transition-colors duration-150 hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <span className="h-[11px] w-[11px] shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
           <span className="truncate text-[#A0A7A2] transition-colors group-hover:text-[#F5F7F4]">{item.label}</span>
-          <strong className="text-[16px] font-[650] tabular-nums text-[#F5F7F4]">{formatCurrencyCompact(item.value, defaultCurrency)}</strong>
+          <strong className="text-[15px] font-[650] tabular-nums text-[#F5F7F4]">{formatCurrencyCompact(item.value, defaultCurrency)}</strong>
           <ChevronRight className="h-4 w-4 text-[#89928B] transition-colors group-hover:text-[#C0F05C]" />
         </Link>)}
       </div>
