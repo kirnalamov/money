@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { DateRange } from "react-day-picker";
 import { differenceInDays, endOfDay, format, startOfDay, subDays } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
-import { useEffect, useState, useMemo, type ReactNode } from "react";
+import { useEffect, useState, useMemo, useRef, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 
 const localeMap: Record<string, Locale> = {
@@ -45,8 +45,8 @@ function formatCompactCurrency(value: number, currency: string) {
   const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "RUB" ? "₽" : "$";
   const absolute = Math.abs(value);
   const sign = value < 0 ? "-" : "";
-  if (absolute >= 1_000_000) return `${sign}${symbol}${(absolute / 1_000_000).toFixed(absolute >= 10_000_000 ? 0 : 1)}m`;
-  if (absolute >= 1_000) return `${sign}${symbol}${(absolute / 1_000).toFixed(absolute >= 10_000 ? 0 : 1)}k`;
+  if (absolute >= 1_000_000) return `${sign}${symbol}${(absolute / 1_000_000).toFixed(absolute >= 10_000_000 ? 0 : 1).replace(/\.0$/, "")}m`;
+  if (absolute >= 1_000) return `${sign}${symbol}${(absolute / 1_000).toFixed(absolute >= 100_000 ? 0 : 1).replace(/\.0$/, "")}k`;
   return `${sign}${symbol}${Math.round(absolute)}`;
 }
 
@@ -101,6 +101,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const [data, setData] = useState<ChartPoint[]>([]);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('combined');
   const [chartType, setChartType] = useState<ChartType>('area');
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
 
   // Получаем стабильный список ID счетов
   const accountIds = useMemo(() => accounts.map(acc => acc.id), [accounts]);
@@ -130,6 +132,15 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const dateRangeFrom = dateRange?.from?.getTime() ?? null;
   const dateRangeTo = dateRange?.to?.getTime() ?? null;
   const dateRangeKey = `${dateRangeFrom}-${dateRangeTo}`;
+
+  useEffect(() => {
+    const element = chartRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     // Пересоздаем filteredAccounts внутри useEffect для избежания проблем с зависимостями
@@ -250,28 +261,15 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
       return newSet;
     });
   };
-  // Dynamic colors based on trend
-  const dynamicColor = useMemo(() => {
-    if (data.length < 2) return 'hsl(var(--primary))';
-    const start = data[0].total || 0;
-    const end = data[data.length - 1].total || 0;
-    const diff = end - start;
-
-    // "Yellow border" logic: +/- 1000 threshold for neutral/stable
-    // Make updates more responsive by checking absolute difference
-    if (Math.abs(diff) <= 1000) return 'hsl(var(--primary))';
-    if (diff > 0) return 'hsl(var(--primary))';
-    return '#ef4444'; // Red (Loss)
-  }, [data]);
-
   const domain = useMemo(() => chartDomain(data.flatMap(point =>
     displayMode === 'combined' ? [point.total] : filteredAccounts.map(account => point[account.id])
   ).filter((value): value is number => typeof value === 'number')), [data, displayMode, filteredAccounts]);
   const xTicks = useMemo(() => {
     if (data.length <= 5) return data.map((point) => point.date);
-    const tickCount = data.length > 180 ? 5 : data.length > 60 ? 6 : 7;
-    return Array.from({ length: tickCount }, (_, index) => data[Math.round((index * (data.length - 1)) / (tickCount - 1))]?.date).filter(Boolean);
-  }, [data]);
+    const tickCount = chartWidth <= 420 ? 4 : chartWidth <= 800 ? 5 : chartWidth <= 1200 ? 6 : 7;
+    const visibleTickCount = Math.min(tickCount, data.length);
+    return Array.from({ length: visibleTickCount }, (_, index) => data[Math.round((index * (data.length - 1)) / (visibleTickCount - 1))]?.date).filter(Boolean);
+  }, [chartWidth, data]);
 
   const accountColors = [
     'hsl(var(--primary))',
@@ -286,26 +284,26 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
 
   return (
     <div
-      className="flex h-[303px] flex-col overflow-hidden rounded-[20px] border border-[#262B28] bg-[#111311]"
+      className="flex min-h-[330px] flex-col overflow-hidden rounded-[20px] border border-[#262B28] bg-[#111311] lg:h-[330px]"
     >
-      <div className="px-6 pb-1 pt-5">
-        <div className="flex items-center justify-between gap-3">
+      <div className="px-5 pb-1 pt-4 sm:px-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-center gap-2">
-            <BarChart3 className="h-5 w-5 shrink-0 text-[#C0F05C]" aria-hidden="true" />
+            <BarChart3 className="h-[18px] w-[18px] shrink-0 text-[#C0F05C]" aria-hidden="true" />
             <div className="min-w-0">
-            <h3 className="text-[17px] font-semibold leading-none tracking-tight text-[#F5F7F4]">{t("dashboard.charts.net_worth_title")}</h3>
-            <p className="mt-1 text-xs text-[#89928B]">
-              {dateRange?.from ?
-                `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
-                : t("dashboard.charts.net_worth_subtitle")}
-            </p>
-            <p className="mt-0.5 text-[11px] text-[#89928B]">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
-            {showAnalyticsLink && <Link href="/analytics" className="sr-only">{t("common.view_all")}</Link>}
+              <h3 className="text-[17px] font-semibold leading-none tracking-tight text-[#F5F7F4]">{t("dashboard.charts.net_worth_title")}</h3>
+              <p className="mt-1 text-xs leading-4 text-[#89928B]">
+                {dateRange?.from ?
+                  `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
+                  : t("dashboard.charts.net_worth_subtitle")}
+              </p>
+              <p className="text-[11px] leading-4 text-[#89928B]">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
+              {showAnalyticsLink && <Link href="/analytics" className="sr-only">{t("common.view_all")}</Link>}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
-          {periodControls}
-          <div className="flex items-center gap-1">
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto" onClick={(event) => event.stopPropagation()}>
+            {periodControls}
+            <div className="flex items-center gap-0.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#A0A7A2] hover:bg-white/[0.04] hover:text-[#F5F7F4]">
@@ -377,15 +375,19 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
+            </div>
           </div>
         </div>
       </div>
-      <div className="min-h-0 w-full min-w-0 flex-1 px-3 pb-2">
+      <div ref={chartRef} className="min-h-0 w-full min-w-0 flex-1 px-2 pb-2 sm:px-3">
         <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0}>
           {chartType === 'area' && (
-            <AreaChart data={data} margin={{ top: 2, right: 4, bottom: 0, left: 0 }}>
+            <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 2, left: 0 }}>
               <defs>
+                <filter id="net-worth-point-glow" x="-100%" y="-100%" width="300%" height="300%">
+                  <feGaussianBlur stdDeviation="2" result="blur" />
+                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
                 {displayMode === 'combined' ? (
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#C0F05C" stopOpacity={0.28} />
@@ -421,7 +423,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                 axisLine={false}
                 domain={domain}
                 allowDataOverflow
-                tickCount={4}
+                tickCount={5}
                 tickFormatter={(value) => formatCompactCurrency(value, defaultCurrency)}
                 width={48}
               />
@@ -435,7 +437,9 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                   dataKey="total"
                   stroke="#C0F05C"
                   strokeWidth={2.5}
-                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2 }}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
                   fillOpacity={1}
                   baseValue="dataMin"
                   fill="url(#colorTotal)"
@@ -471,7 +475,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
             </AreaChart>
           )}
           {chartType === 'bar' && (
-            <BarChart data={data}>
+            <BarChart data={data} margin={{ top: 4, right: 8, bottom: 2, left: 0 }}>
               <defs>
                 {displayMode === 'combined' ? (
                   <linearGradient id="barColorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -491,34 +495,30 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                   })
                 )}
               </defs>
-              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
+              <CartesianGrid stroke="#30362F" strokeOpacity={0.35} vertical={false} />
               <XAxis
                 dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                ticks={xTicks}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
-                width={100}
+                domain={domain}
+                allowDataOverflow
+                tickCount={5}
+                tickFormatter={(value) => formatCompactCurrency(value, defaultCurrency)}
+                width={48}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number, name: string) => {
-                  if (displayMode === 'combined') {
-                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
-                  } else {
-                    const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrency(value, defaultCurrency), account?.name || name];
-                  }
-                }}
+                content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
+                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Bar
@@ -553,47 +553,40 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
             </BarChart>
           )}
           {chartType === 'line' && (
-            <LineChart data={data}>
-              <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.65} vertical={false} />
+            <LineChart data={data} margin={{ top: 4, right: 8, bottom: 2, left: 0 }}>
+              <CartesianGrid stroke="#30362F" strokeOpacity={0.35} vertical={false} />
               <XAxis
                 dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                ticks={xTicks}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                stroke="#89928B"
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 domain={domain}
                 allowDataOverflow
-                tickCount={4}
-                tickFormatter={(value) => formatCurrency(value, defaultCurrency)}
-                width={100}
+                tickCount={5}
+                tickFormatter={(value) => formatCompactCurrency(value, defaultCurrency)}
+                width={48}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number, name: string) => {
-                  if (displayMode === 'combined') {
-                    return [formatCurrency(value, defaultCurrency), t("dashboard.charts.total")];
-                  } else {
-                    const account = accounts.find(acc => acc.id.toString() === name);
-                    return [formatCurrency(value, defaultCurrency), account?.name || name];
-                  }
-                }}
+                content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
+                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Line
-                  type="linear"
+                  type="monotone"
                   dataKey="total"
-                  stroke="hsl(var(--primary))"
+                  stroke="#C0F05C"
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
                   animationDuration={1000}
                 />
               ) : (
@@ -603,7 +596,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                     return (
                       <Line
                         key={acc.id}
-                        type="linear"
+                        type="monotone"
                         dataKey={acc.id}
                         stroke={color}
                         strokeWidth={2}
