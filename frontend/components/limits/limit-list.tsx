@@ -4,13 +4,14 @@ import { useStore } from "@/lib/store";
 import { LimitCard } from "./limit-card";
 import { useTranslation } from "react-i18next";
 import { LimitRule } from "@/types";
+import { calculateLimitSpent } from "@/lib/limit-utils";
 
 interface LimitListProps {
     onEdit: (limit: LimitRule) => void;
 }
 
 export function LimitList({ onEdit }: LimitListProps) {
-    const { limits, deleteLimit } = useStore();
+    const { limits, transactions, deleteLimit } = useStore();
     const { t } = useTranslation();
 
     const handleDelete = async (id: string) => {
@@ -33,7 +34,7 @@ export function LimitList({ onEdit }: LimitListProps) {
             {limits.map(limit => (
                 <LimitCard
                     key={limit.id}
-                    limit={limit}
+                    limit={{ ...limit, spent: calculateLimitSpent(limit, transactions) }}
                     onEdit={onEdit}
                     onDelete={handleDelete}
                 />

@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { calculateLimitSpent } from "@/lib/limit-utils";
 
 // Categories are now fetched from store with their colors
 
@@ -25,21 +26,8 @@ export function LimitsSummary() {
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {limits.filter(limit => limit.period === 'monthly').map((limit) => {
-
-          // Calculate dynamically from current month's transactions
-          const currentMonth = new Date().getMonth();
-          const currentYear = new Date().getFullYear();
-
-          const matchingTransactions = transactions.filter(t =>
-            t.type === 'expense' &&
-            t.category === limit.category &&
-            new Date(t.date).getMonth() === currentMonth &&
-            new Date(t.date).getFullYear() === currentYear
-          );
-
-          const calculatedSpent = matchingTransactions.reduce((acc, tx) => {
-            return acc + convertCurrency(tx.amount, tx.currency, defaultCurrency);
-          }, 0);
+          const spentInLimitCurrency = calculateLimitSpent(limit, transactions);
+          const calculatedSpent = convertCurrency(spentInLimitCurrency, limit.currency, defaultCurrency);
 
           const convertedLimit = convertCurrency(limit.amount, limit.currency, defaultCurrency);
           const percentage = convertedLimit > 0 ? Math.min(100, (calculatedSpent / convertedLimit) * 100) : 0;
