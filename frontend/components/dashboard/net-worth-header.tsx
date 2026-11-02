@@ -107,14 +107,20 @@ export function NetWorthHeader() {
 
   return (
     <div className="relative grid min-h-[190px] overflow-hidden rounded-[22px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-6 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_240px] lg:p-7 xl:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="absolute inset-y-0 left-0 right-0 z-0 md:right-[240px] xl:right-[300px]">
+      <div
+        className="absolute inset-y-0 left-0 right-0 z-0 md:right-[calc(240px+1.5rem)] lg:right-[calc(240px+1.75rem)] xl:right-[calc(300px+1.75rem)]"
+        style={{
+          maskImage: "linear-gradient(90deg, transparent 0%, transparent 38%, black 54%, black 100%)",
+          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, transparent 38%, black 54%, black 100%)",
+        }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 12, right: 0, bottom: 12, left: 0 }}>
             <defs>
               <linearGradient id="capital-mini-fill" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#C0F05C" stopOpacity="0" />
-                <stop offset="28%" stopColor="#C0F05C" stopOpacity="0.015" />
-                <stop offset="52%" stopColor="#C0F05C" stopOpacity="0.18" />
+                <stop offset="38%" stopColor="#C0F05C" stopOpacity="0" />
+                <stop offset="54%" stopColor="#C0F05C" stopOpacity="0.12" />
                 <stop offset="78%" stopColor="#C0F05C" stopOpacity="0.24" />
                 <stop offset="100%" stopColor="#C0F05C" stopOpacity="0.04" />
               </linearGradient>
