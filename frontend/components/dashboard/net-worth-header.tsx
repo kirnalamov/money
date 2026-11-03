@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
 import { formatCurrencyCompact, convertCurrency } from "@/lib/utils";
+import { getFinancialHealth, getFinancialHealthColor } from "@/lib/financial-health";
 import { ChevronRight, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -90,10 +91,11 @@ export function NetWorthHeader() {
   const changePercent = chartData[0]?.value ? (change / chartData[0].value) * 100 : 0;
   const isPositive = change >= 0;
   const hasChange = Math.abs(changePercent) > 0.005;
-  const capitalChartColor = changePercent < -7 ? "#F27683" : changePercent > 7 ? "#C0F05C" : "#F2C45E";
-  const capitalCardBackground = changePercent < -3.5
+  const financialHealth = getFinancialHealth(transactions, defaultCurrency, subDays(new Date(), 30), new Date());
+  const capitalChartColor = getFinancialHealthColor(financialHealth);
+  const capitalCardBackground = financialHealth === "negative"
     ? "linear-gradient(115deg,#261619 0%,#111311 65%,#101210 100%)"
-    : changePercent > 3.5
+    : financialHealth === "positive"
       ? "linear-gradient(115deg,#171D11 0%,#111311 65%,#101210 100%)"
       : "linear-gradient(115deg,#242012 0%,#111311 65%,#101210 100%)";
   const chartBounds = useMemo(() => {

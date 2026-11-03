@@ -15,6 +15,7 @@ const localeMap: Record<string, Locale> = {
   en: enUS,
 };
 import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { getFinancialHealth, getFinancialHealthColor } from "@/lib/financial-health";
 import { accountExistsAtEndOfDay, chartDomain } from "@/lib/chart-domain";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Filter, Layers, Settings } from "lucide-react";
@@ -52,12 +53,6 @@ function formatCompactCurrency(value: number, currency: string) {
 
 function formatSignedCurrency(value: number, currency: string) {
   return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatCurrency(Math.abs(value), currency)}`;
-}
-
-function getCapitalStatusColor(changePercent: number) {
-  if (changePercent < -3.5) return "#F27683";
-  if (changePercent > 3.5) return "#C0F05C";
-  return "#F2C45E";
 }
 
 function FinancialTooltip({
@@ -270,13 +265,9 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const domain = useMemo(() => chartDomain(data.flatMap(point =>
     displayMode === 'combined' ? [point.total] : filteredAccounts.map(account => point[account.id])
   ).filter((value): value is number => typeof value === 'number')), [data, displayMode, filteredAccounts]);
-  const combinedChangePercent = useMemo(() => {
-    const values = data.map((point) => point.total).filter((value): value is number => typeof value === 'number');
-    const start = values[0];
-    const end = values[values.length - 1];
-    return start && end !== undefined ? ((end - start) / Math.abs(start)) * 100 : 0;
-  }, [data]);
-  const combinedChartColor = getCapitalStatusColor(combinedChangePercent);
+  const chartPeriodStart = dateRange?.from || (data[0]?.fullDate ? new Date(data[0].fullDate) : subDays(new Date(), 30));
+  const chartPeriodEnd = dateRange?.to || new Date();
+  const combinedChartColor = getFinancialHealthColor(getFinancialHealth(transactions, defaultCurrency, chartPeriodStart, chartPeriodEnd));
   const xTicks = useMemo(() => {
     if (data.length <= 5) return data.map((point) => point.date);
     const tickCount = chartWidth <= 420 ? 4 : chartWidth <= 800 ? 5 : chartWidth <= 1200 ? 6 : 7;
