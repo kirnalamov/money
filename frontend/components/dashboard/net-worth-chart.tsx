@@ -54,6 +54,12 @@ function formatSignedCurrency(value: number, currency: string) {
   return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatCurrency(Math.abs(value), currency)}`;
 }
 
+function getCapitalStatusColor(changePercent: number) {
+  if (changePercent < -3.5) return "#F27683";
+  if (changePercent > 3.5) return "#C0F05C";
+  return "#F2C45E";
+}
+
 function FinancialTooltip({
   active,
   payload,
@@ -264,6 +270,13 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const domain = useMemo(() => chartDomain(data.flatMap(point =>
     displayMode === 'combined' ? [point.total] : filteredAccounts.map(account => point[account.id])
   ).filter((value): value is number => typeof value === 'number')), [data, displayMode, filteredAccounts]);
+  const combinedChangePercent = useMemo(() => {
+    const values = data.map((point) => point.total).filter((value): value is number => typeof value === 'number');
+    const start = values[0];
+    const end = values[values.length - 1];
+    return start && end !== undefined ? ((end - start) / Math.abs(start)) * 100 : 0;
+  }, [data]);
+  const combinedChartColor = getCapitalStatusColor(combinedChangePercent);
   const xTicks = useMemo(() => {
     if (data.length <= 5) return data.map((point) => point.date);
     const tickCount = chartWidth <= 420 ? 4 : chartWidth <= 800 ? 5 : chartWidth <= 1200 ? 6 : 7;
@@ -388,9 +401,9 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                   <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
                 {displayMode === 'combined' ? (
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#C0F05C" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#C0F05C" stopOpacity={0.01} />
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="5%" stopColor={combinedChartColor} stopOpacity={0.28} />
+                     <stop offset="95%" stopColor={combinedChartColor} stopOpacity={0.01} />
                   </linearGradient>
                 ) : (
                   filteredAccounts.map((acc, index) => {
@@ -428,17 +441,17 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
               />
               <Tooltip
                 content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
-                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+                 cursor={{ stroke: combinedChartColor, strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="#C0F05C"
+                   stroke={combinedChartColor}
                   strokeWidth={2.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
+                   activeDot={{ r: 5, fill: combinedChartColor, stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
                   fillOpacity={1}
                   baseValue="dataMin"
                   fill="url(#colorTotal)"
@@ -472,9 +485,9 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
             <BarChart data={data} margin={{ top: 4, right: 8, bottom: 2, left: 0 }}>
               <defs>
                 {displayMode === 'combined' ? (
-                  <linearGradient id="barColorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                   <linearGradient id="barColorTotal" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="5%" stopColor={combinedChartColor} stopOpacity={0.8} />
+                     <stop offset="95%" stopColor={combinedChartColor} stopOpacity={0.4} />
                   </linearGradient>
                 ) : (
                   filteredAccounts.map((acc, index) => {
@@ -512,12 +525,12 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
               />
               <Tooltip
                 content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
-                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+                 cursor={{ stroke: combinedChartColor, strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Bar
                   dataKey="total"
-                  fill="url(#barColorTotal)"
+                   fill="url(#barColorTotal)"
                   radius={[4, 4, 0, 0]}
                   animationDuration={1000}
                 />
@@ -566,16 +579,16 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
               />
               <Tooltip
                 content={<FinancialTooltip currency={defaultCurrency} displayMode={displayMode} accounts={accounts} />}
-                cursor={{ stroke: '#C0F05C', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+                 cursor={{ stroke: combinedChartColor, strokeDasharray: '4 4', strokeOpacity: 0.5 }}
               />
               {displayMode === 'combined' ? (
                 <Line
                   type="monotone"
                   dataKey="total"
-                  stroke="#C0F05C"
+                   stroke={combinedChartColor}
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, fill: '#C0F05C', stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
+                   activeDot={{ r: 5, fill: combinedChartColor, stroke: '#111311', strokeWidth: 2, filter: 'url(#net-worth-point-glow)' }}
                   animationDuration={1000}
                 />
               ) : (

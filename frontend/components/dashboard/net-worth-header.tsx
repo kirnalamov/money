@@ -91,6 +91,11 @@ export function NetWorthHeader() {
   const isPositive = change >= 0;
   const hasChange = Math.abs(changePercent) > 0.005;
   const capitalChartColor = changePercent < -7 ? "#F27683" : changePercent > 7 ? "#C0F05C" : "#F2C45E";
+  const capitalCardBackground = changePercent < -3.5
+    ? "linear-gradient(115deg,#261619 0%,#111311 65%,#101210 100%)"
+    : changePercent > 3.5
+      ? "linear-gradient(115deg,#171D11 0%,#111311 65%,#101210 100%)"
+      : "linear-gradient(115deg,#242012 0%,#111311 65%,#101210 100%)";
   const chartBounds = useMemo(() => {
     const values = chartData.map((point) => point.value);
     const min = Math.min(...values, totalNetWorth);
@@ -108,7 +113,7 @@ export function NetWorthHeader() {
   const mask = "linear-gradient(90deg, transparent 0px, transparent 160px, rgba(0,0,0,.35) 240px, rgba(0,0,0,.75) 330px, black 420px, black 100%)";
 
   return (
-    <div className="relative grid gap-x-6 overflow-hidden rounded-[20px] border border-[#282E28] bg-[linear-gradient(115deg,#171D11_0%,#111311_65%,#101210_100%)] p-4 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_264px] lg:p-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+    <div className="relative grid gap-x-6 overflow-hidden rounded-[20px] border border-[#282E28] p-4 text-card-foreground [isolation:isolate] md:grid-cols-[minmax(0,1fr)_264px] lg:p-5 xl:grid-cols-[minmax(0,1fr)_330px]" style={{ background: capitalCardBackground }}>
       {/* График-фон */}
       <div
         className="absolute bottom-[12%] left-0 right-0 top-[12%] z-0 md:right-[calc(264px+1rem+12px)] lg:right-[calc(264px+1.25rem+12px)] xl:right-[calc(330px+1.25rem+12px)]"
