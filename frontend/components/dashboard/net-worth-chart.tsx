@@ -297,7 +297,6 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                   `${format(dateRange.from, 'dd.MM.yyyy', { locale })} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy', { locale }) : '...'}`
                   : t("dashboard.charts.net_worth_subtitle")}
               </p>
-              <p className="text-[11px] leading-4 text-[#89928B]">{t(chartType === 'bar' ? 'dashboard.charts.zero_scale' : 'dashboard.charts.dynamic_scale')}</p>
               {showAnalyticsLink && <Link href="/analytics" className="sr-only">{t("common.view_all")}</Link>}
             </div>
           </div>
@@ -411,14 +410,14 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                 dataKey="date"
                 ticks={xTicks}
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 domain={domain}
@@ -454,7 +453,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                    <Area
                         key={acc.id}
                          type="monotone"
-                        dataKey={acc.id}
+                         dataKey={acc.id}
+                         name={acc.name}
                         stroke={color}
                         fillOpacity={0.6}
                         fill={`url(#${gradientId})`}
@@ -463,13 +463,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                       />
                     );
                   })}
-                  <Legend
-                    formatter={(value) => {
-                      const account = accounts.find(acc => acc.id.toString() === value);
-                      return account?.name || value;
-                    }}
-                    wrapperStyle={{ paddingTop: '20px' }}
-                  />
+                   <Legend height={22} iconSize={8} wrapperStyle={{ fontSize: Math.max(10, 13 - Math.max(0, filteredAccounts.length - 3)), whiteSpace: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }} />
                 </>
               )}
             </AreaChart>
@@ -500,14 +494,14 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                 dataKey="date"
                 ticks={xTicks}
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 domain={domain}
@@ -534,20 +528,15 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                     return (
                       <Bar
                         key={acc.id}
-                        dataKey={acc.id}
+                         dataKey={acc.id}
+                         name={acc.name}
                         fill={`url(#${gradientId})`}
                         radius={[4, 4, 0, 0]}
                         animationDuration={1000}
                       />
                     );
                   })}
-                  <Legend
-                    formatter={(value) => {
-                      const account = accounts.find(acc => acc.id.toString() === value);
-                      return account?.name || value;
-                    }}
-                    wrapperStyle={{ paddingTop: '20px' }}
-                  />
+                   <Legend height={22} iconSize={8} wrapperStyle={{ fontSize: Math.max(10, 13 - Math.max(0, filteredAccounts.length - 3)), whiteSpace: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }} />
                 </>
               )}
             </BarChart>
@@ -559,14 +548,14 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                 dataKey="date"
                 ticks={xTicks}
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis
                 stroke="#89928B"
-                fontSize={11}
+                 fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 domain={domain}
@@ -597,7 +586,8 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                       <Line
                         key={acc.id}
                         type="monotone"
-                        dataKey={acc.id}
+                         dataKey={acc.id}
+                         name={acc.name}
                         stroke={color}
                         strokeWidth={2}
                         dot={false}
@@ -606,13 +596,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
                       />
                     );
                   })}
-                  <Legend
-                    formatter={(value) => {
-                      const account = accounts.find(acc => acc.id.toString() === value);
-                      return account?.name || value;
-                    }}
-                    wrapperStyle={{ paddingTop: '20px' }}
-                  />
+                   <Legend height={22} iconSize={8} wrapperStyle={{ fontSize: Math.max(10, 13 - Math.max(0, filteredAccounts.length - 3)), whiteSpace: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }} />
                 </>
               )}
             </LineChart>

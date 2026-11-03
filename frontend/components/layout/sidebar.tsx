@@ -84,22 +84,22 @@ export function Sidebar() {
         </nav>
 
         {/* User Info & Logout */}
-        <div className="mt-auto flex items-center gap-2 border-t p-4">
+        <div className={cn("mt-auto flex border-t p-4", collapsed ? "justify-center" : "flex-col gap-2")}>
           {!collapsed && (
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">{(user.full_name || user.username).charAt(0).toUpperCase()}</span>
               <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user.full_name || user.username}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-              {user.is_superuser && (
-                <span className="mt-1 inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                  {t("common.admin")}
-                </span>
-              )}
+                <p className="truncate text-sm font-medium">{user.full_name || user.username}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                {user.is_superuser && (
+                  <span className="mt-1 inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {t("common.admin")}
+                  </span>
+                )}
               </div>
             </div>
           )}
-          <LogoutButton collapsed />
+          <LogoutButton collapsed={collapsed} />
         </div>
       </div>
     </aside>

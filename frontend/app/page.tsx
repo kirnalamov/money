@@ -35,7 +35,7 @@ export default function OverviewPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-5 pb-10">
+      <div className="mx-auto space-y-5 pb-10 md:max-w-[1440px] md:px-4 xl:px-8">
         {/* Header & Filter */}
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>

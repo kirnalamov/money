@@ -24,7 +24,7 @@ export default function LogoutButton({ collapsed = false }: { collapsed?: boolea
             disabled={isLoading}
             aria-label={t("common.sign_out")}
             title={collapsed ? t("common.sign_out") : undefined}
-            className={collapsed ? "w-full justify-center" : "w-full justify-start"}
+            className={collapsed ? "h-9 w-9 shrink-0 justify-center p-0" : "w-full justify-start"}
         >
             <LogOut className={collapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} />
             {!collapsed && t("common.sign_out")}
