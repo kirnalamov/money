@@ -65,14 +65,14 @@ export default function OverviewPage() {
           <div className="min-w-0"><NetWorthChart dateRange={dateRange} showAnalyticsLink periodControls={<DashboardFilter dateRange={dateRange} setDateRange={setDateRange} />} /></div>
           <ExpensesDonut dateRange={dateRange} />
         </div>
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] items-start">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
           <RecentTransactions />
-          <GrowthCard />
-        </div>
-        <GoalsSummary />
-        <div className="grid gap-5 lg:grid-cols-2 items-start">
-          <MandatoryExpensesList />
-          <LimitsSummary />
+          <div className="flex flex-col gap-5">
+            <GrowthCard />
+            <LimitsSummary />
+            <MandatoryExpensesList />
+            <GoalsSummary />
+          </div>
         </div>
 
       </div>

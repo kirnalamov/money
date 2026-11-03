@@ -13,8 +13,8 @@ export function RecentTransactions() {
     const { t, i18n } = useTranslation();
     const { transactions, defaultCurrency } = useStore();
 
-    // Sort by date desc and take top 5
-    const recent = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 2);
+    // Sort by date desc and show the latest 13 transactions.
+    const recent = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 13);
 
     if (recent.length === 0) {
         return (
