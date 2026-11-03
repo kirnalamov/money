@@ -2,14 +2,37 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
-import { cn, formatCurrency, convertCurrency } from "@/lib/utils";
+import { cn, formatCurrency, convertCurrency, getCurrencySymbol } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import Link from "next/link";
 import { DateRange } from "react-day-picker";
 import { isWithinInterval } from "date-fns";
 
+function formatDonutTotal(amount: number, currency: string, language: string) {
+    const absolute = Math.abs(amount);
+    const sign = amount < 0 ? "-" : "";
+    const locale = language === "ru" ? "ru-RU" : "en-US";
+    const symbol = getCurrencySymbol(currency);
+    const withSymbol = (value: string, suffix: string) => currency === "RUB"
+        ? `${sign}${value}${suffix} ${symbol}`
+        : `${sign}${symbol}${value}${suffix}`;
+    const format = (value: number) => new Intl.NumberFormat(locale, {
+        maximumFractionDigits: 2,
+    }).format(value);
+
+    if (absolute >= 1_000_000) {
+        const suffix = language === "ru" ? " млн" : "m";
+        return withSymbol(format(absolute / 1_000_000), suffix);
+    }
+    if (absolute >= 1_000) {
+        const suffix = language === "ru" ? " тыс." : "k";
+        return withSymbol(format(absolute / 1_000), suffix);
+    }
+    return formatCurrency(amount, currency);
+}
+
 export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { transactions, defaultCurrency } = useStore();
     const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
     const containerRef = React.useRef<HTMLDivElement>(null);
@@ -49,6 +72,8 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     }, [transactions, defaultCurrency, dateRangeFrom, dateRangeTo]);
 
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
+    const totalLabel = formatDonutTotal(total, defaultCurrency, i18n.language);
+    const totalFontSize = totalLabel.length > 11 ? "text-lg" : totalLabel.length > 8 ? "text-xl" : "text-2xl";
 
     if (data.length === 0) {
         return (
@@ -69,7 +94,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                 <div ref={containerRef} className="relative w-full h-[160px] max-w-[180px] flex-shrink-0">
                     {/* Center Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
-                        <span className="text-2xl font-bold tracking-tight">{formatCurrency(total, defaultCurrency)}</span>
+                        <span className={cn("whitespace-nowrap font-bold leading-none tracking-tight", totalFontSize)}>{totalLabel}</span>
                         <span className="text-sm text-muted-foreground mt-1">{t("dashboard.charts.total")}</span>
                     </div>
                     <ResponsiveContainer width="100%" height="100%">
