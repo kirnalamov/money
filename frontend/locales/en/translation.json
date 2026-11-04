@@ -25,6 +25,7 @@
     "backup_summary": "Found in backup: {{limits}} limits, {{recurringExpenses}} recurring expenses, and {{positions}} positions.",
     "backup_no_importable_data": "This backup has no limits or recurring expenses to import automatically. Positions require manual transfer.",
     "backup_download": "Download backup",
+    "backup_dismiss": "Hide notification",
     "backup_import": "Import to current account",
     "backup_confirm": "Import limits and recurring expenses into {{username}}? Make sure the backup is yours. Existing records will not be overwritten. Positions remain in the backup and require manual transfer.",
     "backup_result": "Limits and expenses imported: {{imported}}. Not imported (duplicates or errors): {{failed}}. Positions in backup: {{positions}}; they require manual transfer.",

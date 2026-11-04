@@ -8,7 +8,12 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { getLegacyBackup, type LegacyBackup } from "@/lib/legacy-backup";
+import {
+    dismissLegacyBackup,
+    getLegacyBackup,
+    isLegacyBackupDismissed,
+    type LegacyBackup,
+} from "@/lib/legacy-backup";
 import { saveUserItem } from "@/lib/api/user-items";
 
 interface ProtectedRouteProps {
@@ -25,7 +30,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<string | null>(null);
 
-    useEffect(() => { setBackup(getLegacyBackup(localStorage)); }, []);
+    useEffect(() => {
+        const value = getLegacyBackup(localStorage);
+        setBackup(value && !isLegacyBackupDismissed(localStorage, value) ? value : null);
+    }, []);
 
     const importBackup = async () => {
         if (!backup || !window.confirm(t("common.backup_confirm", { username: user?.username }))) return;
@@ -124,6 +132,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
                     link.click();
                     URL.revokeObjectURL(url);
                 }}>{t("common.backup_download")}</Button>
+                <Button variant="ghost" className="w-fit" onClick={() => {
+                    dismissLegacyBackup(localStorage, backup);
+                    setBackup(null);
+                }}>{t("common.backup_dismiss")}</Button>
             </AlertDescription>
         </Alert>}
         {children}

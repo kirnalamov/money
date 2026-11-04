@@ -1,4 +1,5 @@
 const backupKey = 'plutus-legacy-backup';
+const dismissedBackupKey = 'plutus-legacy-backup-dismissed';
 const applicationStorageKeys = ['plutus-storage', 'access_token', 'refresh_token', 'i18nextLng', 'sidebar-collapsed'];
 
 import type { UserItems } from './api/user-items';
@@ -42,6 +43,14 @@ export function getLegacyBackup(storage: Storage): LegacyBackup | null {
   const backup = parseLegacyBackup(raw);
   if (!backup) storage.removeItem(backupKey);
   return backup;
+}
+
+export function isLegacyBackupDismissed(storage: Storage, backup: LegacyBackup): boolean {
+  return storage.getItem(dismissedBackupKey) === backup.raw;
+}
+
+export function dismissLegacyBackup(storage: Storage, backup: LegacyBackup) {
+  storage.setItem(dismissedBackupKey, backup.raw);
 }
 
 export function resetApplicationStorage(storage: Storage) {

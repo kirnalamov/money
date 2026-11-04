@@ -38,3 +38,8 @@ values.set('plutus-legacy-backup', 'broken json');
 values.set('plutus-storage', JSON.stringify({ state: { positions: [{ symbol: 'NEW' }] } }));
 api.preserveLegacyData(storage);
 assert.equal(api.getLegacyBackup(storage).state.positions[0].symbol, 'NEW');
+const currentBackup = api.getLegacyBackup(storage);
+assert.equal(api.isLegacyBackupDismissed(storage, currentBackup), false);
+api.dismissLegacyBackup(storage, currentBackup);
+assert.equal(api.isLegacyBackupDismissed(storage, currentBackup), true);
+assert.equal(api.getLegacyBackup(storage).raw, currentBackup.raw);
