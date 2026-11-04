@@ -8,8 +8,8 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { getLegacyBackup } from "@/lib/legacy-backup";
-import { saveUserItem, type UserItems } from "@/lib/api/user-items";
+import { getLegacyBackup, type LegacyBackup } from "@/lib/legacy-backup";
+import { saveUserItem } from "@/lib/api/user-items";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { fetchAllData, seedDemoPositions, isLoading: dataLoading, dataReady, dataError } = useStore();
-    const [backup, setBackup] = useState<string | null>(null);
+    const [backup, setBackup] = useState<LegacyBackup | null>(null);
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<string | null>(null);
 
@@ -32,7 +32,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         setImporting(true);
         let imported = 0, failed = 0;
         try {
-            const state = JSON.parse(backup).state as UserItems;
+            const state = backup.state;
             for (const kind of ["limits", "recurringExpenses"] as const) {
                 if (!Array.isArray(state?.[kind])) continue;
                 for (const item of state[kind]) {
@@ -41,7 +41,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
                     catch { failed++; }
                 }
             }
-            setImportResult(t("common.backup_result", { imported, failed }));
+            setImportResult(t("common.backup_result", {
+                imported,
+                failed,
+                positions: state.positions.length,
+            }));
             await fetchAllData();
         } catch {
             setImportResult(t("common.error"));
@@ -101,10 +105,19 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
             <AlertTitle>{t("common.backup_title")}</AlertTitle>
             <AlertDescription className="mt-2 flex flex-col gap-3">
                 <span>{t("common.backup_description")}</span>
+                <span>{t("common.backup_summary", {
+                    limits: backup.state.limits.length,
+                    recurringExpenses: backup.state.recurringExpenses.length,
+                    positions: backup.state.positions.length,
+                })}</span>
                 {importResult && <span role="status">{importResult}</span>}
-                <Button variant="outline" className="w-fit" disabled={importing} onClick={() => void importBackup()}>{t("common.backup_import")}</Button>
+                {backup.state.limits.length + backup.state.recurringExpenses.length > 0 ? (
+                    <Button variant="outline" className="w-fit" disabled={importing} onClick={() => void importBackup()}>{t("common.backup_import")}</Button>
+                ) : (
+                    <span>{t("common.backup_no_importable_data")}</span>
+                )}
                 <Button variant="outline" className="w-fit" onClick={() => {
-                    const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
+                    const url = URL.createObjectURL(new Blob([backup.raw], { type: 'application/json' }));
                     const link = document.createElement('a');
                     link.href = url;
                     link.download = 'plutus-backup.json';

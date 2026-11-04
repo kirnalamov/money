@@ -1,17 +1,47 @@
 const backupKey = 'plutus-legacy-backup';
 const applicationStorageKeys = ['plutus-storage', 'access_token', 'refresh_token', 'i18nextLng', 'sidebar-collapsed'];
 
+import type { UserItems } from './api/user-items';
+
+export interface LegacyBackup {
+  raw: string;
+  state: UserItems;
+}
+
+export function parseLegacyBackup(raw: string): LegacyBackup | null {
+  try {
+    const parsed = JSON.parse(raw) as { state?: Partial<UserItems> };
+    const state = parsed.state;
+    if (!state || typeof state !== 'object') return null;
+
+    const normalized: UserItems = {
+      limits: Array.isArray(state.limits) ? state.limits : [],
+      positions: Array.isArray(state.positions) ? state.positions : [],
+      recurringExpenses: Array.isArray(state.recurringExpenses) ? state.recurringExpenses : [],
+    };
+    if (Object.values(normalized).every((items) => items.length === 0)) return null;
+    return { raw, state: normalized };
+  } catch {
+    return null;
+  }
+}
+
 export function preserveLegacyData(storage: Storage) {
   const raw = storage.getItem('plutus-storage');
-  if (!raw || storage.getItem(backupKey)) return;
-  const state = JSON.parse(raw)?.state;
-  if (['limits', 'positions', 'recurringExpenses'].some(key => Array.isArray(state?.[key]) && state[key].length > 0)) {
+  if (!raw) return;
+  if (getLegacyBackup(storage)) return;
+  if (storage.getItem(backupKey)) storage.removeItem(backupKey);
+  if (parseLegacyBackup(raw)) {
     storage.setItem(backupKey, raw);
   }
 }
 
-export function getLegacyBackup(storage: Storage) {
-  return storage.getItem(backupKey);
+export function getLegacyBackup(storage: Storage): LegacyBackup | null {
+  const raw = storage.getItem(backupKey);
+  if (!raw) return null;
+  const backup = parseLegacyBackup(raw);
+  if (!backup) storage.removeItem(backupKey);
+  return backup;
 }
 
 export function resetApplicationStorage(storage: Storage) {
