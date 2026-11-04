@@ -125,7 +125,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                         <AlertTriangle className="h-4 w-4 text-destructive" />
                         <AlertTitle className="text-destructive font-semibold">{t('analytics.forecast.uncategorized_warning_title')}</AlertTitle>
                         <AlertDescription className="flex items-center justify-between text-xs sm:text-sm mt-1">
-                            <span dangerouslySetInnerHTML={{ __html: t('analytics.forecast.uncategorized_warning_desc', { percent: uncategorizedShare.toFixed(1) }) }} />
+                            <span>{t('analytics.forecast.uncategorized_warning_desc', { percent: uncategorizedShare.toFixed(1) })}</span>
                         </AlertDescription>
                     </Alert>
                 )}

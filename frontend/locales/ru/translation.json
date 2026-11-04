@@ -418,7 +418,7 @@
       "current": "Текущий",
       "burn": "Расход",
       "uncategorized_warning_title": "Много некатегоризированных трат",
-      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> ваших расходов без категории."
+      "uncategorized_warning_desc": "{{percent}}% ваших расходов без категории."
     },
     "page_title": "Аналитика",
     "page_subtitle": "Профессиональный финансовый анализ и детализация.",

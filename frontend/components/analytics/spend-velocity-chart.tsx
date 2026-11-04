@@ -153,12 +153,12 @@ export function SpendVelocityChart() {
                     {isSpendingFaster ? (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.caution')}:</span>
-                            <span dangerouslySetInnerHTML={{ __html: t('analytics.velocity.outpacing', { amount: `<span class="font-bold">${formatCurrency(velocityDiff, defaultCurrency)}</span>` }) }} />
+                            <span>{t('analytics.velocity.outpacing', { amount: formatCurrency(velocityDiff, defaultCurrency) })}</span>
                         </>
                     ) : (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.great_job')}</span>
-                            <span dangerouslySetInnerHTML={{ __html: t('analytics.velocity.saved', { amount: `<span class="font-bold">${formatCurrency(Math.abs(velocityDiff), defaultCurrency)}</span>` }) }} />
+                            <span>{t('analytics.velocity.saved', { amount: formatCurrency(Math.abs(velocityDiff), defaultCurrency) })}</span>
                         </>
                     )}
                 </div>

@@ -411,7 +411,7 @@
       "current": "Current",
       "burn": "Burn",
       "uncategorized_warning_title": "High Uncategorized Spending",
-      "uncategorized_warning_desc": "<strong>{{percent}}%</strong> of your expenses are Uncategorized."
+      "uncategorized_warning_desc": "{{percent}}% of your expenses are Uncategorized."
     },
     "page_title": "Analytics & Planning",
     "page_subtitle": "Professional financial analysis and detailed breakdowns.",
