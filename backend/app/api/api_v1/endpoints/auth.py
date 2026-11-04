@@ -27,6 +27,16 @@ from app.schemas.user import User as UserSchema, UserCreate
 
 router = APIRouter()
 
+
+def _refresh_user_id(payload: dict) -> int:
+    try:
+        return int(str(payload.get("sub")))
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        ) from None
+
 @router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def register(
     *,
@@ -169,7 +179,7 @@ async def refresh_access_token(
         )
     
     # Get user
-    user_id = int(str(payload.get("sub")))
+    user_id = _refresh_user_id(payload)
     user = await crud_user.get(db, id=user_id)
     if not user or not crud_user.is_active(user):
         raise HTTPException(

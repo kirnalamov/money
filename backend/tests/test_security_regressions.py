@@ -18,6 +18,19 @@ def test_refresh_tokens_are_unique(monkeypatch):
     assert hash_refresh_token(first) == hash_refresh_token(first)
 
 
+def test_refresh_token_subject_must_be_an_integer():
+    from fastapi import HTTPException
+    from app.api.api_v1.endpoints.auth import _refresh_user_id
+
+    assert _refresh_user_id({"sub": "42"}) == 42
+    for payload in ({}, {"sub": "not-an-id"}, {"sub": None}):
+        try:
+            _refresh_user_id(payload)
+            assert False, "invalid refresh subject should be rejected"
+        except HTTPException as exc:
+            assert exc.status_code == 401
+
+
 def test_transfer_effect_and_reversal():
     from decimal import Decimal
     import app.db.base
