@@ -54,11 +54,13 @@ async def update_account(
     """
     Update an account.
     """
-    account = (await db.execute(select(AccountModel).where(AccountModel.id == id).with_for_update())).scalar_one_or_none()
+    account = (await db.execute(
+        select(AccountModel)
+        .where(AccountModel.id == id, AccountModel.user_id == current_user.id)
+        .with_for_update()
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     if item_in.balance is not None:
         if item_in.expected_balance is None or item_in.expected_balance != float(account.balance):
             raise HTTPException(status_code=409, detail="Account balance has changed; reload before editing")
@@ -83,11 +85,14 @@ async def read_account(
     """
     Get account by ID.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(
+        select(AccountModel).where(
+            AccountModel.id == id,
+            AccountModel.user_id == current_user.id,
+        )
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     return account
 
 @router.delete("/{id}", response_model=Account)
@@ -100,11 +105,13 @@ async def delete_account(
     """
     Delete an account.
     """
-    account = (await db.execute(select(AccountModel).where(AccountModel.id == id).with_for_update())).scalar_one_or_none()
+    account = (await db.execute(
+        select(AccountModel)
+        .where(AccountModel.id == id, AccountModel.user_id == current_user.id)
+        .with_for_update()
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
         raise HTTPException(status_code=409, detail="Cannot delete an account with transactions")
     await db.execute(delete(UserItem).where(UserItem.user_id == current_user.id, UserItem.kind == "positions", UserItem.key.like(f"{id}:%")))

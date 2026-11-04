@@ -75,6 +75,13 @@ async def check_money_ownership_and_refresh():
             assert (await client.delete(f"/api/v1/accounts/{account['id']}", headers=headers)).status_code == 409
             other = (await client.post("/api/v1/auth/login", data={"username": "bobby", "password": "Password123"})).json()
             other_headers = {"Authorization": f"Bearer {other['access_token']}"}
+            for method in ("get", "put", "delete"):
+                response = await getattr(client, method)(
+                    f"/api/v1/accounts/{account['id']}",
+                    headers=other_headers,
+                    **({"json": {"name": "stolen"}} if method == "put" else {}),
+                )
+                assert response.status_code == 404, response.text
             limit = {"id": "rent", "category": "Housing", "period": "monthly", "amount": 100, "currency": "USD", "spent": 0}
             assert (await client.put("/api/v1/user-items/limits/rent", headers=headers, json=limit)).status_code == 200
             changed_limit = {**limit, "amount": 999}
