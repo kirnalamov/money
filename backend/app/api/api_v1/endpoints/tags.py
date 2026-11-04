@@ -21,6 +21,7 @@ async def read_tags(
     result = await db.execute(
         select(TagModel)
         .where(TagModel.user_id == current_user.id)
+        .order_by(TagModel.id)
         .offset(skip)
         .limit(limit)
     )

@@ -22,6 +22,7 @@ async def read_categories(
     result = await db.execute(
         select(CategoryModel)
         .where(CategoryModel.user_id == current_user.id)
+        .order_by(CategoryModel.id)
         .offset(skip)
         .limit(limit)
     )

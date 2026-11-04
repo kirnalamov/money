@@ -6,7 +6,7 @@ from app.schemas.core import Currency
 class AccountBase(BaseModel):
     name: str
     type: str
-    balance: float = 0.0
+    balance: float = Field(0.0, allow_inf_nan=False)
     currency: Currency = Currency.USD
 
 class AccountCreate(AccountBase):

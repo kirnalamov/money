@@ -8,7 +8,7 @@ class CategoryBase(BaseModel):
     name: str
     icon: Optional[str] = None
     color: Optional[str] = None
-    limit: Optional[float] = 0.0
+    limit: Optional[float] = Field(0.0, allow_inf_nan=False)
 
 class CategoryCreate(CategoryBase):
     pass
@@ -17,7 +17,7 @@ class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     icon: Optional[str] = None
     color: Optional[str] = None
-    limit: Optional[float] = None
+    limit: Optional[float] = Field(None, allow_inf_nan=False)
 
 class CategoryInDBBase(CategoryBase):
     id: int
@@ -68,7 +68,7 @@ class Currency(str, Enum):
 from pydantic import field_validator
 
 class TransactionBase(BaseModel):
-    amount: float = Field(gt=0)
+    amount: float = Field(gt=0, allow_inf_nan=False)
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType = TransactionType.EXPENSE
@@ -87,7 +87,7 @@ class TransactionCreate(TransactionBase):
     tags: Optional[list[str]] = None
 
 class TransactionUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, gt=0, allow_inf_nan=False)
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: Optional[TransactionType] = None

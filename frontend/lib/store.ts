@@ -338,21 +338,15 @@ export const useStore = create<AppState>()(
           const oldTx = get().transactions.find(t => t.id === id);
           if (!oldTx) return;
 
-          const updated = await updateTransactionApi(id.toString(), updates);
-          
-          const [accounts, categories, tags] = await Promise.all([
-            getAccounts(),
-            getCategories(),
-            getTags(),
-          ]);
+           const updated = await updateTransactionApi(id.toString(), updates);
+           set((state) => ({ transactions: state.transactions.map(t => t.id === id ? updated : t) }));
 
-          set((state) => {
-            const updatedState: Partial<AppState> = {
-              transactions: state.transactions.map(t => t.id === id ? updated : t),
-              accounts,
-              categories,
-              tags
-            };
+           const results = await Promise.allSettled([getAccounts(), getCategories(), getTags()]);
+           set((state) => {
+             const updatedState: Partial<AppState> = {};
+             if (results[0].status === 'fulfilled') updatedState.accounts = results[0].value;
+             if (results[1].status === 'fulfilled') updatedState.categories = results[1].value;
+             if (results[2].status === 'fulfilled') updatedState.tags = results[2].value;
 
             // If isRecurring became true, also add to recurringExpenses if not already there
             if (updated.isRecurring && !oldTx.isRecurring) {
@@ -387,12 +381,15 @@ export const useStore = create<AppState>()(
           const txToDelete = get().transactions.find(t => t.id === id);
           if (!txToDelete) return;
 
-          await deleteTransactionApi(id.toString());
-          const accounts = await getAccounts();
-          set((state) => ({
-            transactions: state.transactions.filter(t => t.id !== id),
-            accounts,
-          }));
+           await deleteTransactionApi(id.toString());
+           set((state) => ({
+             transactions: state.transactions.filter(t => t.id !== id),
+           }));
+           try {
+             set({ accounts: await getAccounts() });
+           } catch (error) {
+             console.error('Failed to refresh accounts after deleting transaction:', error);
+           }
         } catch (e) {
           console.error(e);
           throw e;

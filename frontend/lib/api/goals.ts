@@ -28,8 +28,14 @@ const mapGoalToClient = (data: GoalResponse): Goal => ({
 });
 
 export const getGoals = async (): Promise<Goal[]> => {
-    const response = await apiClient.get<GoalResponse[]>('/goals/');
-    return response.data.map(mapGoalToClient);
+    const goals: Goal[] = [];
+    let page: GoalResponse[];
+    do {
+        const response = await apiClient.get<GoalResponse[]>('/goals/', { params: { skip: goals.length, limit: 100 } });
+        page = response.data;
+        goals.push(...page.map(mapGoalToClient));
+    } while (page.length === 100);
+    return goals;
 };
 
 export const createGoal = async (goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): Promise<Goal> => {

@@ -10,6 +10,9 @@ from app.schemas.core import (
     TransactionUpdate,
 )
 from app.schemas.various import GoalUpdate, SavingsUpdate
+from app.schemas.account import AccountCreate
+from app.schemas.core import CategoryCreate
+from app.schemas.various import GoalCreate, SavingsCreate
 
 
 def test_transfer_payload_is_supported():
@@ -27,6 +30,20 @@ def test_transfer_payload_is_supported():
 def test_transaction_amount_must_be_positive():
     with pytest.raises(ValidationError):
         TransactionCreate(accountId=1, amount=0)
+
+
+def test_money_values_must_be_finite():
+    invalid_values = (float("nan"), float("inf"), float("-inf"))
+    for value in invalid_values:
+        for schema, kwargs in (
+            (AccountCreate, {"name": "cash", "type": "cash", "balance": value}),
+            (CategoryCreate, {"name": "food", "limit": value}),
+            (TransactionCreate, {"accountId": 1, "amount": value}),
+            (GoalCreate, {"name": "goal", "target_amount": value}),
+            (SavingsCreate, {"name": "savings", "balance": value}),
+        ):
+            with pytest.raises(ValidationError):
+                schema(**kwargs)
 
 
 def test_transaction_update_is_partial():

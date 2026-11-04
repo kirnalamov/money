@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from app.models.account import Account
 from app.models.refresh_token import RefreshToken
 
@@ -72,7 +73,14 @@ async def register(
             balance=0.0
         ).model_dump(), user_id=user.id
     ))
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email or username already exists",
+        )
 
     return user
 

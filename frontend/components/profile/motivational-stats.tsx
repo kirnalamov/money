@@ -5,9 +5,10 @@ import { useStore } from "@/lib/store";
 import { TrendingUp, Award, Target, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { startOfMonth, subMonths } from "date-fns";
+import { convertCurrency, formatCurrency } from "@/lib/utils";
 
 export function MotivationalStats() {
-    const { transactions, accounts, goals } = useStore();
+    const { transactions, accounts, goals, defaultCurrency } = useStore();
 
     const insights = useMemo(() => {
         const now = new Date();
@@ -17,16 +18,16 @@ export function MotivationalStats() {
         // Calculate Spending
         const thisMonthSpend = transactions
             .filter(t => t.type === 'expense' && new Date(t.date) >= currentMonthStart)
-            .reduce((acc, t) => acc + t.amount, 0);
+            .reduce((acc, t) => acc + convertCurrency(t.amount, t.currency, defaultCurrency), 0);
 
         const lastMonthSpend = transactions
             .filter(t => t.type === 'expense' && new Date(t.date) >= lastMonthStart && new Date(t.date) < currentMonthStart)
-            .reduce((acc, t) => acc + t.amount, 0);
+            .reduce((acc, t) => acc + convertCurrency(t.amount, t.currency, defaultCurrency), 0);
 
         // Calculate Savings
         const totalSavings = accounts
             .filter(a => a.type === 'savings')
-            .reduce((acc, a) => acc + a.balance, 0);
+            .reduce((acc, a) => acc + convertCurrency(a.balance, a.currency, defaultCurrency), 0);
 
         const goalsHit = goals.filter(g => g.currentAmount >= g.targetAmount).length;
 
@@ -50,7 +51,7 @@ export function MotivationalStats() {
         transactions
             .filter(t => t.type === 'expense' && new Date(t.date) >= currentMonthStart)
             .forEach(t => {
-                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + convertCurrency(t.amount, t.currency, defaultCurrency);
             });
 
         const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
@@ -65,7 +66,7 @@ export function MotivationalStats() {
             goalsHit,
             guiltyPleasure
         };
-    }, [transactions, accounts, goals]);
+    }, [transactions, accounts, goals, defaultCurrency]);
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 h-full">
@@ -93,7 +94,7 @@ export function MotivationalStats() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${insights.totalSavings.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(insights.totalSavings, defaultCurrency)}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Your safety net is looking strong!
                         </p>

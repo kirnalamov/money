@@ -38,6 +38,7 @@ async def read_goals(
     result = await db.execute(
         select(GoalModel)
         .where(GoalModel.user_id == current_user.id)
+        .order_by(GoalModel.id)
         .offset(skip)
         .limit(limit)
     )
