@@ -27,16 +27,18 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle token refresh
 let isRefreshing = false;
 let failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (reason?: any) => void;
+    resolve: (value: string | PromiseLike<string>) => void;
+    reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token?: string) => {
     failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
-        } else {
+        } else if (token) {
             prom.resolve(token);
+        } else {
+            prom.reject(new Error('Не удалось обновить сессию'));
         }
     });
 
@@ -52,8 +54,8 @@ apiClient.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login')) {
             if (isRefreshing) {
                 // If already refreshing, queue this request
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject });
+                return new Promise<string>((resolve, reject) => {
+                        failedQueue.push({ resolve, reject });
                 })
                     .then((token) => {
                         if (originalRequest.headers) {
@@ -110,7 +112,7 @@ apiClient.interceptors.response.use(
                 // Retry the original request
                 return apiClient(originalRequest);
             } catch (refreshError) {
-                processQueue(refreshError, null);
+                processQueue(refreshError);
                 if (getRefreshToken() === refreshToken) {
                     clearTokens();
                     window.location.href = '/login';

@@ -63,8 +63,8 @@ export interface AuthContextType {
 export interface ApiError {
     detail: string | Array<{
         type: string;
-        loc: string[];
+        loc: Array<string | number>;
         msg: string;
-        input: any;
+        input: unknown;
     }>;
 }

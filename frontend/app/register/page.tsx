@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Loader2, CheckCircle2 } from "lucide-react";
@@ -75,8 +75,8 @@ export default function RegisterPage() {
                 full_name: formData.full_name || undefined,
             });
             setSuccess(true);
-        } catch (err: any) {
-            setError(err.message || "Registration failed. Please try again.");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
         }
     };
 
@@ -88,7 +88,7 @@ export default function RegisterPage() {
                         <div className="flex justify-center mb-4">
                             <CheckCircle2 className="h-16 w-16 text-green-500" />
                         </div>
-                        <CardTitle className="text-2xl font-bold text-center">Registration Successful!</CardTitle>
+                        <h2 className="text-2xl font-bold text-center">Registration Successful!</h2>
                         <CardDescription className="text-center">
                             Your account has been created. You can now log in.
                         </CardDescription>
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+                    <h2 className="text-2xl font-bold text-center">Create an account</h2>
                     <CardDescription className="text-center">
                         Enter your details to create your account
                     </CardDescription>
@@ -126,6 +126,7 @@ export default function RegisterPage() {
                                 id="email"
                                 name="email"
                                 type="email"
+                                autoComplete="email"
                                 placeholder="your.email@example.com"
                                 value={formData.email}
                                 onChange={handleChange}
@@ -140,6 +141,7 @@ export default function RegisterPage() {
                                 id="username"
                                 name="username"
                                 type="text"
+                                autoComplete="username"
                                 placeholder="Choose a username"
                                 value={formData.username}
                                 onChange={handleChange}
@@ -154,6 +156,7 @@ export default function RegisterPage() {
                                 id="full_name"
                                 name="full_name"
                                 type="text"
+                                autoComplete="name"
                                 placeholder="John Doe"
                                 value={formData.full_name}
                                 onChange={handleChange}
@@ -167,6 +170,7 @@ export default function RegisterPage() {
                                 id="password"
                                 name="password"
                                 type="password"
+                                autoComplete="new-password"
                                 placeholder="Create a strong password"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -184,6 +188,7 @@ export default function RegisterPage() {
                                 id="confirmPassword"
                                 name="confirmPassword"
                                 type="password"
+                                autoComplete="new-password"
                                 placeholder="Confirm your password"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}

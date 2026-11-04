@@ -75,11 +75,12 @@ export function AssetAllocation() {
                                 layout="vertical"
                                 verticalAlign="middle"
                                 align="right"
-                                formatter={(value, entry: any) => {
-                                    const item = data.find(d => d.name === value);
+                                formatter={(value) => {
+                                    const key = String(value);
+                                    const item = data.find(d => d.name === key);
                                     return (
                                         <span className="text-sm text-muted-foreground ml-2">
-                                            {getLabel(value)} ({item?.percent.toFixed(1)}%)
+                                            {getLabel(key)} ({item?.percent.toFixed(1)}%)
                                         </span>
                                     );
                                 }}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import LogoutButton from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
@@ -15,13 +15,18 @@ export function Sidebar() {
   const { t } = useTranslation();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    const isCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
-    setCollapsed(isCollapsed);
+    const frame = window.requestAnimationFrame(() => {
+      setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
+      initialized.current = true;
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
+    if (!initialized.current) return;
     document.documentElement.style.setProperty("--sidebar-width", collapsed ? "5rem" : "225px");
     localStorage.setItem("sidebar-collapsed", String(collapsed));
   }, [collapsed]);
@@ -39,7 +44,7 @@ export function Sidebar() {
           </div>
           {!collapsed && <h1 className="text-xl font-bold tracking-tight text-primary">Plutus</h1>}
         </div>
-        <div className="sr-only">
+        <div className="flex justify-end px-3">
           <button
             type="button"
             onClick={() => setCollapsed((value) => !value)}

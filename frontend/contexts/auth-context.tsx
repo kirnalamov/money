@@ -1,7 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { User, AuthContextType, RegisterRequest, UserUpdateRequest } from '@/types/auth';
+import type { ApiError } from '@/types/auth';
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
 import { hasTokens, getRefreshToken, clearTokens } from '@/lib/auth/token-manager';
@@ -83,9 +85,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userData = await authApi.getCurrentUser();
             setUser(userData);
             router.push('/');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Login failed:', error);
-            throw new Error(error.response?.data?.detail || 'Login failed');
+            const detail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
+            throw new Error(typeof detail === 'string' ? detail : 'Login failed');
         } finally {
             setIsLoading(false);
         }
@@ -96,9 +99,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             await authApi.register(data);
             router.push('/login');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Registration failed:', error);
-            const errorDetail = error.response?.data?.detail;
+            const errorDetail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
             if (typeof errorDetail === 'string') {
                 throw new Error(errorDetail);
             } else if (Array.isArray(errorDetail)) {
@@ -141,9 +144,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             const updatedUser = await usersApi.updateProfile(data);
             setUser(updatedUser);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Profile update failed:', error);
-            throw new Error(error.response?.data?.detail || 'Profile update failed');
+            const detail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
+            throw new Error(typeof detail === 'string' ? detail : 'Profile update failed');
         }
     };
 
