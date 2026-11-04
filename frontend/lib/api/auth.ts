@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { LoginRequest, LoginResponse, RegisterRequest, TokenRefreshRequest, TokenRefreshResponse, User } from '@/types/auth';
+import { LoginResponse, RegisterRequest, TokenRefreshResponse, User } from '@/types/auth';
 import { setTokens, clearTokens } from '@/lib/auth/token-manager';
 
 /**

@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Check, MoreHorizontal } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MoreHorizontal } from "lucide-react";
 import { RecurringExpense } from "@/types";
 import {
     Dialog,

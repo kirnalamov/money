@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { convertCurrency, formatCurrency } from "@/lib/utils";
-import { format, differenceInDays, startOfMonth, subMonths, getDaysInMonth, addDays } from "date-fns";
+import { startOfMonth, subMonths, getDaysInMonth } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";

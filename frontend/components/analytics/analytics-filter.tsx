@@ -6,12 +6,7 @@ import { addDays } from "date-fns";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { Filter, Calendar as CalendarIcon } from "lucide-react";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 interface AnalyticsFilterProps {
     dateRange: DateRange | undefined;

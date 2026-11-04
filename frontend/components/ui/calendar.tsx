@@ -37,7 +37,6 @@ function CustomMonthCaption({ calendarMonth }: MonthCaptionProps) {
     goToMonth,
     previousMonth,
     nextMonth,
-    formatters,
     labels,
     dayPickerProps,
   } = useDayPicker()

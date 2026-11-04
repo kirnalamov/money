@@ -1,6 +1,6 @@
 import { Transaction, Account, Currency } from "@/types";
 import { convertCurrency } from "@/lib/utils";
-import { getDaysInMonth, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
+import { getDaysInMonth, startOfMonth } from "date-fns";
 
 export interface ForecastMetrics {
     currentSpend: number;
@@ -16,8 +16,6 @@ export const calculateForecast = (
 ): ForecastMetrics => {
     const today = new Date();
     const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-
     // Days passed so far (inclusive of today for simplicity, or exclusive if we want partial day logic)
     // Let's assume passed days = today.getDate()
     const daysPassed = today.getDate();

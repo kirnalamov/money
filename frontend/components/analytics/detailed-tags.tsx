@@ -5,9 +5,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { formatCurrency, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { DateRange } from "react-day-picker";
-import { Tag, TrendingUp, DollarSign, Award } from "lucide-react";
+import { Tag, TrendingUp, Award } from "lucide-react";
 
 interface DetailedTagsProps {
     dateRange: DateRange | undefined;
@@ -29,7 +28,6 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
 
     // Aggregate expenses by tag
     const tagDataMap: Record<string, { value: number, count: number }> = {};
-    let totalTaggedSpend = 0;
 
     filteredTransactions.forEach(tx => {
         const account = accounts.find(a => a.id === tx.accountId);
@@ -48,7 +46,6 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                 }
                 tagDataMap[key].value += amountInDefault;
                 tagDataMap[key].count += 1;
-                totalTaggedSpend += amountInDefault; // Note: this might double count if transaction has multiple tags. This is "Spend by Tag" volume.
             });
         }
     });
@@ -61,8 +58,6 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
         .sort((a, b) => b.value - a.value);
 
     const topTag = data[0];
-    const avgTagValue = data.length > 0 ? totalTaggedSpend / data.length : 0;
-
     // Most frequent tag
     const mostFrequent = [...data].sort((a, b) => b.count - a.count)[0];
 

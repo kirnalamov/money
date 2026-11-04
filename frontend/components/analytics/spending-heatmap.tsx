@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { convertCurrency, formatCurrency } from "@/lib/utils";
-import { subDays, format, eachDayOfInterval, startOfYear, endOfYear, getDay, startOfWeek, endOfWeek } from "date-fns";
+import { subDays, format, eachDayOfInterval, getDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";

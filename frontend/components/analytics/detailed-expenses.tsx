@@ -8,17 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { DateRange } from "react-day-picker";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { TrendingDown, TrendingUp, DollarSign, PieChart as PieIcon, BarChart as BarIcon, FilterX, AlertCircle, Building, ShoppingBag, AlertTriangle, ArrowRight } from "lucide-react";
+import { TrendingDown, TrendingUp, DollarSign, PieChart as PieIcon, BarChart as BarIcon, FilterX, Building, ShoppingBag, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SpendVelocityChart } from "@/components/analytics/spend-velocity-chart";
 import { SpendingHeatmap } from "@/components/analytics/spending-heatmap";
 import { calculateForecast } from "@/components/analytics/insights-engine";
-import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DetailedExpensesProps {

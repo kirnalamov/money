@@ -95,7 +95,8 @@ export default function AccountsPage() {
 
     try {
       if (editingAccount) {
-        const { balance: _balance, ...details } = accountData;
+        const { name, type, currency, provider } = accountData;
+        const details = { name, type, currency, provider };
         await updateAccount(editingAccount.id, balance === editingAccount.balance
           ? details
           : { ...details, balance, expected_balance: editingAccount.balance });
