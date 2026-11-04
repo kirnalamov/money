@@ -188,6 +188,12 @@
     "restore_error": "Could not restore the transaction.",
     "recurring_label": "Recurring / Mandatory",
     "recurring_desc": "Is this a fixed monthly cost?",
+    "recurring_monthly": "Repeat every month",
+    "recurring_same_day": "On the same day",
+    "more_details": "Description and tags",
+    "hide_details": "Hide details",
+    "available_balance": "Available {{amount}}",
+    "insufficient_balance": "Short by {{amount}}",
       "filters": {
         "title": "Filter transactions",
         "description": "Search, narrow down, and sort your activity",

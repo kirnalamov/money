@@ -195,6 +195,12 @@
     "restore_error": "Не удалось восстановить операцию.",
     "recurring_label": "Постоянный / Обязательный",
     "recurring_desc": "Это фиксированный ежемесячный расход?",
+    "recurring_monthly": "Повторять каждый месяц",
+    "recurring_same_day": "В этот же день",
+    "more_details": "Описание и метки",
+    "hide_details": "Скрыть детали",
+    "available_balance": "Доступно {{amount}}",
+    "insufficient_balance": "Не хватает {{amount}}",
       "filters": {
         "title": "Фильтры операций",
         "description": "Поиск, отбор и сортировка операций",
