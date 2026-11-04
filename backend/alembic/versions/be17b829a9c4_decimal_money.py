@@ -13,8 +13,14 @@ FIELDS = (("accounts", "balance"), ("transactions", "amount"),
 
 
 def upgrade():
-    for table, column in FIELDS:
-        op.alter_column(table, column, type_=sa.Numeric(), postgresql_using=f'"{column}"::numeric')
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        for table, column in FIELDS:
+            with op.batch_alter_table(table, recreate="always") as batch:
+                batch.alter_column(column, type_=sa.Numeric())
+    else:
+        for table, column in FIELDS:
+            op.alter_column(table, column, type_=sa.Numeric(), postgresql_using=f'"{column}"::numeric')
 
 
 def downgrade():

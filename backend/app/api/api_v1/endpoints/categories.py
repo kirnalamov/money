@@ -1,5 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
@@ -15,8 +15,8 @@ router = APIRouter()
 async def read_categories(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> Any:
     from app.models.category import Category as CategoryModel
     result = await db.execute(

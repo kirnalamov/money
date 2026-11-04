@@ -45,27 +45,49 @@ def upgrade() -> None:
                 {"user_id": user_ids[0]},
             )
 
-    for table_name in ("goals", "savings"):
-        op.alter_column(table_name, "user_id", nullable=False)
-        op.create_foreign_key(
-            f"fk_{table_name}_user_id_users",
-            table_name,
-            "users",
-            ["user_id"],
-            ["id"],
-            ondelete="CASCADE",
-        )
-        op.create_index(f"ix_{table_name}_user_id", table_name, ["user_id"])
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table("goals", recreate="always") as batch:
+            batch.alter_column("user_id", nullable=False)
+            batch.create_foreign_key(
+                "fk_goals_user_id_users", "users", ["user_id"], ["id"], ondelete="CASCADE"
+            )
+            batch.create_foreign_key(
+                "fk_goals_linked_account_id_accounts",
+                "accounts", ["linked_account_id"], ["id"], ondelete="SET NULL"
+            )
+        with op.batch_alter_table("savings", recreate="always") as batch:
+            batch.alter_column("user_id", nullable=False)
+            batch.create_foreign_key(
+                "fk_savings_user_id_users", "users", ["user_id"], ["id"], ondelete="CASCADE"
+            )
+    else:
+        for table_name in ("goals", "savings"):
+            op.alter_column(table_name, "user_id", nullable=False)
+            op.create_foreign_key(
+                f"fk_{table_name}_user_id_users",
+                table_name,
+                "users",
+                ["user_id"],
+                ["id"],
+                ondelete="CASCADE",
+            )
 
-    op.create_foreign_key(
-        "fk_goals_linked_account_id_accounts",
-        "goals",
-        "accounts",
-        ["linked_account_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
-    op.alter_column("goals", "currency", server_default=None)
+        op.create_foreign_key(
+            "fk_goals_linked_account_id_accounts",
+            "goals",
+            "accounts",
+            ["linked_account_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
+
+    for table_name in ("goals", "savings"):
+        op.create_index(f"ix_{table_name}_user_id", table_name, ["user_id"])
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table("goals", recreate="always") as batch:
+            batch.alter_column("currency", server_default=None)
+    else:
+        op.alter_column("goals", "currency", server_default=None)
 
 
 def downgrade() -> None:

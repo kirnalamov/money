@@ -8,12 +8,14 @@ def test_refresh_tokens_are_unique(monkeypatch):
         "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
     }.items():
         monkeypatch.setenv(name, value)
-    from app.core.security import create_refresh_token, decode_token
+    from app.core.security import create_refresh_token, decode_token, hash_refresh_token
 
     first = create_refresh_token("1")
     second = create_refresh_token("1")
     assert first != second
     assert decode_token(first)["sub"] == "1"
+    assert hash_refresh_token(first) != first
+    assert hash_refresh_token(first) == hash_refresh_token(first)
 
 
 def test_transfer_effect_and_reversal():

@@ -1,6 +1,6 @@
 from typing import Any, List
 from decimal import Decimal
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, delete
 from app.models.transaction import Transaction
@@ -18,8 +18,8 @@ router = APIRouter()
 @router.get("/", response_model=List[Account])
 async def read_accounts(
     db: AsyncSession = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """

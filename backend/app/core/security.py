@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import hashlib
 from uuid import uuid4
 from typing import Any
 from jose import JWTError, jwt
@@ -7,6 +8,10 @@ from app.core.config import settings
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_refresh_token(token: str) -> str:
+    """Hash a refresh token before storing or looking it up."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""

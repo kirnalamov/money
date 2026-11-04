@@ -14,6 +14,7 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_refresh_token,
     validate_password_strength,
 )
 from app.crud.crud_user import user as crud_user
@@ -59,21 +60,20 @@ async def register(
             detail=error_msg
         )
     
-    # Create new user
-    user_create = UserCreate(**user_in.model_dump())
-    user = await crud_user.create(db, obj_in=user_create, commit=False)
-
-    # Create initial account for new user
-    from app.schemas.account import AccountCreate
-    db.add(Account(
-        **AccountCreate(
-            name="Main Account",
-            type="cash",
-            currency="USD",
-            balance=0.0
-        ).model_dump(), user_id=user.id
-    ))
     try:
+        # Create new user and the initial account in one transaction.
+        user_create = UserCreate(**user_in.model_dump())
+        user = await crud_user.create(db, obj_in=user_create, commit=False)
+
+        from app.schemas.account import AccountCreate
+        db.add(Account(
+            **AccountCreate(
+                name="Main Account",
+                type="cash",
+                currency="USD",
+                balance=0.0
+            ).model_dump(), user_id=user.id
+        ))
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -120,7 +120,7 @@ async def login(
     
     # Store refresh token in database
     refresh_token_obj = RefreshTokenCreate(
-        token=refresh_token_str,
+        token=hash_refresh_token(refresh_token_str),
         user_id=user.id,  # type: ignore
         expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
@@ -150,7 +150,11 @@ async def refresh_access_token(
         )
     
     # Check and lock the token until its replacement is stored.
-    token_obj = (await db.execute(select(RefreshToken).where(RefreshToken.token == token_data.refresh_token).with_for_update())).scalar_one_or_none()
+    token_obj = (await db.execute(
+        select(RefreshToken)
+        .where(RefreshToken.token == hash_refresh_token(token_data.refresh_token))
+        .with_for_update()
+    )).scalar_one_or_none()
     if not token_obj or token_obj.revoked:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -180,7 +184,7 @@ async def refresh_access_token(
     # Revoke old refresh token and create new one (token rotation)
     token_obj.revoked = True
     refresh_token_obj = RefreshToken(
-        token=new_refresh_token,
+        token=hash_refresh_token(new_refresh_token),
         user_id=user.id,  # type: ignore
         expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
@@ -203,7 +207,11 @@ async def logout(
     """
     Logout by revoking the refresh token.
     """
-    token_obj = (await db.execute(select(RefreshToken).where(RefreshToken.token == token_data.refresh_token).with_for_update())).scalar_one_or_none()
+    token_obj = (await db.execute(
+        select(RefreshToken)
+        .where(RefreshToken.token == hash_refresh_token(token_data.refresh_token))
+        .with_for_update()
+    )).scalar_one_or_none()
     if token_obj and token_obj.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not belong to this user")
     if token_obj:

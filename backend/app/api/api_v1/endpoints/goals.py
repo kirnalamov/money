@@ -1,5 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.schemas.various import Goal, GoalCreate, GoalUpdate
@@ -31,8 +31,8 @@ async def _validate_linked_account(
 @router.get("/", response_model=List[Goal])
 async def read_goals(
     db: AsyncSession = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     result = await db.execute(

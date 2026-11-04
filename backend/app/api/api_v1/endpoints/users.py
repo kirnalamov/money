@@ -1,5 +1,5 @@
 from typing import Annotated, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,8 +78,8 @@ async def read_users(
     *,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[UserModel, Depends(require_role("admin"))],
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> Any:
     """
     List all users (admin only).
