@@ -1,11 +1,11 @@
 from typing import Any
-from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
+from app.core.time import utcnow
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     async def get_by_email(self, db: AsyncSession, *, email: str) -> User | None:
@@ -28,8 +28,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_active=obj_in.is_active,
             role=obj_in.role,
             is_superuser=False,  # Never allow creating superuser via API
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=utcnow(),
+            updated_at=utcnow()
         )
         db.add(db_obj)
         if commit:

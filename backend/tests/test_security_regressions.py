@@ -18,6 +18,15 @@ def test_refresh_tokens_are_unique(monkeypatch):
     assert hash_refresh_token(first) == hash_refresh_token(first)
 
 
+def test_utcnow_returns_naive_utc_for_database_timestamps():
+    from datetime import datetime, timezone
+    from app.core.time import utcnow
+
+    value = utcnow()
+    assert value.tzinfo is None
+    assert abs((datetime.now(timezone.utc).replace(tzinfo=None) - value).total_seconds()) < 1
+
+
 def test_refresh_token_subject_must_be_an_integer():
     from fastapi import HTTPException
     from app.api.api_v1.endpoints.auth import _refresh_user_id

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.db.base_class import Base
+from app.core.time import utcnow
 
 # Important: import RefreshToken here so `relationship("RefreshToken")` can resolve
 from app.models.refresh_token import RefreshToken
@@ -22,8 +22,8 @@ class User(Base):
     role = Column(String, default="user", nullable=False)  # user, admin
     
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
     
     # Relationships
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")

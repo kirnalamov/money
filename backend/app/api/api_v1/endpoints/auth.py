@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -17,6 +17,7 @@ from app.core.security import (
     hash_refresh_token,
     validate_password_strength,
 )
+from app.core.time import utcnow
 from app.crud.crud_user import user as crud_user
 from app.crud.crud_refresh_token import refresh_token as crud_refresh_token, RefreshTokenCreate
 from app.db.session import get_db
@@ -123,7 +124,7 @@ async def login(
             detail="Inactive user"
         )
     
-    await db.execute(delete(RefreshToken).where(RefreshToken.expires_at < datetime.utcnow()))
+    await db.execute(delete(RefreshToken).where(RefreshToken.expires_at < utcnow()))
     # Create tokens
     access_token = create_access_token(subject=str(user.id))
     refresh_token_str = create_refresh_token(subject=str(user.id))
@@ -132,7 +133,7 @@ async def login(
     refresh_token_obj = RefreshTokenCreate(
         token=hash_refresh_token(refresh_token_str),
         user_id=user.id,  # type: ignore
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at=utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
     await crud_refresh_token.create(db, obj_in=refresh_token_obj)
     
@@ -172,7 +173,7 @@ async def refresh_access_token(
         )
     
     # Check if token is expired
-    if token_obj.expires_at < datetime.utcnow():
+    if token_obj.expires_at < utcnow():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has expired"
@@ -196,7 +197,7 @@ async def refresh_access_token(
     refresh_token_obj = RefreshToken(
         token=hash_refresh_token(new_refresh_token),
         user_id=user.id,  # type: ignore
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at=utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
     db.add(refresh_token_obj)
     await db.commit()

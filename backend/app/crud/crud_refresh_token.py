@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.crud.base import CRUDBase
 from app.models.refresh_token import RefreshToken
+from app.core.time import utcnow
 from pydantic import BaseModel
 
 class RefreshTokenCreate(BaseModel):
@@ -49,7 +50,7 @@ class CRUDRefreshToken(CRUDBase[RefreshToken, RefreshTokenCreate, RefreshTokenUp
     async def cleanup_expired(self, db: AsyncSession) -> None:
         """Delete expired tokens from database"""
         result = await db.execute(
-            select(RefreshToken).filter(RefreshToken.expires_at < datetime.utcnow())
+            select(RefreshToken).filter(RefreshToken.expires_at < utcnow())
         )
         tokens = result.scalars().all()
         for token in tokens:
