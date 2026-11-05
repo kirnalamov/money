@@ -9,7 +9,6 @@ import { ShoppingBag, ArrowUpRight, ArrowRightLeft, Wallet } from "lucide-react"
 import { Transaction } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { TransactionDetailsDialog } from "./transaction-details-dialog";
@@ -99,8 +98,6 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         }
     };
 
-    const getTypeLabel = (type: Transaction['type']) => t(`transactions.types.${type}`);
-
     return (
         <div className="space-y-6">
             {deletedTransaction && (
@@ -127,11 +124,11 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                     <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
                         {getDateLabel(dateKey)}
                     </h2>
-                    <div className="grid gap-3">
+                    <div className="divide-y divide-white/[.09]">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
-                                className="group flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="group flex min-h-[64px] min-w-0 cursor-pointer items-center justify-between gap-3 bg-[#0f110d] px-3 py-3 text-left transition-colors hover:bg-[#161913] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8f05a]"
                                 onClick={() => {
                                     setSelectedTx(tx);
                                     setIsDetailsOpen(true);
@@ -145,7 +142,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 }}
                                 role="button"
                                 tabIndex={0}
-                                aria-label={`${tx.category}, ${getTypeLabel(tx.type)}, ${getAccountName(tx.accountId)}${tx.type === 'transfer' ? `, ${getAccountName(tx.toAccountId)}` : ''}, ${tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount, tx.currency)}, ${format(new Date(tx.date), 'HH:mm')}${tx.description ? `, ${tx.description}` : ''}${tx.currency !== defaultCurrency ? `, ${formatCurrency(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency)}` : ''}`}
+                                aria-label={`${tx.category}, ${getAccountName(tx.accountId)}, ${tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount, tx.currency)}, ${format(new Date(tx.date), 'HH:mm')}${tx.description ? `, ${tx.description}` : ''}`}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                                     <div className={`p-2.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/10' :
@@ -156,9 +153,6 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                     <div className="flex min-w-0 flex-col gap-0.5">
                                         <div className="flex min-w-0 items-center gap-2">
                                             <span className="max-w-[160px] truncate text-sm font-semibold sm:max-w-[260px]" title={tx.category}>{tx.category}</span>
-                                            <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px] font-medium">
-                                                {getTypeLabel(tx.type)}
-                                            </Badge>
                                         </div>
                                         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                             <span className="flex items-center gap-1">

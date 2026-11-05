@@ -150,6 +150,7 @@
     "title": "Transactions",
     "results_count": "{{count}} transactions found",
     "add_button": "Add Transaction",
+    "export_csv": "Export CSV",
     "add_dialog_title": "Add New Transaction",
     "add_dialog_desc": "Record an expense, income, or a transfer between accounts.",
     "currency_after_account": "Account currency",
@@ -212,7 +213,8 @@
         "sort_newest": "Newest first",
         "sort_oldest": "Oldest first",
         "sort_largest": "Largest amount",
-        "sort_smallest": "Smallest amount"
+        "sort_smallest": "Smallest amount",
+        "filter_button": "Filters"
       },
       "summary": {
         "total_income": "Total Income",

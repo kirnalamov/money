@@ -17,8 +17,9 @@ import { TransactionType } from "@/types";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, isSameDay, startOfMonth } from "date-fns";
 import { convertCurrency } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, ReceiptText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PAGE_SIZE = 20;
 
@@ -158,23 +159,29 @@ export default function TransactionsPage() {
     ...transactions.map(transaction => transaction.category),
   ])).sort((a, b) => a.localeCompare(b));
 
+  const exportCsv = () => {
+    const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const rows = sortedTransactions.map(tx => [tx.date, tx.type, tx.category, tx.amount, tx.currency, tx.description, tx.merchant].map(escape).join(','));
+    const csv = ['date,type,category,amount,currency,description,merchant', ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'transactions.csv'; link.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <ProtectedRoute>
-      <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-20 md:px-4 md:pb-6 xl:px-8">
+      <TooltipProvider><div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 bg-[#070806] pb-20 text-[#f1f4ea] md:px-4 md:pb-6 xl:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="mt-1 rounded-xl bg-primary/10 p-3 text-primary">
-              <ReceiptText className="h-5 w-5" />
-            </div>
             <div className="min-w-0">
-              <h1 className="text-3xl font-bold leading-none tracking-tight md:text-[40px]">{t('transactions.title')}</h1>
+              <h1 className="text-3xl font-semibold leading-none tracking-tight md:text-[40px]">{t('transactions.title')}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
               {t('transactions.results_count', { count: filteredTransactions.length })}
               </p>
             </div>
           </div>
-          <div className="w-full shrink-0 [&_button]:min-h-11 sm:w-auto">
-            <AddTransactionDialog />
+          <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+            <Button type="button" variant="outline" onClick={exportCsv} className="border-white/[.09] bg-[#161913]"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
+            <Tooltip><TooltipTrigger asChild><div><AddTransactionDialog /></div></TooltipTrigger><TooltipContent>{t('transactions.add_button')}</TooltipContent></Tooltip>
           </div>
         </div>
 
@@ -247,7 +254,7 @@ export default function TransactionsPage() {
             </div>
           </div>
         )}
-      </div>
+      </div></TooltipProvider>
     </ProtectedRoute>
   );
 }

@@ -157,6 +157,7 @@
     "title": "Операции",
     "results_count": "Найдено операций: {{count}}",
     "add_button": "Добавить операцию",
+    "export_csv": "Экспорт CSV",
     "add_dialog_title": "Новая операция",
     "add_dialog_desc": "Запишите расход, доход или перевод между счетами.",
     "currency_after_account": "Валюта счёта",
@@ -219,7 +220,8 @@
         "sort_newest": "Сначала новые",
         "sort_oldest": "Сначала старые",
         "sort_largest": "Сначала крупные",
-        "sort_smallest": "Сначала небольшие"
+         "sort_smallest": "Сначала небольшие",
+         "filter_button": "Фильтры"
       },
       "summary": {
         "total_income": "Общий доход",
