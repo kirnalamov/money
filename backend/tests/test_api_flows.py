@@ -95,6 +95,11 @@ async def check_money_ownership_and_refresh():
             assert len((await client.get("/api/v1/user-items/", headers=headers)).json()["limits"]) == 1
             assert (await client.get(f"/api/v1/transactions/{transfer.json()['id']}", headers=other_headers)).status_code == 404
             assert (await client.delete(f"/api/v1/transactions/{transfer.json()['id']}", headers=headers)).status_code == 200
+            category = (await client.post("/api/v1/categories/", headers=headers, json={"name": "Deletion test"})).json()
+            linked = (await client.post("/api/v1/transactions/", headers=headers, json={"accountId": destination["id"], "amount": 1, "categoryId": category["id"]})).json()
+            assert (await client.delete(f"/api/v1/categories/{category['id']}", headers=headers)).status_code == 409
+            assert (await client.delete(f"/api/v1/transactions/{linked['id']}", headers=headers)).status_code == 200
+            assert (await client.delete(f"/api/v1/categories/{category['id']}", headers=headers)).status_code == 200
             assert (await client.get(f"/api/v1/accounts/{destination['id']}", headers=headers)).json()["balance"] == 0
             expense = {"id": "monthly", "name": "Rent", "amount": 5, "currency": "USD", "category": "Housing", "dueDay": 1}
             assert (await client.put("/api/v1/user-items/recurringExpenses/monthly", headers=headers, json=expense)).status_code == 200

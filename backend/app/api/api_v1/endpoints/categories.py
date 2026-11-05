@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
+from app.models.transaction import Transaction
 from app.schemas.core import Category, CategoryCreate, CategoryUpdate
 from app.crud import crud_functions as crud_cat
 from app.db.session import get_db
@@ -87,4 +88,7 @@ async def delete_category(
     item = await crud_cat.category.get(db, id=id)
     if not item or item.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Category not found")
+    linked = await db.scalar(select(Transaction.id).where(Transaction.category_id == id).limit(1))
+    if linked is not None:
+        raise HTTPException(status_code=409, detail="Cannot delete a category used by transactions")
     return await crud_cat.category.remove(db, id=id)
