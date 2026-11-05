@@ -298,12 +298,12 @@ export default function AccountsPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">{t("accounts.balance")}</p>
                       <p className="text-2xl font-bold">
-                        {formatMoney(account.balance, account.currency)}
+                        {formatMoney(account.balance, account.currency, i18n.language)}
                       </p>
                       <p className="text-xs font-medium text-muted-foreground">{account.currency}</p>
                       {convertedBalance !== null && (
                         <p className="text-xs text-muted-foreground">
-                          ≈ {formatMoney(convertedBalance, defaultCurrency)}
+                          ≈ {formatMoney(convertedBalance, defaultCurrency, i18n.language)}
                         </p>
                       )}
                     </div>

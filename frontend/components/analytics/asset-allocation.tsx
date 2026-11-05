@@ -50,7 +50,7 @@ export function AssetAllocation() {
                 <CardTitle>{t('portfolio.allocation_title')}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="h-[300px] w-full">
+                <div className="h-[300px] w-full" aria-label={t('portfolio.allocation_title')}>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -75,15 +75,22 @@ export function AssetAllocation() {
                                 layout="vertical"
                                 verticalAlign="middle"
                                 align="right"
-                                formatter={(value) => {
-                                    const key = String(value);
-                                    const item = data.find(d => d.name === key);
-                                    return (
-                                        <span className="text-sm text-muted-foreground ml-2">
-                                            {getLabel(key)} ({item?.percent.toFixed(1)}%)
-                                        </span>
-                                    );
-                                }}
+                                content={() => (
+                                    <ul aria-label={t('portfolio.allocation_title')}>
+                                        {data.map((item, index) => (
+                                            <li key={item.name} className="flex items-center">
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="h-2.5 w-2.5 rounded-full"
+                                                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                                />
+                                                <span className="text-sm text-muted-foreground ml-2">
+                                                    {getLabel(item.name)} ({item.percent.toFixed(1)}%)
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             />
                         </PieChart>
                     </ResponsiveContainer>
