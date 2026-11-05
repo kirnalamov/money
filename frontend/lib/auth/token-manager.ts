@@ -10,13 +10,14 @@ export const getAccessToken = (): string | null => {
 
 export const getRefreshToken = (): string | null => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return localStorage.getItem(REFRESH_TOKEN_KEY) || (getAccessToken() ? 'cookie' : null);
 };
 
 export const setTokens = (accessToken: string, refreshToken: string): void => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    else localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
 export const clearTokens = (): void => {

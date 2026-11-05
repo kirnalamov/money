@@ -36,7 +36,7 @@ export const register = async (data: RegisterRequest): Promise<User> => {
  */
 export const logout = async (refreshToken: string): Promise<void> => {
     try {
-        await apiClient.post('/auth/logout', { refresh_token: refreshToken });
+        await apiClient.post('/auth/logout', refreshToken === 'cookie' ? undefined : { refresh_token: refreshToken });
     } finally {
         // Clear tokens even if logout request fails
         clearTokens();
@@ -47,7 +47,7 @@ export const logout = async (refreshToken: string): Promise<void> => {
  * Refresh access token
  */
 export const refreshAccessToken = async (refreshToken: string): Promise<TokenRefreshResponse> => {
-    const response = await apiClient.post<TokenRefreshResponse>('/auth/refresh', {
+    const response = await apiClient.post<TokenRefreshResponse>('/auth/refresh', refreshToken === 'cookie' ? undefined : {
         refresh_token: refreshToken,
     });
 

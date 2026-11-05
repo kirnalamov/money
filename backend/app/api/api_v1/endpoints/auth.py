@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select
@@ -27,6 +27,29 @@ from app.schemas.auth import Token, TokenRefresh, UserRegister
 from app.schemas.user import User as UserSchema, UserCreate
 
 router = APIRouter()
+
+
+def _cookie_token(request: Request, token_data: TokenRefresh | None) -> str:
+    if token_data is not None:
+        return token_data.refresh_token
+    origin = request.headers.get("origin")
+    allowed = {str(value).rstrip('/') for value in settings.BACKEND_CORS_ORIGINS}
+    allowed.add(str(request.base_url).rstrip('/'))
+    if not origin or origin.rstrip('/') not in allowed:
+        raise HTTPException(status_code=403, detail="Untrusted request origin")
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+    return token
+
+
+def _token_response(request: Request, response: Response, access: str, refresh: str) -> dict:
+    if request.headers.get("x-refresh-transport") == "cookie":
+        response.set_cookie("refresh_token", refresh, httponly=True, secure=request.url.scheme == "https",
+                            samesite="strict", path=f"{settings.API_V1_STR}/auth",
+                            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400)
+        refresh = ""
+    return {"access_token": access, "refresh_token": refresh, "token_type": "bearer"}
 
 
 def _refresh_user_id(payload: dict) -> int:
@@ -99,6 +122,8 @@ async def register(
 @router.post("/login", response_model=Token)
 async def login(
     *,
+    request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     _: Annotated[None, Depends(get_rate_limiter(requests_per_minute=settings.AUTH_RATE_LIMIT_PER_MINUTE))],
@@ -137,23 +162,22 @@ async def login(
     )
     await crud_refresh_token.create(db, obj_in=refresh_token_obj)
     
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token_str,
-        "token_type": "bearer"
-    }
+    return _token_response(request, response, access_token, refresh_token_str)
 
 @router.post("/refresh", response_model=Token)
 async def refresh_access_token(
     *,
+    request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
-    token_data: TokenRefresh,
+    token_data: TokenRefresh | None = None,
 ) -> dict:
     """
     Refresh access token using refresh token.
     """
     # Decode refresh token
-    payload = decode_token(token_data.refresh_token)
+    refresh_token_value = _cookie_token(request, token_data)
+    payload = decode_token(refresh_token_value)
     if payload is None or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,7 +187,7 @@ async def refresh_access_token(
     # Check and lock the token until its replacement is stored.
     token_obj = (await db.execute(
         select(RefreshToken)
-        .where(RefreshToken.token == hash_refresh_token(token_data.refresh_token))
+        .where(RefreshToken.token == hash_refresh_token(refresh_token_value))
         .with_for_update()
     )).scalar_one_or_none()
     if not token_obj or token_obj.revoked:
@@ -202,25 +226,24 @@ async def refresh_access_token(
     db.add(refresh_token_obj)
     await db.commit()
     
-    return {
-        "access_token": access_token,
-        "refresh_token": new_refresh_token,
-        "token_type": "bearer"
-    }
+    return _token_response(request, response, access_token, new_refresh_token)
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     *,
+    request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    token_data: TokenRefresh,
+    token_data: TokenRefresh | None = None,
 ):
     """
     Logout by revoking the refresh token.
     """
+    refresh_token_value = _cookie_token(request, token_data)
     token_obj = (await db.execute(
         select(RefreshToken)
-        .where(RefreshToken.token == hash_refresh_token(token_data.refresh_token))
+        .where(RefreshToken.token == hash_refresh_token(refresh_token_value))
         .with_for_update()
     )).scalar_one_or_none()
     if token_obj and token_obj.user_id != current_user.id:
@@ -228,4 +251,5 @@ async def logout(
     if token_obj:
         token_obj.revoked = True
         await db.commit()
+    response.delete_cookie("refresh_token", path=f"{settings.API_V1_STR}/auth")
     return None

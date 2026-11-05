@@ -6,8 +6,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({
     baseURL: API_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
+        'X-Refresh-Transport': 'cookie',
     },
 });
 
@@ -93,7 +95,7 @@ apiClient.interceptors.response.use(
                         if (!currentAccessToken) throw new Error('Сессия завершена');
                         return currentAccessToken;
                     }
-                    const response = await axios.post(`${API_URL}/auth/refresh`, { refresh_token: currentRefreshToken });
+                    const response = await axios.post(`${API_URL}/auth/refresh`, currentRefreshToken === 'cookie' ? undefined : { refresh_token: currentRefreshToken }, { withCredentials: true, headers: { 'X-Refresh-Transport': 'cookie' } });
                     if (getRefreshToken() !== currentRefreshToken) throw new Error('Сессия изменилась');
                     const { access_token, refresh_token: newRefreshToken } = response.data;
                     setTokens(access_token, newRefreshToken);

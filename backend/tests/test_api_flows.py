@@ -125,6 +125,17 @@ async def check_money_ownership_and_refresh():
             assert (await client.post("/api/v1/auth/refresh", json={"refresh_token": second_session["refresh_token"]})).status_code == 401
             assert (await client.post("/api/v1/auth/login", data={"username": "alice", "password": "Password123"})).status_code == 401
             assert (await client.post("/api/v1/auth/login", data={"username": "alice", "password": "NewPassword123"})).status_code == 200
+            cookie_headers = {"X-Refresh-Transport": "cookie", "Origin": "http://test"}
+            cookie_login = await client.post("/api/v1/auth/login", headers=cookie_headers, data={"username": "alice", "password": "NewPassword123"})
+            assert cookie_login.json()["refresh_token"] == ""
+            assert "HttpOnly" in cookie_login.headers["set-cookie"]
+            assert (await client.post("/api/v1/auth/refresh", headers={**cookie_headers, "Origin": "http://evil.example"})).status_code == 403
+            cookie_refresh = await client.post("/api/v1/auth/refresh", headers=cookie_headers)
+            assert cookie_refresh.status_code == 200, cookie_refresh.text
+            assert cookie_refresh.json()["refresh_token"] == ""
+            cookie_logout = await client.post("/api/v1/auth/logout", headers={**cookie_headers, "Authorization": f"Bearer {cookie_refresh.json()['access_token']}"})
+            assert cookie_logout.status_code == 204, cookie_logout.text
+            assert "refresh_token" not in client.cookies
     finally:
         app.dependency_overrides.clear()
         await engine.dispose()
