@@ -9,7 +9,7 @@ const files = [
   'components/transactions/transaction-filters.tsx',
   'components/transactions/transaction-details-dialog.tsx',
   'components/transactions/add-transaction-dialog.tsx',
-].map((file) => `frontend/${file}`);
+];
 
 test('transactions use shared money formatter and design tokens', () => {
   for (const file of files) {
