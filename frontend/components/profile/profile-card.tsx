@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Edit2, Check } from "lucide-react";
 
 export function ProfileCard() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { user, updateProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user?.full_name || user?.username || t('profile.card.placeholder_name'));
@@ -56,15 +56,15 @@ export function ProfileCard() {
     };
 
     const memberSince = user?.created_at
-        ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+        ? new Date(user.created_at).toLocaleDateString(i18n.language, { month: 'short', year: 'numeric' })
         : t('profile.card.unknown_date');
 
     return (
-        <Card className="h-full">
+        <Card className="h-full rounded-2xl">
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     <span>{t('profile.card.personal_details')}</span>
-                    <Button variant="ghost" size="icon" onClick={() => {
+                     <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={() => {
                         if (isEditing) void handleSave();
                         else {
                             setError(null);
@@ -76,7 +76,7 @@ export function ProfileCard() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                {error && <p className="text-sm text-expense" role="alert">{error}</p>}
                 <div className="flex flex-col items-center gap-4">
                     <Avatar className="h-24 w-24">
                         <AvatarFallback className="text-2xl bg-primary/10 text-primary">

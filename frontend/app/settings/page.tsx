@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6 pb-10 max-w-[1440px] mx-auto text-sm [&_button]:min-h-11 [&_button]:min-w-11 [&_input]:min-h-11 [&_input]:min-w-0 [&_input]:rounded-xl [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring [&_button]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-offset-background">
+       <div className="mx-auto max-w-[1440px] space-y-6 pb-10 text-sm [&_button]:min-h-11 [&_button]:min-w-11 [&_input]:min-h-11 [&_input]:min-w-0 [&_input]:rounded-xl [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring [&_button]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-offset-background">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h2>
           <p className="text-muted-foreground mt-1">{t('settings.description')}</p>

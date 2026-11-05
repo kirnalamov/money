@@ -570,6 +570,21 @@
       "placeholder_name": "Your Name",
       "placeholder_bio": "Saving for a dream home 🏠",
       "name_required": "Enter your name."
+    },
+    "stats": {
+      "monthly_hype": "Monthly progress",
+      "tracking": "You're tracking your spending.",
+      "spent_less": "You've spent {{percent}}% less than last month. Great work!",
+      "spent_more": "Spending is up {{percent}}% from last month. Keep an eye on it.",
+      "spending_stable": "Your spending is stable compared to last month.",
+      "favorite_category": "{{category}} is your top category this month.",
+      "no_favorite_category": "No top category yet.",
+      "total_savings": "Total savings",
+      "savings_hint": "Your safety net is growing.",
+      "goals_hit": "Goals completed",
+      "goals_done": "You're making progress!",
+      "goals_hint": "Set a goal and get started.",
+      "fun_fact": "Monthly insight"
     }
   }
 }
