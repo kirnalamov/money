@@ -84,7 +84,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         undoTimerRef.current = setTimeout(() => setDeletedTransaction(null), 10_000);
     };
 
-    const getDayTotal = (items: Transaction[]) => items.reduce((sum, tx) => sum + (tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : 0), 0);
+    const getDayTotal = (items: Transaction[]) => items.reduce((sum, tx) => sum + (tx.type === 'expense' ? -1 : tx.type === 'income' ? 1 : 0) * convertCurrency(tx.amount, tx.currency, defaultCurrency), 0);
 
     const handleUndo = async () => {
         if (!deletedTransaction) return;
@@ -144,7 +144,6 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 }}
                                 role="button"
                                 tabIndex={0}
-                                aria-label={`${tx.category}, ${getAccountName(tx.accountId)}, ${tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount, tx.currency)}, ${format(new Date(tx.date), 'HH:mm')}${tx.description ? `, ${tx.description}` : ''}`}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                                     <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-[#34d399]/10' :
