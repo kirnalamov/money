@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Money App"
     API_V1_STR: str = "/api/v1"
     DEV_MODE: bool = False
+    EXPOSE_INTERNAL_ENDPOINTS: bool = False
     
     # Security
     SECRET_KEY: str

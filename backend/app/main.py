@@ -15,8 +15,9 @@ logger = structlog.get_logger()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url=f"{settings.API_V1_STR}/docs",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS else None,
+    docs_url=f"{settings.API_V1_STR}/docs" if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS else None,
+    redoc_url=None,
 )
 
 # CORS Options
@@ -117,7 +118,9 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # Prometheus setup
-instrumentator = Instrumentator().instrument(app).expose(app)
+instrumentator = Instrumentator().instrument(app)
+if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS:
+    instrumentator.expose(app)
 
 @app.get("/health")
 async def health_check():
