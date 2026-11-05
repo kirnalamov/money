@@ -10,6 +10,7 @@ import { getTags, createTag as createTagApi, updateTag as updateTagApi, deleteTa
 import { getExchangeRates as getExchangeRatesApi } from './api/exchange-rates';
 import { updateExchangeRates } from './utils';
 import { getUserItems, saveUserItem, deleteUserItem, payUserExpense } from './api/user-items';
+import { recurringExpenseId } from './recurring-expense-id';
 
 const getRandomHexColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
@@ -286,6 +287,7 @@ export const useStore = create<AppState>()(
       addTransaction: async (transaction: Omit<Transaction, 'id'>) => {
         try {
           const newTx = await createTransaction(transaction);
+          const recurringId = transaction.isRecurring ? await recurringExpenseId(transaction.description || transaction.category, transaction.category, transaction.amount, transaction.currency) : '';
           const [accounts, categories, tags] = await Promise.allSettled([
             getAccounts(),
             getCategories(),
@@ -308,7 +310,7 @@ export const useStore = create<AppState>()(
               );
               if (!exists) {
                 const newRecurring: RecurringExpense = {
-                  id: Math.random().toString(36).substr(2, 9),
+                  id: recurringId,
                   name: transaction.description || transaction.category,
                   amount: transaction.amount,
                   currency: transaction.currency,
@@ -325,7 +327,7 @@ export const useStore = create<AppState>()(
           });
           if (recurringToSave) {
             try { await saveUserItem('recurringExpenses', recurringToSave.id, recurringToSave); }
-            catch { window.alert('Операция сохранена, но регулярный расход не удалось сохранить.'); }
+            catch { set((state) => ({ recurringExpenses: state.recurringExpenses.filter(expense => expense.id !== recurringToSave!.id) })); window.alert('Операция сохранена, но регулярный расход не удалось сохранить.'); }
           }
         } catch (e) {
           console.error(e);
@@ -356,7 +358,7 @@ export const useStore = create<AppState>()(
               );
               if (!exists) {
                 const newRecurring: RecurringExpense = {
-                  id: Math.random().toString(36).substr(2, 9),
+                  id: crypto.randomUUID(),
                   name: updated.description || updated.category,
                   amount: updated.amount,
                   currency: updated.currency,
