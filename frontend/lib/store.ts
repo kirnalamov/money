@@ -136,7 +136,7 @@ export const useStore = create<AppState>()(
             const tags = results[4].status === 'fulfilled' ? results[4].value : state.tags;
             const accountIds = new Set(accounts.map((a) => a.id));
             const validPositions = results[0].status === 'fulfilled' ? userItems.positions.filter((p) => accountIds.has(p.accountId)) : userItems.positions;
-            const allSourcesFailed = sourceNames.every((source) => dataErrors[source]);
+            const anySourceFailed = sourceNames.some((source) => dataErrors[source]);
             return {
               accounts,
               transactions,
@@ -148,7 +148,7 @@ export const useStore = create<AppState>()(
               recurringExpenses: userItems.recurringExpenses,
               isLoading: false,
               dataReady: true,
-              dataError: allSourcesFailed ? 'common.data_load_failed' : null,
+              dataError: anySourceFailed ? 'common.data_load_failed' : null,
               dataErrors,
             };
           });
