@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, convertCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -325,23 +325,23 @@ export default function PortfolioPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
           <div className="lg:col-span-4 space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_value")}</p>
-                <p className="text-3xl font-bold">{formatCurrency(portfolioMetrics.totalValue, defaultCurrency)}</p>
+                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalValue, defaultCurrency)}</p>
               </div>
-              <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.invested_capital")}</p>
-                <p className="text-3xl font-bold">{formatCurrency(portfolioMetrics.totalCost, defaultCurrency)}</p>
+                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalCost, defaultCurrency)}</p>
               </div>
-              <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {portfolioMetrics.totalPnL >= 0 ? '+' : ''}{formatCurrency(portfolioMetrics.totalPnL, defaultCurrency)}
+                <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-income' : 'text-expense'}`}>
+                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency)}
                 </p>
               </div>
-              <div className="border rounded-xl p-6 bg-card transition-all hover:shadow-md">
+              <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.return_on_cost")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.returnPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <p className={`text-3xl font-bold ${portfolioMetrics.returnPercent >= 0 ? 'text-income' : 'text-expense'}`}>
                   {portfolioMetrics.returnPercent >= 0 ? '+' : ''}{portfolioMetrics.returnPercent.toFixed(2)}%
                 </p>
               </div>
@@ -414,26 +414,26 @@ export default function PortfolioPage() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">{t("portfolio.avg_price")}</span>
-                              <span className="text-sm font-medium">{formatCurrency(position.avgPrice, position.currency)}</span>
+                              <span className="text-sm font-medium">{formatMoney(position.avgPrice, position.currency)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">{t("portfolio.current_price")}</span>
-                              <span className="text-sm font-medium">{formatCurrency(position.currentPrice, position.currency)}</span>
+                              <span className="text-sm font-medium">{formatMoney(position.currentPrice, position.currency)}</span>
                             </div>
                             <div className="flex justify-between pt-2 border-t">
                               <span className="text-sm text-muted-foreground">{t("portfolio.value")}</span>
-                              <span className="text-sm font-bold">{formatCurrency(valueInDefault, defaultCurrency)}</span>
+                              <span className="text-sm font-bold">{formatMoney(valueInDefault, defaultCurrency)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">{t("portfolio.pnl")}</span>
                               <div className="flex items-center gap-2">
                                 {pnl >= 0 ? (
-                                  <TrendingUp className="h-4 w-4 text-green-500" />
+                                  <TrendingUp className="h-4 w-4 text-income" />
                                 ) : (
-                                  <TrendingDown className="h-4 w-4 text-red-500" />
+                                  <TrendingDown className="h-4 w-4 text-expense" />
                                 )}
-                                <span className={`text-sm font-bold ${pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                  {pnl >= 0 ? '+' : ''}{formatCurrency(pnl, position.currency)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
+                                <span className={`text-sm font-bold ${pnl >= 0 ? 'text-income' : 'text-expense'}`}>
+                                  {formatMoney(pnl, position.currency)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
                                 </span>
                               </div>
                             </div>

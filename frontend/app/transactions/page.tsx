@@ -170,11 +170,11 @@ export default function TransactionsPage() {
   return (
     <ProtectedRoute>
       <TooltipProvider><div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 bg-background pb-20 text-foreground md:px-4 md:pb-6 xl:px-8">
-        <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{t('transactions.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('transactions.results_count', { count: filteredTransactions.length })}</p></div>
+        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0"><h1 className="text-2xl font-bold tracking-tight">{t('transactions.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('transactions.results_count', { count: filteredTransactions.length })}</p></div>
           <div className="flex w-full shrink-0 gap-2 sm:w-auto">
             <Tooltip><TooltipTrigger asChild><span><AddTransactionDialog trigger={<Button type="button" className="h-10 bg-primary px-3 text-primary-foreground hover:bg-primary/90"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}<kbd className="ml-2 rounded border border-primary-foreground/30 px-1 text-xs font-medium">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
-            <Button type="button" variant="outline" onClick={exportCsv} className="h-10 border-border bg-muted px-3"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
+            <Button type="button" variant="outline" onClick={exportCsv} className="h-10 border-border bg-card px-3"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
           </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
@@ -61,7 +61,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
     // Most frequent tag
     const mostFrequent = [...data].sort((a, b) => b.count - a.count)[0];
 
-    const colors = ['#00C853', '#2979FF', '#FFB300', '#F44336', '#AB47BC', '#009688', '#FF4081', '#3F51B5', '#FFC107', '#4CAF50'];
+    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
     if (data.length === 0) {
         return (
@@ -77,7 +77,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
         <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="glass-card">
+                <Card className="bg-card border rounded-2xl p-5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('analytics.tags.top_spending')}</CardTitle>
                         <Award className="h-4 w-4 text-primary" />
@@ -85,11 +85,11 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                     <CardContent>
                         <div className="text-2xl font-bold capitalize">{topTag?.name || "N/A"}</div>
                         <p className="text-xs text-muted-foreground">
-                            {formatCurrency(topTag?.value || 0, defaultCurrency)} {t('analytics.tags.total')}
+                            {formatMoney(topTag?.value || 0, defaultCurrency)} {t('analytics.tags.total')}
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="glass-card">
+                <Card className="bg-card border rounded-2xl p-5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('analytics.tags.most_frequent')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-primary" />
@@ -101,7 +101,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="glass-card">
+                <Card className="bg-card border rounded-2xl p-5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('analytics.tags.unique_tags')}</CardTitle>
                         <Tag className="h-4 w-4 text-primary" />
@@ -116,7 +116,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
             </div>
 
             {/* Main Chart */}
-            <Card className="p-6 h-[600px] glass-card">
+            <Card className="p-6 h-[600px] bg-card border rounded-2xl p-5">
                 <div className="mb-6 flex justify-between items-center">
                     <div>
                         <h3 className="font-semibold text-lg">{t('analytics.tags.chart_title')}</h3>
@@ -127,7 +127,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" tickFormatter={(val) => formatCurrency(val, defaultCurrency)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <XAxis type="number" tickFormatter={(val) => formatMoney(val, defaultCurrency)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
                             <YAxis
                                 dataKey="name"
                                 type="category"
@@ -140,7 +140,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                                 cursor={{ fill: 'hsl(var(--accent))', opacity: 0.1 }}
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: number) => [formatCurrency(value, defaultCurrency), t('analytics.stats.total_spend')]}
+                                formatter={(value: number) => [formatMoney(value, defaultCurrency), t('analytics.stats.total_spend')]}
                             />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                                 {data.map((entry, index) => (

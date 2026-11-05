@@ -4,7 +4,7 @@ import { useState } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { convertCurrency, formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -262,7 +262,7 @@ export default function AccountsPage() {
                 : null;
 
               return (
-                  <div key={account.id} className="min-w-0 rounded-xl border bg-card p-6">
+                  <div key={account.id} className="min-w-0 rounded-2xl border bg-card p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <Wallet className="h-5 w-5 text-muted-foreground" />
@@ -298,12 +298,12 @@ export default function AccountsPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">{t("accounts.balance")}</p>
                       <p className="text-2xl font-bold">
-                        {formatCurrency(account.balance, account.currency)}
+                        {formatMoney(account.balance, account.currency)}
                       </p>
                       <p className="text-xs font-medium text-muted-foreground">{account.currency}</p>
                       {convertedBalance !== null && (
                         <p className="text-xs text-muted-foreground">
-                          ≈ {formatCurrency(convertedBalance, defaultCurrency)}
+                          ≈ {formatMoney(convertedBalance, defaultCurrency)}
                         </p>
                       )}
                     </div>

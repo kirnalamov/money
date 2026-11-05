@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { convertCurrency, formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatMoney } from "@/lib/utils";
 import { startOfMonth, subMonths, getDaysInMonth } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -79,7 +79,7 @@ export function SpendVelocityChart() {
     const isSpendingFaster = velocityDiff > 0;
 
     return (
-        <Card className="glass-card h-full">
+        <Card className="bg-card border rounded-2xl p-5 h-full">
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                     <div>
@@ -88,7 +88,7 @@ export function SpendVelocityChart() {
                     </div>
                     <div className={cn(
                         "px-2 py-1 rounded text-xs font-bold text-nowrap",
-                        isSpendingFaster ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500"
+                        isSpendingFaster ? "bg-expense/10 text-expense" : "bg-income/10 text-income"
                     )}>
                         {isSpendingFaster ? "+" : ""}{velocityPercent.toFixed(1)}% {isSpendingFaster ? t('analytics.velocity.faster') : t('analytics.velocity.slower')}
                     </div>
@@ -115,7 +115,7 @@ export function SpendVelocityChart() {
                             <Tooltip
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                 formatter={(value: number, name: string) => [
-                                    formatCurrency(value, defaultCurrency),
+                                    formatMoney(value, defaultCurrency),
                                     name === 'current' ? t('analytics.forecast.current') : t('dashboard.date_filters.1m')
                                 ]}
                                 labelFormatter={(day) => `Day ${day}`}
@@ -147,18 +147,18 @@ export function SpendVelocityChart() {
                 <div className={cn(
                     "mt-3 text-xs p-2.5 rounded-lg border flex items-center justify-center gap-2 transition-colors",
                     isSpendingFaster
-                        ? "bg-red-500/5 border-red-500/10 text-red-600 dark:text-red-400"
-                        : "bg-emerald-500/5 border-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        ? "bg-expense/5 border-expense/20 text-expense "
+                        : "bg-income/5 border-emerald-500/10 text-income "
                 )}>
                     {isSpendingFaster ? (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.caution')}:</span>
-                            <span>{t('analytics.velocity.outpacing', { amount: formatCurrency(velocityDiff, defaultCurrency) })}</span>
+                            <span>{t('analytics.velocity.outpacing', { amount: formatMoney(velocityDiff, defaultCurrency) })}</span>
                         </>
                     ) : (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.great_job')}</span>
-                            <span>{t('analytics.velocity.saved', { amount: formatCurrency(Math.abs(velocityDiff), defaultCurrency) })}</span>
+                            <span>{t('analytics.velocity.saved', { amount: formatMoney(Math.abs(velocityDiff), defaultCurrency) })}</span>
                         </>
                     )}
                 </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency, cn, getCurrencySymbol } from "@/lib/utils";
+import { formatMoney, cn, getCurrencySymbol } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Target, TrendingUp, Calendar } from "lucide-react";
 import {
@@ -162,9 +162,9 @@ export default function SavingsPage() {
             const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
 
             return (
-              <div key={goal.id} className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+              <div key={goal.id} className="group relative overflow-hidden rounded-2xl border bg-card p-5 ">
                 <div className="flex justify-between items-start mb-4">
-                  <div className={`p-2 rounded-lg ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
+                  <div className={`p-2 rounded-lg ${isCompleted ? 'bg-income/10 text-income' : 'bg-primary/10 text-primary'}`}>
                     <Target className="h-6 w-6" />
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -188,13 +188,13 @@ export default function SavingsPage() {
                 </p>
 
                 <div className="flex items-end justify-between mb-2">
-                  <span className="text-2xl font-bold">{formatCurrency(goal.currentAmount, goal.currency)}</span>
-                  <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatCurrency(goal.targetAmount, goal.currency)}</span>
+                  <span className="text-2xl font-bold">{formatMoney(goal.currentAmount, goal.currency)}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatMoney(goal.targetAmount, goal.currency)}</span>
                 </div>
 
                 <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full transition-all duration-500 rounded-full", isCompleted ? "bg-green-500" : "bg-primary")}
+                    className={cn("h-full transition-all duration-500 rounded-full", isCompleted ? "bg-income" : "bg-primary")}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -202,7 +202,7 @@ export default function SavingsPage() {
                   {progress}%
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{t("savings.remaining")}: {formatCurrency(remaining, goal.currency)}</span>
+                  <span>{t("savings.remaining")}: {formatMoney(remaining, goal.currency)}</span>
                   <span>{goal.currency}</span>
                 </div>
               </div>
@@ -222,9 +222,9 @@ export default function SavingsPage() {
         </div>
 
         {/* Savings Calculator Section */}
-        <div className="rounded-xl border bg-card p-6 md:p-8 mt-8">
+        <div className="rounded-2xl border bg-card p-5 md:p-8 mt-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
@@ -288,13 +288,13 @@ export default function SavingsPage() {
             <div className="flex flex-col justify-center items-center bg-secondary/20 rounded-xl p-6 text-center">
               <span className="text-sm text-muted-foreground mb-2">{t("savings.calculator.projected_total", { years: calcYears })}</span>
               <span className="text-4xl md:text-5xl font-bold text-primary mb-2">
-                {formatCurrency(calculateSavings(), defaultCurrency)}
+                {formatMoney(calculateSavings(), defaultCurrency)}
               </span>
               <span className="text-sm text-muted-foreground">
-                {t("savings.calculator.total_contributed")}: {formatCurrency(totalContributed, defaultCurrency)}
+                {t("savings.calculator.total_contributed")}: {formatMoney(totalContributed, defaultCurrency)}
               </span>
-              <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
-                +{formatCurrency(Math.max(0, calculateSavings() - totalContributed), defaultCurrency)} {t("savings.calculator.interest_earned")}
+              <div className="mt-4 px-4 py-2 bg-income/10 text-income rounded-full text-xs font-semibold">
+                {formatMoney(Math.max(0, calculateSavings() - totalContributed), defaultCurrency)} {t("savings.calculator.interest_earned")}
               </div>
             </div>
           </div>

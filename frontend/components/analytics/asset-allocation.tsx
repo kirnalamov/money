@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { useMemo } from "react";
-import { convertCurrency, formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatMoney } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AssetAllocation() {
@@ -30,7 +30,7 @@ export function AssetAllocation() {
         })).sort((a, b) => b.value - a.value);
     }, [accounts, defaultCurrency]);
 
-    const COLORS = ['hsl(var(--primary))', '#2979FF', '#FFB300', '#AB47BC', '#00C853'];
+    const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
     const getLabel = (key: string) => {
         // Mapping account types to readable labels
@@ -67,7 +67,7 @@ export function AssetAllocation() {
                                 ))}
                             </Pie>
                             <Tooltip
-                                formatter={(value: number) => formatCurrency(value, defaultCurrency)}
+                                formatter={(value: number) => formatMoney(value, defaultCurrency)}
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                             />

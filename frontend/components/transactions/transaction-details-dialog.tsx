@@ -142,7 +142,7 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: 
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{t('transactions.edit_dialog_title') || 'Transaction Details'}</DialogTitle>
-            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleDelete}>
+            <Button variant="ghost" size="icon" className="text-expense hover:text-expense hover:bg-expense/10" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>

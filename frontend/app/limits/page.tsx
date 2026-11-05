@@ -25,10 +25,10 @@ export default function LimitsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6 container mx-auto pb-20 md:pb-6">
+      <div className="mx-auto w-full max-w-[1440px] space-y-6 pb-20 md:pb-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{t("limits.title")}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("limits.title")}</h2>
             <p className="text-muted-foreground text-sm mt-1">
               {t("limits.subtitle") || "Manage your monthly spending limits."}
             </p>

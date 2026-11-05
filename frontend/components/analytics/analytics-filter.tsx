@@ -24,7 +24,7 @@ export function AnalyticsFilter({ dateRange, setDateRange }: AnalyticsFilterProp
     };
 
     return (
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card/50 p-4 rounded-xl border backdrop-blur-sm shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card/50 p-4 rounded-xl border  ">
             <div className="flex items-center gap-2">
                 <div className="p-2 bg-primary/10 rounded-lg">
                     <CalendarIcon className="w-5 h-5 text-primary" />

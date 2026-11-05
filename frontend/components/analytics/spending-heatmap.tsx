@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { convertCurrency, formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatMoney } from "@/lib/utils";
 import { subDays, format, eachDayOfInterval, getDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -66,15 +66,15 @@ export function SpendingHeatmap() {
     const getIntensityClass = (value: number) => {
         if (value === 0) return "bg-muted/20";
         const ratio = value / maxSpend;
-        if (ratio < 0.2) return "bg-emerald-900/40"; // Very low
-        if (ratio < 0.4) return "bg-emerald-700/60";
-        if (ratio < 0.6) return "bg-emerald-500/80";
-        if (ratio < 0.8) return "bg-emerald-400";
-        return "bg-emerald-300"; // Max
+        if (ratio < 0.2) return "bg-income/20"; // Very low
+        if (ratio < 0.4) return "bg-income/40";
+        if (ratio < 0.6) return "bg-income/60";
+        if (ratio < 0.8) return "bg-income/80";
+        return "bg-income"; // Max
     };
 
     return (
-        <Card className="glass-card h-full flex flex-col">
+        <Card className="bg-card border rounded-2xl p-5 h-full flex flex-col">
             <CardHeader className="pb-2 flex-none">
                 <CardTitle className="text-base">{t('analytics.habits.title')}</CardTitle>
                 <p className="text-xs text-muted-foreground">{t('analytics.habits.subtitle')}</p>
@@ -106,7 +106,7 @@ export function SpendingHeatmap() {
                                         </TooltipTrigger>
                                         <TooltipContent side="top">
                                             <p className="text-xs font-bold">{format(day, 'MMM d, yyyy')}</p>
-                                            <p className="text-xs">{formatCurrency(value, defaultCurrency)}</p>
+                                            <p className="text-xs">{formatMoney(value, defaultCurrency)}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -115,18 +115,18 @@ export function SpendingHeatmap() {
                     </div>
                 </div>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t flex-none">
-                    <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
                         <span>{t('analytics.habits.less')}</span>
                         <div className="flex gap-1">
                             <div className="w-2 h-2 rounded-[1px] bg-muted/20" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-900/40" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-500/80" />
-                            <div className="w-2 h-2 rounded-[1px] bg-emerald-300" />
+                            <div className="w-2 h-2 rounded-[1px] bg-income/20" />
+                            <div className="w-2 h-2 rounded-[1px] bg-income/60" />
+                            <div className="w-2 h-2 rounded-[1px] bg-income" />
                         </div>
                         <span>{t('analytics.habits.more')}</span>
                     </div>
                     {maxDayValue > 0 && (
-                        <div className="text-[10px] font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <div className="text-xs font-medium text-income bg-income/10 px-2 py-0.5 rounded-full">
                             {t('analytics.habits.peak')}: {peakDay}
                         </div>
                     )}

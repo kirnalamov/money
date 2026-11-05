@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, PieChart, Pie, Legend } from "recharts";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
@@ -109,7 +109,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     // Show warning if > 15% and amount is significant (> 1000 whatever currency units, logic simplification)
     const isUncategorizedHigh = uncategorizedShare > 15 && uncategorizedAmount > 0;
 
-    const colors = ['#00C853', '#2979FF', '#FFB300', '#F44336', '#AB47BC', '#009688', '#FF4081', '#3F51B5', '#FFC107', '#4CAF50'];
+    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
     // Forecast (Calculated globally for simplicity)
     const forecast = calculateForecast(transactions, accounts, defaultCurrency);
@@ -138,22 +138,22 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                     </div>
                     {/* Forecast & Heatmap Column */}
                     <div className="space-y-4 h-[460px] flex flex-col">
-                        <Card className="glass-card flex-none">
+                        <Card className="bg-card border rounded-2xl p-5 flex-none">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-base text-muted-foreground flex justify-between items-center">
                                     <span>{t('analytics.forecast.title')}</span>
-                                    <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                                         {t('analytics.forecast.active')}
                                     </span>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold mt-1">
-                                    {formatCurrency(forecast.projectedSpend, defaultCurrency)}
+                                    {formatMoney(forecast.projectedSpend, defaultCurrency)}
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground flex items-center justify-between">
-                                    <span>{t('analytics.forecast.current')}: {formatCurrency(forecast.currentSpend, defaultCurrency)}</span>
-                                    <span>{t('analytics.forecast.burn')}: {formatCurrency(forecast.burnRate, defaultCurrency)}/day</span>
+                                    <span>{t('analytics.forecast.current')}: {formatMoney(forecast.currentSpend, defaultCurrency)}</span>
+                                    <span>{t('analytics.forecast.burn')}: {formatMoney(forecast.burnRate, defaultCurrency)}/day</span>
                                 </div>
                                 <div className="w-full bg-secondary h-2 rounded-full mt-3 overflow-hidden">
                                     <div
@@ -172,29 +172,29 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
 
                 {/* Main Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="glass-card premium-gradient">
+                    <Card className="bg-card border rounded-2xl p-5 ">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <DollarSign className="w-4 h-4" /> {t('analytics.stats.total_spend')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(totalSpend, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalSpend, defaultCurrency)}</div>
                             <p className="text-xs text-muted-foreground mt-1">{t('analytics.stats.in_selected_period')}</p>
                         </CardContent>
                     </Card>
-                    <Card className="glass-card">
+                    <Card className="bg-card border rounded-2xl p-5">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4" /> {t('analytics.stats.avg_daily')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(avgDaily, defaultCurrency)}</div>
-                            <p className="text-xs text-muted-foreground mt-1">~{formatCurrency(avgDaily * 30, defaultCurrency)} {t('analytics.stats.per_month')}</p>
+                            <div className="text-2xl font-bold">{formatMoney(avgDaily, defaultCurrency)}</div>
+                            <p className="text-xs text-muted-foreground mt-1">~{formatMoney(avgDaily * 30, defaultCurrency)} {t('analytics.stats.per_month')}</p>
                         </CardContent>
                     </Card>
-                    <Card className="glass-card">
+                    <Card className="bg-card border rounded-2xl p-5">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <TrendingDown className="w-4 h-4" /> {t('analytics.stats.top_category')}
@@ -217,7 +217,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <Building className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(totalFixed, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalFixed, defaultCurrency)}</div>
                             <p className="text-xs text-muted-foreground">
                                 {fixedRatio.toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
@@ -229,7 +229,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(totalVariable, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalVariable, defaultCurrency)}</div>
                             <p className="text-xs text-muted-foreground">
                                 {(100 - fixedRatio).toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
@@ -238,7 +238,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                 </div>
 
                 {/* Main breakdowns Chart */}
-                <Card className="p-6 h-[500px] glass-card flex flex-col">
+                <Card className="p-6 h-[500px] bg-card border rounded-2xl p-5 flex flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h3 className="font-semibold text-lg">{t('analytics.breakdown.title')}</h3>
@@ -293,7 +293,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                         <Tooltip
                                             contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                             itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                            formatter={(value: number) => [formatCurrency(value, defaultCurrency), 'Spend']}
+                                            formatter={(value: number) => [formatMoney(value, defaultCurrency), 'Spend']}
                                         />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
@@ -306,7 +306,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             cursor={{ fill: 'hsl(var(--accent))', opacity: 0.1 }}
                                             contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                             itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                            formatter={(value: number) => [formatCurrency(value, defaultCurrency), 'Spend']}
+                                            formatter={(value: number) => [formatMoney(value, defaultCurrency), 'Spend']}
                                         />
                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                             {data.map((entry, index) => (
@@ -323,7 +323,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
 
             {/* Settings Sidebar */}
             <div className="space-y-6">
-                <Card className="glass-card">
+                <Card className="bg-card border rounded-2xl p-5">
                     <CardHeader>
                         <CardTitle className="text-base">{t('analytics.settings.title')}</CardTitle>
                         <CardDescription>{t('analytics.settings.subtitle')}</CardDescription>

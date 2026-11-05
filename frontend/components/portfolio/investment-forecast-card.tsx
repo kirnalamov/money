@@ -16,7 +16,7 @@ import { Calculator, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatCurrency } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 interface InvestmentForecastCardProps {
@@ -158,19 +158,19 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.projected_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatCurrency(forecast.finalPoint.nominal, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.nominal, defaultCurrency)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.real_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatCurrency(forecast.finalPoint.real, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.real, defaultCurrency)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.invested")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatCurrency(forecast.invested, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.invested, defaultCurrency)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.inflation_impact")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatCurrency(forecast.inflationImpact, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.inflationImpact, defaultCurrency)}</p>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
                 tickLine={false}
                 axisLine={false}
                 width={72}
-                tickFormatter={(value) => formatCurrency(Number(value), defaultCurrency)}
+                tickFormatter={(value) => formatMoney(Number(value), defaultCurrency)}
               />
               <Tooltip
                 contentStyle={{
@@ -192,7 +192,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
                   borderRadius: "8px",
                 }}
                 formatter={(value, name) => [
-                  formatCurrency(Number(value), defaultCurrency),
+                  formatMoney(Number(value), defaultCurrency),
                   t(`portfolio.forecast.series.${String(name)}`),
                 ]}
                 labelFormatter={(label) => `${t("portfolio.forecast.year")} ${label}`}
@@ -217,7 +217,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
               <Line
                 type="monotone"
                 dataKey="real"
-                stroke="#f59e0b"
+                stroke="hsl(var(--chart-4))"
                 strokeWidth={3}
                 dot={false}
               />
@@ -226,7 +226,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
         </div>
 
         <p className="text-xs text-muted-foreground">
-          {t("portfolio.forecast.note", { years: forecast.years, profit: formatCurrency(forecast.nominalProfit, defaultCurrency) })}
+          {t("portfolio.forecast.note", { years: forecast.years, profit: formatMoney(forecast.nominalProfit, defaultCurrency) })}
         </p>
       </CardContent>
     </Card>

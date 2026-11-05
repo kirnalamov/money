@@ -39,7 +39,7 @@ export function AnalyticsContent() {
             {/* Header & Filter */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{t('analytics.page_title')}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t('analytics.page_title')}</h2>
                     <p className="text-muted-foreground">{t('analytics.page_subtitle')}</p>
                 </div>
                 <div className="w-full md:w-auto">
@@ -49,12 +49,12 @@ export function AnalyticsContent() {
 
             <div className="space-y-6">
                 {/* Tabs Navigation */}
-                <div className="flex w-full items-center justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground md:w-auto md:justify-center no-scrollbar">
+                <div className="flex w-full items-center justify-start overflow-x-auto rounded-xl bg-muted p-1 text-muted-foreground md:w-auto md:justify-center no-scrollbar">
                     <button
                         onClick={() => handleTabChange("net-worth")}
                         className={cn(
                             "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
-                            activeTab === "net-worth" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
+                            activeTab === "net-worth" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >
                         {t("dashboard.charts.net_worth_title")}
@@ -63,7 +63,7 @@ export function AnalyticsContent() {
                         onClick={() => handleTabChange("expenses")}
                         className={cn(
                             "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
-                            activeTab === "expenses" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
+                            activeTab === "expenses" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >
                         {t("dashboard.charts.expenses_title")}
@@ -72,7 +72,7 @@ export function AnalyticsContent() {
                         onClick={() => handleTabChange("tags")}
                         className={cn(
                             "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
-                            activeTab === "tags" ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
+                            activeTab === "tags" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >
                         {t("dashboard.charts.tags_title")}
@@ -86,7 +86,7 @@ export function AnalyticsContent() {
                             <NetWorthStats />
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="rounded-xl border bg-card text-card-foreground shadow p-6 lg:col-span-2">
+                                <div className="rounded-2xl border bg-card p-5 lg:col-span-2">
                                     <div className="h-[400px] w-full">
                                         <NetWorthChart dateRange={dateRange} />
                                     </div>

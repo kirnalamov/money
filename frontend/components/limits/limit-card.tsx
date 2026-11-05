@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 
 interface LimitCardProps {
     limit: LimitRule;
@@ -16,17 +16,17 @@ interface LimitCardProps {
 
 export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
     const { t } = useTranslation();
-    const percentage = limit.amount > 0 ? Math.min(100, (limit.spent / limit.amount) * 100) : 0;
+    const percentage = limit.amount > 0 ? (limit.spent / limit.amount) * 100 : 0;
     const remaining = Math.max(0, limit.amount - limit.spent);
 
     // Determine color based on percentage
     let indicatorColor = "bg-primary";
-    if (percentage >= 100) indicatorColor = "bg-red-500";
-    else if (percentage >= 75) indicatorColor = "bg-amber-500";
-    else indicatorColor = "bg-emerald-500";
+    if (percentage > 100) indicatorColor = "bg-expense";
+    else if (percentage >= 80) indicatorColor = "bg-warning";
+    else indicatorColor = "bg-primary";
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden rounded-2xl border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                     <span className="max-w-[180px] truncate" title={limit.category}>{t(limit.category, { defaultValue: limit.category })}</span>
@@ -44,24 +44,24 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">
-                    {formatCurrency(limit.spent, limit.currency)}
+                <div className="text-2xl font-bold tabular-nums">
+                    {formatMoney(limit.spent, limit.currency)}
                     <span className="text-sm text-muted-foreground font-normal ml-2">
-                        / {formatCurrency(limit.amount, limit.currency)}
+                        / {formatMoney(limit.amount, limit.currency)}
                     </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{limit.currency}</p>
 
                 <div className="mt-4 space-y-2">
                     <div className="flex justify-between text-xs">
-                        <span className={percentage >= 100 ? "text-red-500 font-medium" : "text-muted-foreground"}>
+                        <span className={percentage > 100 ? "text-expense font-medium" : percentage >= 80 ? "text-warning font-medium" : "text-muted-foreground"}>
                             {Math.round(percentage)}% {t('limits.spent')}
                         </span>
                         <span className="text-muted-foreground">
-                            {formatCurrency(remaining, limit.currency)} {t('limits.remaining')}
+                            {formatMoney(remaining, limit.currency)} {t('limits.remaining')}
                         </span>
                     </div>
-                    <Progress value={percentage} className="h-2" indicatorClassName={indicatorColor} />
+                    <Progress value={Math.min(100, percentage)} className="h-2" indicatorClassName={indicatorColor} />
                 </div>
             </CardContent>
         </Card>

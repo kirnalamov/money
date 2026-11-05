@@ -72,9 +72,9 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
 
     const getIcon = (type: string) => {
         if (type === 'income') return <ArrowUpRight className="h-5 w-5 text-emerald-500" />;
-        if (type === 'transfer') return <ArrowRightLeft className="h-5 w-5 text-blue-500" />;
+        if (type === 'transfer') return <ArrowRightLeft className="h-5 w-5 text-chart-2" />;
         // Specific icons based on category name could go here, for now generic expense
-        return <ShoppingBag className="h-5 w-5 text-red-500" />;
+        return <ShoppingBag className="h-5 w-5 text-expense" />;
     };
 
     const handleDeleted = (transaction: Transaction) => {
@@ -182,7 +182,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                         }`}>
                                         {formatMoney(tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : tx.amount, tx.currency, i18n.language)}
                                     </span>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground">
                                         {format(new Date(tx.date), 'HH:mm')}
                                     </span>
                                     {tx.currency !== defaultCurrency && (

@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { convertCurrency, formatCurrency } from "@/lib/utils";
+import { convertCurrency, formatMoney } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -60,10 +60,10 @@ export function AccountBreakdown() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {formatCurrency(acc.balance, acc.currency)}
+                                        {formatMoney(acc.balance, acc.currency)}
                                         {acc.currency !== defaultCurrency && (
                                             <div className="text-xs text-muted-foreground">
-                                                ≈ {formatCurrency(val, defaultCurrency)}
+                                                ≈ {formatMoney(val, defaultCurrency)}
                                             </div>
                                         )}
                                     </TableCell>

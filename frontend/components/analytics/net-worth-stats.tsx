@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Wallet, Landmark, PiggyBank } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -39,7 +39,7 @@ export function NetWorthStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-primary">
-                        {formatCurrency(stats.total, defaultCurrency)}
+                        {formatMoney(stats.total, defaultCurrency)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                         {t('analytics.stats.current_snapshot')}
@@ -56,7 +56,7 @@ export function NetWorthStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {formatCurrency(stats.liquid, defaultCurrency)}
+                        {formatMoney(stats.liquid, defaultCurrency)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                         {stats.total > 0 ? `${((stats.liquid / stats.total) * 100).toFixed(1)}% ` : ""}{t('analytics.stats.of_total')}
