@@ -9,9 +9,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function RegisterPage() {
     const { register, isLoading } = useAuth();
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         email: "",
         username: "",
@@ -31,16 +33,16 @@ export default function RegisterPage() {
 
     const validatePassword = (password: string): string | null => {
         if (password.length < 8) {
-            return "Password must be at least 8 characters long";
+            return t("auth.password_min_length");
         }
         if (!/[A-Z]/.test(password)) {
-            return "Password must contain at least one uppercase letter";
+            return t("auth.password_uppercase");
         }
         if (!/[a-z]/.test(password)) {
-            return "Password must contain at least one lowercase letter";
+            return t("auth.password_lowercase");
         }
         if (!/[0-9]/.test(password)) {
-            return "Password must contain at least one digit";
+            return t("auth.password_digit");
         }
         return null;
     };
@@ -52,12 +54,12 @@ export default function RegisterPage() {
 
         // Validation
         if (!formData.email || !formData.username || !formData.password) {
-            setError("Please fill in all required fields");
+            setError(t("auth.required_fields"));
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match");
+            setError(t("auth.passwords_do_not_match"));
             return;
         }
 
@@ -76,26 +78,26 @@ export default function RegisterPage() {
             });
             setSuccess(true);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+            setError(err instanceof Error ? err.message : t("auth.registration_failed"));
         }
     };
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-                <Card className="w-full max-w-md">
+            <div className="flex min-h-screen items-center justify-center bg-background p-4">
+                <Card className="w-full max-w-md rounded-2xl border bg-card">
                     <CardHeader className="space-y-1">
                         <div className="flex justify-center mb-4">
-                            <CheckCircle2 className="h-16 w-16 text-green-500" />
+                            <CheckCircle2 className="h-16 w-16 text-income" />
                         </div>
-                        <h2 className="text-2xl font-bold text-center">Registration Successful!</h2>
+                        <h2 className="text-center text-2xl font-bold">{t("auth.registration_successful")}</h2>
                         <CardDescription className="text-center">
-                            Your account has been created. You can now log in.
+                            {t("auth.account_created")}
                         </CardDescription>
                     </CardHeader>
                     <CardFooter className="flex justify-center">
                         <Button asChild>
-                            <Link href="/login">Go to Login</Link>
+                            <Link href="/login" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{t("auth.go_to_login")}</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -104,12 +106,12 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-            <Card className="w-full max-w-md">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+            <Card className="w-full max-w-md rounded-2xl border bg-card">
                 <CardHeader className="space-y-1">
-                    <h2 className="text-2xl font-bold text-center">Create an account</h2>
+                    <h2 className="text-center text-2xl font-bold">{t("auth.register_title")}</h2>
                     <CardDescription className="text-center">
-                        Enter your details to create your account
+                        {t("auth.register_description")}
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
@@ -121,7 +123,7 @@ export default function RegisterPage() {
                         )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email *</Label>
+                            <Label htmlFor="email">{t("auth.email")} *</Label>
                             <Input
                                 id="email"
                                 name="email"
@@ -136,13 +138,13 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="username">Username *</Label>
+                            <Label htmlFor="username">{t("auth.username")} *</Label>
                             <Input
                                 id="username"
                                 name="username"
                                 type="text"
                                 autoComplete="username"
-                                placeholder="Choose a username"
+                                placeholder={t("auth.choose_username")}
                                 value={formData.username}
                                 onChange={handleChange}
                                 disabled={isLoading}
@@ -151,13 +153,13 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
+                            <Label htmlFor="full_name">{t("auth.full_name")}</Label>
                             <Input
                                 id="full_name"
                                 name="full_name"
                                 type="text"
                                 autoComplete="name"
-                                placeholder="John Doe"
+                                placeholder={t("auth.full_name_placeholder")}
                                 value={formData.full_name}
                                 onChange={handleChange}
                                 disabled={isLoading}
@@ -165,31 +167,31 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password *</Label>
+                            <Label htmlFor="password">{t("auth.password")} *</Label>
                             <Input
                                 id="password"
                                 name="password"
                                 type="password"
                                 autoComplete="new-password"
-                                placeholder="Create a strong password"
+                                placeholder={t("auth.create_password")}
                                 value={formData.password}
                                 onChange={handleChange}
                                 disabled={isLoading}
                                 required
                             />
-                            <p className="text-xs text-muted-foreground">
-                                Must be at least 8 characters with uppercase, lowercase, and numbers
+                            <p className="text-sm text-muted-foreground">
+                                {t("auth.password_hint")}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                            <Label htmlFor="confirmPassword">{t("auth.confirm_password")} *</Label>
                             <Input
                                 id="confirmPassword"
                                 name="confirmPassword"
                                 type="password"
                                 autoComplete="new-password"
-                                placeholder="Confirm your password"
+                                placeholder={t("auth.confirm_password_placeholder")}
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 disabled={isLoading}
@@ -207,17 +209,17 @@ export default function RegisterPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating account...
+                                    {t("auth.creating_account")}
                                 </>
                             ) : (
-                                "Create Account"
+                                t("auth.create_account")
                             )}
                         </Button>
 
                         <p className="text-sm text-center text-muted-foreground">
-                            Already have an account?{" "}
-                            <Link href="/login" className="text-primary hover:underline font-medium">
-                                Log in
+                            {t("auth.has_account")} {" "}
+                            <Link href="/login" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                {t("auth.log_in")}
                             </Link>
                         </p>
                     </CardFooter>

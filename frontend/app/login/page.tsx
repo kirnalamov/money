@@ -9,9 +9,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
     const { login, isLoading } = useAuth();
+    const { t } = useTranslation();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -28,24 +30,24 @@ export default function LoginPage() {
         setError("");
 
         if (!username || !password) {
-            setError("Please fill in all fields");
+            setError(t("auth.required_fields"));
             return;
         }
 
         try {
             await login(username, password);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Login failed. Please check your credentials.");
+            setError(err instanceof Error ? err.message : t("auth.login_failed"));
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-            <Card className="w-full max-w-md">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+            <Card className="w-full max-w-md rounded-2xl border bg-card">
                 <CardHeader className="space-y-1">
-                    <h2 className="text-2xl font-bold text-center">Welcome back</h2>
+                    <h2 className="text-center text-2xl font-bold">{t("auth.login_title")}</h2>
                     <CardDescription className="text-center">
-                        Enter your credentials to access your account
+                        {t("auth.login_description")}
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
@@ -57,11 +59,11 @@ export default function LoginPage() {
                         )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="username">Username or Email</Label>
+                            <Label htmlFor="username">{t("auth.username_or_email")}</Label>
                             <Input
                                 id="username"
                                 type="text"
-                                placeholder="Enter your username"
+                                placeholder={t("auth.username_placeholder")}
                                 autoComplete="username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
@@ -71,11 +73,11 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t("auth.password")}</Label>
                             <Input
                                 id="password"
                                 type="password"
-                                placeholder="Enter your password"
+                                placeholder={t("auth.password_placeholder")}
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -94,10 +96,10 @@ export default function LoginPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Logging in...
+                                    {t("auth.logging_in")}
                                 </>
                             ) : (
-                                "Login"
+                                t("auth.login")
                             )}
                         </Button>
 
@@ -109,14 +111,14 @@ export default function LoginPage() {
                                 onClick={fillDemoCredentials}
                                 disabled={isLoading}
                             >
-                                Use demo account
+                                {t("auth.demo_account")}
                             </Button>
                         )}
 
                         <p className="text-sm text-center text-muted-foreground">
-                            Don&apos;t have an account?{" "}
-                            <Link href="/register" className="text-primary hover:underline font-medium">
-                                Sign up
+                            {t("auth.no_account")} {" "}
+                            <Link href="/register" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                {t("auth.sign_up")}
                             </Link>
                         </p>
                     </CardFooter>
