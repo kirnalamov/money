@@ -182,7 +182,6 @@ export default function TransactionsPage() {
           income={stats.income}
           expense={stats.expense}
           net={stats.net}
-          transactionCount={filteredTransactions.length}
         />
 
         <TransactionFilters

@@ -84,6 +84,8 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         undoTimerRef.current = setTimeout(() => setDeletedTransaction(null), 10_000);
     };
 
+    const getDayTotal = (items: Transaction[]) => items.reduce((sum, tx) => sum + (tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : 0), 0);
+
     const handleUndo = async () => {
         if (!deletedTransaction) return;
         const { id, ...transactionToRestore } = deletedTransaction;
@@ -120,15 +122,15 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                     {emptyAction && <div className="mt-5 flex justify-center">{emptyAction}</div>}
                 </div>
             ) : sortedDates.map((dateKey) => (
-                <div key={dateKey} className="space-y-3">
-                    <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
-                        {getDateLabel(dateKey)}
+                <div key={dateKey} className="overflow-hidden rounded-2xl border border-[rgba(200,240,90,.09)] bg-[#0f110d]">
+                     <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-[rgba(200,240,90,.09)] bg-[#161913]/95 px-4 py-3 text-sm font-medium text-[#f1f4ea] backdrop-blur-sm">
+                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-[#8f9588]">{getDayTotal(groupedTransactions[dateKey]) >= 0 ? '+' : ''}{formatCurrency(getDayTotal(groupedTransactions[dateKey]), defaultCurrency)}</span>
                     </h2>
                     <div className="divide-y divide-white/[.09]">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
-                                className="group flex min-h-[64px] min-w-0 cursor-pointer items-center justify-between gap-3 bg-[#0f110d] px-3 py-3 text-left transition-colors hover:bg-[#161913] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8f05a]"
+                                 className="group flex min-h-[66px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-[#161913] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#c8f05a] motion-reduce:transition-none"
                                 onClick={() => {
                                     setSelectedTx(tx);
                                     setIsDetailsOpen(true);
@@ -145,8 +147,8 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 aria-label={`${tx.category}, ${getAccountName(tx.accountId)}, ${tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount, tx.currency)}, ${format(new Date(tx.date), 'HH:mm')}${tx.description ? `, ${tx.description}` : ''}`}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                                    <div className={`p-2.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/10' :
-                                        tx.type === 'transfer' ? 'bg-blue-500/10' : 'bg-red-500/10'
+                                    <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-[#34d399]/10' :
+                                        tx.type === 'transfer' ? 'bg-[#5aa9f0]/10' : 'bg-[#ff6f6a]/10'
                                         }`}>
                                         {getIcon(tx.type)}
                                     </div>
@@ -176,9 +178,8 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 </div>
 
                                 <div className="ml-auto flex shrink-0 flex-col items-end gap-0.5">
-                                    <span className={`font-bold tabular-nums text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' :
-                                        tx.type === 'expense' ? 'text-red-600 dark:text-red-400' :
-                                            'text-blue-600 dark:text-blue-400'
+                                    <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-[#34d399]' :
+                                        tx.type === 'expense' ? 'text-[#ff6f6a]' : 'text-[#5aa9f0]'
                                         }`}>
                                         {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
                                         {formatCurrency(tx.amount, tx.currency)}
