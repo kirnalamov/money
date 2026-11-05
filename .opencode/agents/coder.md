@@ -3,6 +3,8 @@ description: Реализует карточку задачи Money, соблю�
 mode: subagent
 model: codexsale/gpt-6.1-sol
 permission:
+  shell:
+    "*": allow
   edit:
     "*": allow
     "frontend/DESIGN.md": deny

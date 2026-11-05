@@ -4,6 +4,8 @@ mode: subagent
 model: codexsale/gpt-6.1-sol
 permission:
   edit: deny
+  shell:
+    "*": allow
   bash:
     "*": allow
     "git push*": deny

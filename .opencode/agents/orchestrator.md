@@ -20,6 +20,8 @@ permission:
     "curl*": allow
     "Invoke-WebRequest*": allow
     "Set-Location*": allow
+  shell:
+    "*": allow
   skill:
     "*": deny
     "ponytail": allow

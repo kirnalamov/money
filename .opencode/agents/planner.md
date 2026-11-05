@@ -12,6 +12,8 @@ permission:
     "git log*": allow
     "git diff*": allow
     "git branch*": allow
+  shell:
+    "*": allow
   skill:
     "*": deny
     "ponytail": allow
