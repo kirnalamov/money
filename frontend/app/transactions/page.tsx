@@ -160,20 +160,20 @@ export default function TransactionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto space-y-6 pb-20 md:pb-6">
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-20 md:px-4 md:pb-6 xl:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <div className="mt-1 rounded-xl bg-primary/10 p-3 text-primary">
               <ReceiptText className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl font-bold tracking-tight">{t('transactions.title')}</h1>
+              <h1 className="text-3xl font-bold leading-none tracking-tight md:text-[40px]">{t('transactions.title')}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
               {t('transactions.results_count', { count: filteredTransactions.length })}
               </p>
             </div>
           </div>
-          <div className="w-full shrink-0 sm:w-auto">
+          <div className="w-full shrink-0 [&_button]:min-h-11 sm:w-auto">
             <AddTransactionDialog />
           </div>
         </div>

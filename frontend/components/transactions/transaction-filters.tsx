@@ -52,7 +52,7 @@ export function TransactionFilters({
     const { accounts } = useStore();
 
     return (
-        <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-4 rounded-[1.5rem] border bg-card p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <div className="rounded-lg bg-primary/10 p-2 text-primary">
@@ -103,7 +103,7 @@ export function TransactionFilters({
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Select value={type} onValueChange={(val) => setType(val as TransactionType | 'all')}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label={t('transactions.type')}>
                         <SelectValue placeholder={t('transactions.type')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -115,7 +115,7 @@ export function TransactionFilters({
                 </Select>
 
                 <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label={t('transactions.category')}>
                         <SelectValue placeholder={t('transactions.category')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -127,7 +127,7 @@ export function TransactionFilters({
                 </Select>
 
                 <Select value={accountId} onValueChange={setAccountId}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label={t('transactions.account')}>
                         <SelectValue placeholder={t('transactions.account')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -139,7 +139,7 @@ export function TransactionFilters({
                 </Select>
 
                 <Select value={sort} onValueChange={(value) => setSort(value as TransactionSort)}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label={t('transactions.filters.sort')}>
                         <SelectValue placeholder={t('transactions.filters.sort')} />
                     </SelectTrigger>
                     <SelectContent>

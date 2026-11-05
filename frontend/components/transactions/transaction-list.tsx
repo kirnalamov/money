@@ -124,14 +124,14 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                 </div>
             ) : sortedDates.map((dateKey) => (
                 <div key={dateKey} className="space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
+                    <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
                         {getDateLabel(dateKey)}
-                    </h3>
+                    </h2>
                     <div className="grid gap-3">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
-                                className="group flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="group flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 onClick={() => {
                                     setSelectedTx(tx);
                                     setIsDetailsOpen(true);
@@ -145,7 +145,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 }}
                                 role="button"
                                 tabIndex={0}
-                                aria-label={`${tx.category}, ${formatCurrency(tx.amount, tx.currency)}`}
+                                aria-label={`${tx.category}, ${getTypeLabel(tx.type)}, ${getAccountName(tx.accountId)}${tx.type === 'transfer' ? `, ${getAccountName(tx.toAccountId)}` : ''}, ${tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}${formatCurrency(tx.amount, tx.currency)}, ${format(new Date(tx.date), 'HH:mm')}${tx.description ? `, ${tx.description}` : ''}${tx.currency !== defaultCurrency ? `, ${formatCurrency(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency)}` : ''}`}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                                     <div className={`p-2.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/10' :
@@ -163,12 +163,12 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                             <span className="flex items-center gap-1">
                                                 <Wallet className="h-3 w-3" />
-                                                {getAccountName(tx.accountId)}
+                                                <span className="max-w-[160px] truncate sm:max-w-[220px]" title={getAccountName(tx.accountId)}>{getAccountName(tx.accountId)}</span>
                                             </span>
                                             {tx.type === 'transfer' && (
                                                 <>
                                                     <ArrowRightLeft className="h-3 w-3" />
-                                                    <span>{getAccountName(tx.toAccountId)}</span>
+                                                    <span className="max-w-[160px] truncate sm:max-w-[220px]" title={getAccountName(tx.toAccountId)}>{getAccountName(tx.toAccountId)}</span>
                                                 </>
                                             )}
                                             {tx.description && (
@@ -182,7 +182,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 </div>
 
                                 <div className="ml-auto flex shrink-0 flex-col items-end gap-0.5">
-                                    <span className={`font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' :
+                                    <span className={`font-bold tabular-nums text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' :
                                         tx.type === 'expense' ? 'text-red-600 dark:text-red-400' :
                                             'text-blue-600 dark:text-blue-400'
                                         }`}>
@@ -193,7 +193,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                         {format(new Date(tx.date), 'HH:mm')}
                                     </span>
                                     {tx.currency !== defaultCurrency && (
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs tabular-nums text-muted-foreground">
                                             &asymp; {formatCurrency(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency)}
                                         </span>
                                     )}
