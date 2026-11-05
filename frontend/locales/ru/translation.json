@@ -50,8 +50,9 @@
     "select_account": "Выберите счет",
     "date": "Дата",
     "create": "Создать",
-    "search_placeholder": "Поиск или добавление...",
-    "auth": {
+    "search_placeholder": "Поиск или добавление..."
+  },
+  "auth": {
       "login_title": "С возвращением",
       "login_description": "Введите данные, чтобы войти в аккаунт",
       "username_or_email": "Имя пользователя или email",
@@ -90,8 +91,7 @@
       "password_lowercase": "Пароль должен содержать хотя бы одну строчную букву",
       "password_digit": "Пароль должен содержать хотя бы одну цифру",
       "registration_failed": "Не удалось зарегистрироваться. Попробуйте ещё раз."
-    }
-  },
+    },
   "dashboard": {
     "title": "Обзор",
     "subtitle": "Ваши финансы в одном месте",

@@ -50,8 +50,9 @@
     "select_account": "Select account",
     "date": "Date",
     "create": "Create",
-    "search_placeholder": "Search or add fresh...",
-    "auth": {
+    "search_placeholder": "Search or add fresh..."
+  },
+  "auth": {
       "login_title": "Welcome back",
       "login_description": "Enter your details to access your account",
       "username_or_email": "Username or email",
@@ -90,8 +91,7 @@
       "password_lowercase": "Password must contain at least one lowercase letter",
       "password_digit": "Password must contain at least one digit",
       "registration_failed": "Registration failed. Please try again."
-    }
-  },
+    },
   "dashboard": {
     "title": "Overview",
     "subtitle": "Your financial health at a glance",
