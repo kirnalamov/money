@@ -2,9 +2,8 @@
 
 import ProtectedRoute from "@/components/auth/protected-route";
 
-import { ModeToggle } from "@/components/mode-toggle";
-import { LanguageToggle } from "@/components/language-toggle";
-import { CurrencyToggle } from "@/components/currency-toggle";
+import { useTheme } from "next-themes";
+import { Currency } from "@/types";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Palette, Globe, Coins, Database, Trash2, Tags, Tag as TagIcon, LayoutList } from "lucide-react";
@@ -12,13 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState } from "react";
 import { resetApplicationStorage } from "@/lib/legacy-backup";
 
 export default function SettingsPage() {
-  const { t } = useTranslation();
-  const { categories, tags, addCategory, updateCategory, deleteCategory, addTag, updateTag, deleteTag } = useStore();
+  const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
+  const { categories, tags, addCategory, updateCategory, deleteCategory, addTag, updateTag, deleteTag, defaultCurrency, setDefaultCurrency } = useStore();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [catError, setCatError] = useState("");
@@ -125,7 +126,7 @@ export default function SettingsPage() {
   };
 
   const handleReset = () => {
-    if (confirm("Are you sure you want to reset all data? This action cannot be undone.")) {
+    if (confirm(t("settings.reset_confirm"))) {
       resetApplicationStorage(localStorage);
       window.location.reload();
     }
@@ -133,89 +134,101 @@ export default function SettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6 pb-10 max-w-4xl mx-auto">
+      <div className="space-y-6 pb-10 max-w-[1440px] mx-auto text-sm [&_button]:min-h-11 [&_button]:min-w-11 [&_input]:min-h-11 [&_input]:min-w-0 [&_input]:rounded-xl [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring [&_button]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-offset-background">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h2>
-          <p className="text-muted-foreground mt-1">Manage your application preferences and data.</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('settings.description')}</p>
         </div>
 
         <div className="grid gap-6">
           {/* Appearance Section */}
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
-                <CardTitle>{t('settings.appearance')}</CardTitle>
+                <CardTitle className="text-base">{t('settings.appearance')}</CardTitle>
               </div>
-              <CardDescription>Customize the look and feel of the application.</CardDescription>
+              <CardDescription>{t('settings.appearance_description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <span className="font-medium">{t('settings.theme_mode')}</span>
-                  <p className="text-xs text-muted-foreground">Select light or dark mode.</p>
+                  <p className="text-xs text-muted-foreground">{t('settings.theme_description')}</p>
                 </div>
-                <ModeToggle />
+                <Button variant="outline" aria-label={t('settings.toggle_theme')} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{t('settings.toggle_theme')}</Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Regional Settings */}
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Globe className="h-5 w-5 text-primary" />
-                <CardTitle>Regional Settings</CardTitle>
+                <CardTitle className="text-base">{t('settings.regional')}</CardTitle>
               </div>
-              <CardDescription>Configure language and currency preferences.</CardDescription>
+              <CardDescription>{t('settings.regional_description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <span className="font-medium">{t('settings.interface_language')}</span>
-                  <p className="text-xs text-muted-foreground">Change the language of the application.</p>
+                  <p className="text-xs text-muted-foreground">{t('settings.language_description')}</p>
                 </div>
-                <LanguageToggle />
+                <Select value={i18n.language.startsWith('ru') ? 'ru' : 'en'} onValueChange={(value) => { void i18n.changeLanguage(value); localStorage.setItem('i18nextLng', value); }}>
+                  <SelectTrigger aria-label={t('settings.interface_language')} className="w-auto min-w-36 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem className="min-h-11" value="ru">{t('settings.language_ru')}</SelectItem>
+                    <SelectItem className="min-h-11" value="en">{t('settings.language_en')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{t('settings.default_currency')}</span>
                     <Coins className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Select your primary currency for reporting.</p>
+                  <p className="text-xs text-muted-foreground">{t('settings.currency_description')}</p>
                 </div>
-                <CurrencyToggle />
+                <Select value={defaultCurrency} onValueChange={(value) => setDefaultCurrency(value as Currency)}>
+                  <SelectTrigger aria-label={t('settings.default_currency')} className="w-auto min-w-36 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['USD', 'EUR', 'GBP', 'RUB'] as const).map((currency) => <SelectItem className="min-h-11" key={currency} value={currency}>{t(`settings.currencies.${currency}`)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
 
           {/* Categories and Tags Management */}
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Tags className="h-5 w-5 text-primary" />
-                <CardTitle>Custom Classifications</CardTitle>
+                <CardTitle className="text-base">{t('settings.classifications')}</CardTitle>
               </div>
-              <CardDescription>Manage your custom categories and tags.</CardDescription>
+              <CardDescription>{t('settings.classifications_description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Categories */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 font-medium">
-                  <LayoutList className="h-4 w-4" /> Categories
+                  <LayoutList className="h-4 w-4" /> {t('settings.categories')}
                 </div>
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="New category name..." 
+                    placeholder={t('settings.new_category')}
+                    aria-label={t('settings.new_category')}
                     value={newCategoryName} 
                     onChange={(e) => setNewCategoryName(e.target.value)} 
                     onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                   />
-                  <Button onClick={handleAddCategory}>Add</Button>
+                  <Button onClick={handleAddCategory}>{t('common.add')}</Button>
                 </div>
-                {catError && <p className="text-sm text-destructive font-medium">{catError}</p>}
+                {catError && <p role="alert" className="text-sm text-expense font-medium">{catError}</p>}
                 <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => (
                     <Popover key={cat.id} onOpenChange={(open) => {
@@ -223,25 +236,26 @@ export default function SettingsPage() {
                       else setEditingCategory(null);
                     }}>
                       <PopoverTrigger asChild>
-                        <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
-                          <div className="w-3 h-3 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: cat.color || '#cccccc' }} />
+                        <button aria-label={t('settings.edit_category_named', { name: cat.name })} className="min-h-11 min-w-11 max-w-full break-words border bg-secondary text-secondary-foreground px-3 py-2 rounded-full text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                           {cat.name}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
+                      <PopoverContent className="w-64 p-5 space-y-4 shadow-none [&_button]:min-h-11 [&_input]:min-h-11 [&_input]:rounded-xl">
                         <div className="space-y-3">
-                          <h4 className="font-medium text-sm flex items-center gap-2"><LayoutList className="w-4 h-4" /> Edit Category</h4>
+                          <h4 className="font-semibold text-base flex items-center gap-2"><LayoutList className="w-4 h-4" /> {t('settings.edit_category')}</h4>
                           <div className="flex gap-2 items-center">
                             <Input
                               type="color"
+                              aria-label={t('settings.category_color')}
                               value={editingCategory?.id === cat.id ? editingCategory.color : (cat.color || '#cccccc')}
-                              className="w-12 h-10 p-1 cursor-pointer shrink-0"
+                              className="w-12 h-11 p-1 cursor-pointer shrink-0"
                               onChange={(e) => setEditingCategory(prev => prev ? { ...prev, color: e.target.value } : null)}
                             />
                             <Input
                               type="text"
+                              aria-label={t('settings.category_name')}
                               value={editingCategory?.id === cat.id ? editingCategory.name : cat.name}
-                              className="w-full h-10"
+                              className="w-full min-w-0 h-11"
                               onChange={(e) => setEditingCategory(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
@@ -255,12 +269,12 @@ export default function SettingsPage() {
                         </div>
                         <Separator />
                         <Button variant="destructive" size="sm" className="w-full" onClick={() => void handleDeleteCategory(cat.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete Category
+                          <Trash2 className="h-4 w-4 mr-2" /> {t('settings.delete_category')}
                         </Button>
                       </PopoverContent>
                     </Popover>
                   ))}
-                  {categories.length === 0 && <span className="text-xs text-muted-foreground">No custom categories.</span>}
+                  {categories.length === 0 && <span className="text-xs text-muted-foreground">{t('settings.no_categories')}</span>}
                 </div>
               </div>
 
@@ -269,18 +283,19 @@ export default function SettingsPage() {
               {/* Tags */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 font-medium">
-                  <TagIcon className="h-4 w-4" /> Tags
+                  <TagIcon className="h-4 w-4" /> {t('settings.tags')}
                 </div>
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="New tag name..." 
+                    placeholder={t('settings.new_tag')}
+                    aria-label={t('settings.new_tag')}
                     value={newTagName} 
                     onChange={(e) => setNewTagName(e.target.value)} 
                     onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
                   />
-                  <Button onClick={handleAddTag}>Add</Button>
+                  <Button onClick={handleAddTag}>{t('common.add')}</Button>
                 </div>
-                {tagError && <p className="text-sm text-destructive font-medium">{tagError}</p>}
+                {tagError && <p role="alert" className="text-sm text-expense font-medium">{tagError}</p>}
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <Popover key={tag.id} onOpenChange={(open) => {
@@ -288,25 +303,26 @@ export default function SettingsPage() {
                       else setEditingTag(null);
                     }}>
                       <PopoverTrigger asChild>
-                        <button className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50">
-                          <div className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/10" style={{ backgroundColor: tag.color || '#cccccc' }} />
+                        <button aria-label={t('settings.edit_tag_named', { name: tag.name })} className="min-h-11 min-w-11 max-w-full break-words border bg-secondary text-secondary-foreground px-3 py-2 rounded-full text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                           #{tag.name}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-64 p-4 space-y-4 shadow-xl">
+                      <PopoverContent className="w-64 p-5 space-y-4 shadow-none [&_button]:min-h-11 [&_input]:min-h-11 [&_input]:rounded-xl">
                         <div className="space-y-3">
-                          <h4 className="font-medium text-sm flex items-center gap-2"><TagIcon className="w-4 h-4" /> Edit Tag</h4>
+                          <h4 className="font-semibold text-base flex items-center gap-2"><TagIcon className="w-4 h-4" /> {t('settings.edit_tag')}</h4>
                           <div className="flex gap-2 items-center">
                             <Input
                               type="color"
+                              aria-label={t('settings.tag_color')}
                               value={editingTag?.id === tag.id ? editingTag.color : (tag.color || '#cccccc')}
-                              className="w-12 h-10 p-1 cursor-pointer shrink-0"
+                              className="w-12 h-11 p-1 cursor-pointer shrink-0"
                               onChange={(e) => setEditingTag(prev => prev ? { ...prev, color: e.target.value } : null)}
                             />
                             <Input
                               type="text"
+                              aria-label={t('settings.tag_name')}
                               value={editingTag?.id === tag.id ? editingTag.name : tag.name}
-                              className="w-full h-10"
+                              className="w-full min-w-0 h-11"
                               onChange={(e) => setEditingTag(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
                           </div>
@@ -320,12 +336,12 @@ export default function SettingsPage() {
                         </div>
                         <Separator />
                         <Button variant="destructive" size="sm" className="w-full" onClick={() => void handleDeleteTag(tag.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete Tag
+                          <Trash2 className="h-4 w-4 mr-2" /> {t('settings.delete_tag')}
                         </Button>
                       </PopoverContent>
                     </Popover>
                   ))}
-                  {tags.length === 0 && <span className="text-xs text-muted-foreground">No custom tags.</span>}
+                  {tags.length === 0 && <span className="text-xs text-muted-foreground">{t('settings.no_tags')}</span>}
                 </div>
               </div>
 
@@ -333,23 +349,23 @@ export default function SettingsPage() {
           </Card>
 
           {/* Data Management */}
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Database className="h-5 w-5 text-primary" />
-                <CardTitle>Data Management</CardTitle>
+                <CardTitle className="text-base">{t('settings.data_management')}</CardTitle>
               </div>
-              <CardDescription>Manage your local data.</CardDescription>
+              <CardDescription>{t('settings.data_description')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <span className="font-medium text-destructive">Reset Application</span>
-                  <p className="text-xs text-muted-foreground">Clear all local data and reset to default.</p>
+                  <span className="font-medium text-expense">{t('settings.reset_application')}</span>
+                  <p className="text-xs text-muted-foreground">{t('settings.reset_description')}</p>
                 </div>
                 <Button variant="destructive" size="sm" onClick={handleReset}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Reset Data
+                   {t('settings.reset_data')}
                 </Button>
               </div>
             </CardContent>
