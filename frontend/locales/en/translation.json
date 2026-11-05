@@ -67,6 +67,7 @@
       "register_title": "Create an account",
       "register_description": "Enter your details to create your account",
       "email": "Email",
+      "email_placeholder": "your.email@example.com",
       "username": "Username",
       "full_name": "Full name",
       "full_name_placeholder": "John Doe",

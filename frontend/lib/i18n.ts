@@ -2,7 +2,8 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import resourcesToBackend from 'i18next-resources-to-backend';
+import en from '@/locales/en/translation.json';
+import ru from '@/locales/ru/translation.json';
 
 /**
  * Определяет, является ли пользователь из стран СНГ на основе языка браузера
@@ -16,14 +17,13 @@ export function detectDefaultLanguage(): string {
   return 'ru';
 }
 
-// Инициализируем всегда с английским, чтобы избежать проблем с гидратацией
-// Язык будет изменён на клиенте после монтирования компонента
+// Синхронные ресурсы не дают первому рендеру показать ключи переводов.
 i18n
   .use(initReactI18next)
-  .use(resourcesToBackend((language: string, namespace: string) => import(`@/locales/${language}/${namespace}.json`)))
   .init({
     lng: 'en', // Всегда начинаем с английского для совместимости SSR
     fallbackLng: 'en',
+    resources: { en: { translation: en }, ru: { translation: ru } },
     ns: ['translation'],
     defaultNS: 'translation',
     interpolation: {

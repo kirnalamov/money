@@ -129,7 +129,7 @@ export default function RegisterPage() {
                                 name="email"
                                 type="email"
                                 autoComplete="email"
-                                placeholder="your.email@example.com"
+                                placeholder={t("auth.email_placeholder")}
                                 value={formData.email}
                                 onChange={handleChange}
                                 disabled={isLoading}
@@ -218,7 +218,7 @@ export default function RegisterPage() {
 
                         <p className="text-sm text-center text-muted-foreground">
                             {t("auth.has_account")} {" "}
-                            <Link href="/login" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <Link href="/login" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                                 {t("auth.log_in")}
                             </Link>
                         </p>

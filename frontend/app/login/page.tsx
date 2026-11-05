@@ -117,7 +117,7 @@ export default function LoginPage() {
 
                         <p className="text-sm text-center text-muted-foreground">
                             {t("auth.no_account")} {" "}
-                            <Link href="/register" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <Link href="/register" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                                 {t("auth.sign_up")}
                             </Link>
                         </p>

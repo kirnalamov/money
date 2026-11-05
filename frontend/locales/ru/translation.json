@@ -67,6 +67,7 @@
       "register_title": "Создать аккаунт",
       "register_description": "Введите данные, чтобы создать аккаунт",
       "email": "Email",
+      "email_placeholder": "ваш.email@example.com",
       "username": "Имя пользователя",
       "full_name": "Полное имя",
       "full_name_placeholder": "Иван Иванов",
