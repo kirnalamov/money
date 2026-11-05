@@ -49,8 +49,9 @@ export function Sidebar() {
             type="button"
             onClick={() => setCollapsed((value) => !value)}
             aria-label={t(collapsed ? "common.expand_sidebar" : "common.collapse_sidebar")}
+            aria-expanded={!collapsed}
             title={t(collapsed ? "common.expand_sidebar" : "common.collapse_sidebar")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
@@ -68,9 +69,9 @@ export function Sidebar() {
                 className={cn(
                   "group relative flex h-[50px] items-center rounded-[14px] px-4 text-sm font-medium transition-colors",
                   collapsed && "justify-center px-0",
-                  "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
-                  isActive
-                    ? "bg-primary/10 text-primary before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary before:rounded-r"
+                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                   isActive
+                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
