@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { format, isToday, isYesterday } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, convertCurrency } from "@/lib/utils";
 import { ShoppingBag, ArrowUpRight, ArrowRightLeft, Wallet } from "lucide-react";
 import { Transaction } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -122,15 +122,15 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                     {emptyAction && <div className="mt-5 flex justify-center">{emptyAction}</div>}
                 </div>
             ) : sortedDates.map((dateKey) => (
-                <div key={dateKey} className="overflow-hidden rounded-2xl border border-[rgba(200,240,90,.09)] bg-[#0f110d]">
-                     <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-[rgba(200,240,90,.09)] bg-[#161913]/95 px-4 py-3 text-sm font-medium text-[#f1f4ea] backdrop-blur-sm">
-                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-[#8f9588]">{getDayTotal(groupedTransactions[dateKey]) >= 0 ? '+' : ''}{formatCurrency(getDayTotal(groupedTransactions[dateKey]), defaultCurrency)}</span>
+                <div key={dateKey} className="overflow-hidden rounded-2xl border border-border bg-card">
+                     <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted/95 px-4 py-3 text-sm font-medium text-foreground backdrop-blur-sm">
+                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language)}</span>
                     </h2>
                     <div className="divide-y divide-white/[.09]">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
-                                 className="group flex min-h-[66px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-[#161913] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#c8f05a] motion-reduce:transition-none"
+                                 className="group flex min-h-[66px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
                                 onClick={() => {
                                     setSelectedTx(tx);
                                     setIsDetailsOpen(true);
@@ -146,8 +146,8 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 tabIndex={0}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                                    <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-[#34d399]/10' :
-                                        tx.type === 'transfer' ? 'bg-[#5aa9f0]/10' : 'bg-[#ff6f6a]/10'
+                                    <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-income/10' :
+                                        tx.type === 'transfer' ? 'bg-chart-2/10' : 'bg-expense/10'
                                         }`}>
                                         {getIcon(tx.type)}
                                     </div>
@@ -177,18 +177,17 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 </div>
 
                                 <div className="ml-auto flex shrink-0 flex-col items-end gap-0.5">
-                                    <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-[#34d399]' :
-                                        tx.type === 'expense' ? 'text-[#ff6f6a]' : 'text-[#5aa9f0]'
+                                    <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
+                                        tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
                                         }`}>
-                                        {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}
-                                        {formatCurrency(tx.amount, tx.currency)}
+                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : tx.amount, tx.currency, i18n.language)}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground">
                                         {format(new Date(tx.date), 'HH:mm')}
                                     </span>
                                     {tx.currency !== defaultCurrency && (
                                         <span className="text-xs tabular-nums text-muted-foreground">
-                                            &asymp; {formatCurrency(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency)}
+                                            &asymp; {formatMoney(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language)}
                                         </span>
                                     )}
                                 </div>
