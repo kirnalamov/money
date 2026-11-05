@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, X, Filter } from "lucide-react";
+import { Search, X, Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
@@ -83,8 +83,10 @@ export function TransactionFilters({
                 </Popover>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                {[['all', t('transactions.filters.all_types')], ['expense', t('transactions.types.expense')], ['income', t('transactions.types.income')], ['transfer', t('transactions.types.transfer')]].map(([value, label]) => <Button key={value} type="button" variant={type === value ? 'secondary' : 'ghost'} size="sm" onClick={() => setType(value as TransactionType | 'all')} className="h-8 rounded-full border border-white/[.09] px-3 text-xs">{label}</Button>)}
-                <Select value={sort} onValueChange={(value) => setSort(value as TransactionSort)}><SelectTrigger className="ml-auto h-9 w-auto min-w-[150px] border-0 bg-transparent" aria-label={t('transactions.filters.sort')}><SlidersHorizontal className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">{t('transactions.filters.sort_newest')}</SelectItem><SelectItem value="oldest">{t('transactions.filters.sort_oldest')}</SelectItem><SelectItem value="largest">{t('transactions.filters.sort_largest')}</SelectItem><SelectItem value="smallest">{t('transactions.filters.sort_smallest')}</SelectItem></SelectContent></Select>
+                {[['all', t('transactions.filters.all_types'), 'border-white/[.18]'], ['expense', t('transactions.types.expense'), 'border-[#f07878]/60'], ['income', t('transactions.types.income'), 'border-[#70d49a]/60'], ['transfer', t('transactions.types.transfer'), 'border-[#8da8ff]/60']].map(([value, label, border]) => <Button key={value} type="button" variant="ghost" size="sm" onClick={() => setType(value as TransactionType | 'all')} className={`h-8 rounded-full border px-3 text-xs ${border} ${type === value ? 'bg-white/[.08] text-[#f1f4ea]' : 'text-[#8f9588]'}`}>{label}</Button>)}
+            </div>
+            <div className="flex justify-end">
+                <Select value={sort} onValueChange={(value) => setSort(value as TransactionSort)}><SelectTrigger className="h-8 w-auto border-0 bg-transparent px-1 text-xs text-[#8f9588] shadow-none" aria-label={t('transactions.filters.sort')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">{t('transactions.filters.sort_newest')}</SelectItem><SelectItem value="oldest">{t('transactions.filters.sort_oldest')}</SelectItem><SelectItem value="largest">{t('transactions.filters.sort_largest')}</SelectItem><SelectItem value="smallest">{t('transactions.filters.sort_smallest')}</SelectItem></SelectContent></Select>
             </div>
         </div>
     );

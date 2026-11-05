@@ -173,8 +173,8 @@ export default function TransactionsPage() {
         <div className="flex flex-col gap-4 border-b border-white/[.09] pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{t('transactions.title')}</h1><p className="mt-1 text-sm text-[#8f9588]">{t('transactions.results_count', { count: filteredTransactions.length })}</p></div>
           <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+            <Tooltip><TooltipTrigger asChild><span><AddTransactionDialog trigger={<Button type="button" className="h-10 bg-[#c8f05a] px-3 text-[#10130d] hover:bg-[#d5f77a]"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}<kbd className="ml-2 rounded border border-[#10130d]/30 px-1 text-[10px] font-medium">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
             <Button type="button" variant="outline" onClick={exportCsv} className="h-10 border-white/[.09] bg-[#161913] px-3"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
-            <Tooltip><TooltipTrigger asChild><span><AddTransactionDialog trigger={<Button type="button" className="h-10 bg-[#c8f05a] px-3 text-[#10130d] hover:bg-[#d5f77a]"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}</Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')}</TooltipContent></Tooltip>
           </div>
         </div>
 
