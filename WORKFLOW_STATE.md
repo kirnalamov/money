@@ -1,61 +1,86 @@
-# Контекст локального пайплайна Money
-
-Этот файл последовательно обновляют orchestrator, planner и coder. Designer и tester могут работать параллельно после coder и возвращают отчёты orchestrator; только orchestrator объединяет их результаты здесь.
-Не запускайте несколько пайплайнов одновременно в одном рабочем дереве.
-Не записывайте секреты, содержимое .env и персональные финансовые данные.
+# Контекст пайплайна Money
 
 ## Управление
 - Статус: checking
-- Следующий этап: ожидать параллельные отчёты designer и tester
-- Циклов исправлений после первой проверки: 0 (максимум 2)
-- Допустимые статусы: idle, planning, planned, implemented, checking, passed, failed, blocked, done
+- Следующий этап: дождаться независимого browser retest, затем узкий dialog fix
+- Цикл исправлений: 0
+- Approval: designer подтвердил минимальную причину и предложил добавить скрытый `DialogTitle` в wrapper. Coder разрешён только на этот scoped fix, сохранив фактический чужой diff.
 
-## Параллельные проверки (orchestrator)
-- Designer: запущен; sessionID: ожидается
-- Tester: запущен; sessionID: ожидается
-- Проверяемая версия/diff: `frontend/components/transactions/add-transaction-dialog.tsx`, `frontend/tests/add-transaction-dialog.test.cjs`; оригинальный HTML и `frontend/DESIGN.md` не менялись
-- Изоляция браузера, сервера и тестовых данных: designer — отдельный browser-контекст; tester — отдельные тестовые процессы/данные
-- Конфликты ресурсов и последовательные проверки: не ожидаются; tester не перезапускает сервер designer и не использует его сборочную директорию
+## Текущая задача
+- Запрос: Провести полный аудит страницы «Операции» и исправить все проблемы.
+- Цель: безопасно интегрировать накопленные UI-ветки, закрыть подтверждённый a11y defect диалога и повторно проверить незавершённые browser/build сценарии.
+- Ограничения: не менять `frontend/DESIGN.md` и `frontend/public/new-operation-prototype.html`; без новых зависимостей; не терять чужие изменения; не push; remote `origin/llm` не менять; текущую ветку `llm/tx-coder-fixes` не переключать и не reset; credentials только через prompt агенту.
+- Критерии готовности: commit `2e20f9c` принят; подтверждён безопасный минимальный способ обработки `DialogContent` без `DialogTitle`; regression, lint, build и требуемый browser smoke повторно пройдены; локальная plain branch `llm` создана от накопленного HEAD без изменения remote.
 
-## Задача
-- Запрос пользователя: Продолжить аудит Money. Исправить сохранение в форме «Новая операция»: Enter не должен показывать успех без записи в backend, а «Добавить ещё» должно позволять сохранить следующую операцию.
-- Цель: Синхронизировать UI-успех формы «Новая операция» с подтверждённой записью в backend и сохранить рабочий сценарий «Добавить ещё» для следующей операции.
-- Ограничения: минимальные изменения; не трогать чужую работу; не менять оригинальный HTML и frontend/DESIGN.md; не менять frontend/public/new-operation-prototype.html; не сохранять секреты или финансовые данные.
-- Критерии готовности: Enter отправляет форму через тот же backend-путь и показывает успех только после успешного ответа; ошибка backend не маскируется успехом; «Добавить ещё» после успешного сохранения очищает/готовит форму и позволяет сохранить следующую операцию; добавлены/обновлены regression-проверки; обязательные проверки pipeline проходят.
+## План и активные task cards
 
-## План (planner)
-- Область изменения и связанные callers: корневая причина находится в интеграционной обёртке `frontend/components/transactions/add-transaction-dialog.tsx` и её контракте с `frontend/public/new-operation-prototype.html`: прототип сам переключает `#form` в success-состояние в `save()`, а wrapper перехватывает только клик по `#save`; Enter в прототипе вызывает `save()` напрямую и поэтому обходит backend. После успешного wrapper-save `frameWindow.save?.()` повторно вызывает прототипный save, а кнопка `#again` возвращает только внутренний прототип в форму. Все callers одной обёртки: `frontend/app/transactions/page.tsx` (2 места) и `frontend/components/dashboard/quick-actions.tsx` (3 места); shared Zustand caller — `frontend/lib/store.ts:addTransaction`, API caller — `frontend/lib/api/transactions.ts:createTransaction`. Оригинальный HTML и дизайн-документ не менять.
-- Файлы, тесты, fixtures, конфигурация и экспорты: изменить только `frontend/components/transactions/add-transaction-dialog.tsx`; экспорт компонента и Zustand/API-контракты не менять. Regression-проверку запланировать на существующем browser-level пути через wrapper/iframe с mock backend: Enter должен вызвать `addTransaction`/POST до success, rejected POST не должен показывать `#done`, успешный save затем должен сделать `#again` доступным и второй save должен отправить второй POST. В репозитории нет frontend test script, `npm test` не предполагать; `package.json` содержит только `dev`, `build`, `start`, `lint`, а Playwright присутствует лишь как optional peer в lockfile и не установлен как локальный пакет. Backend fixtures/config/exports для этой UI-проблемы не затрагивать; существующие backend API regression-тесты оставить без изменений.
-- Шаги: 1) в wrapper выделить единый async handler сохранения из текущего `saveButton` listener; 2) перехватить Enter в iframe на capture-фазе (только `#amt`, с `preventDefault`/`stopImmediatePropagation`) и направить его в тот же handler, чтобы прототипный `save()` не успевал показать success; 3) сохранить текущую валидацию, payload и обработку backend-ошибки, показывать success только после `await addTransaction`; 4) после подтверждённого сохранения вызвать прототипный `save()` ровно один раз, а затем не переиспользовать старый disabled-контрол при повторном сценарии; 5) перед каждым новым `onFrameLoad`/`#again` сохранять рабочий путь к backend без правок исходного HTML; 6) добавить минимальный regression-тест/скрипт только если существующая установленная инфраструктура позволяет, иначе передать конкретную ручную browser-проверку tester без добавления зависимостей.
-- Проверки и рабочие директории: `C:\money\frontend`: `npm run lint` и `npm run build` (скрипты реально объявлены в `frontend/package.json`); `C:\money\backend`: `python -m pytest -q tests` (существующая backend regression-проверка, не `python -m pytest -q`, так как в корне есть известный Docker-only collector); при наличии поднятого приложения — browser smoke с `docker-compose up --build` из `C:\money`, затем проверить Network/ответ POST `/api/v1/transactions/`, Enter, rejected POST, `#again` и второй POST, без записи реальных финансовых данных. Результаты этих команд пока не заявляются выполненными.
-- Критерии приёмки: Enter и клик используют один backend-backed путь; success DOM появляется только после успешного ответа; HTTP/network/backend ошибка оставляет форму/сообщение ошибки и не показывает success; после success `Добавить ещё` возвращает чистую форму с рабочими селектами и позволяет создать следующую запись; первый и второй payload не смешиваются; не меняются `frontend/public/new-operation-prototype.html` и `frontend/DESIGN.md`; lint/build и backend tests не регрессируют.
-- Дизайн/a11y-проверки: не менять визуальные токены/оригинальный prototype; проверить, что focus возвращается на `#amt` после «Добавить ещё», disabled/ошибка сохранения не оставляют недоступную кнопку, Enter не срабатывает дважды, tab/focus order и `aria-label` существующих controls сохраняются; проверить 320px/768px/desktop и `prefers-reduced-motion` на iframe-экране. Отдельный визуальный рефакторинг не включать.
-- Риски для данных и совместимости: исправление устраняет риск ложного успеха и повторного/пропущенного сохранения; payload остаётся прежним, поэтому риск API-несовместимости минимален. Нельзя показывать success при таймауте/не-2xx. Не повторять POST автоматически после неопределённого сетевого таймаута: запись могла быть принята backend, иначе возможен дубль; сообщать ошибку и оставить форму. Не раскрывать response body/секреты в UI или WORKFLOW_STATE. Возможна зависимость от same-origin доступа к iframe и DOM-id прототипа; это уже текущий контракт wrapper, поэтому новые обходы и зависимости не добавлять.
+### Волна 1 — независимые подтверждения и retest
 
-## Реализация (coder)
-- Изменённые файлы: `frontend/components/transactions/add-transaction-dialog.tsx`, `frontend/tests/add-transaction-dialog.test.cjs`.
-- Суть изменений: вынесен единый backend-backed async save handler; Enter в поле суммы перехватывается на capture-фазе и не запускает прототипный success до `await addTransaction`; защита от повторного сохранения; после подтверждённого сохранения прототип переводится в success, а «Добавить ещё» повторно включает сохранение.
-- Regression-тесты: добавлен минимальный Node assert-тест порядка backend-save/success и наличия Enter/«Добавить ещё» защиты в wrapper; существующий прототип и API/Zustand не менялись.
-- Выполненные проверки: `node tests/add-transaction-dialog.test.cjs` (успешно); все существующие `frontend/tests/*.test.cjs` (успешно); `npm.cmd run lint` (успешно); `npm.cmd run build` (успешно, только предупреждения об устаревших browser data); `python -m pytest -q tests` из `backend` (14 passed, 46 warnings); `git diff --check` (успешно).
-- Отклонения от плана: browser-level regression не добавлялся — в `frontend/package.json` нет test script, Playwright не установлен как локальная зависимость; ручной browser smoke оставлен tester/orchestrator.
+#### tx-dialog-confirm
+- task_id: tx-dialog-confirm
+- agent: designer
+- title: Подтвердить безопасную обработку a11y ошибки AddTransactionDialog
+- scope: только аудит текущего `frontend/components/transactions/add-transaction-dialog.tsx` и связанного Radix Dialog поведения; отдельная Chrome MCP страница/контекст; отчёт orchestrator
+- instructions: используй ponytail full; код и `WORKFLOW_STATE.md` не меняй. Проверь, что console error вызван отсутствующим `DialogTitle`, определи минимальный совместимый вариант исправления в wrapper (не в `frontend/public/new-operation-prototype.html`), и зафиксируй, как сохранить незакоммиченные чужие изменения. Не выполняй merge, reset, checkout или commit. Если изменение файла действительно необходимо, только опиши точный допустимый scope для последующего coder и явно запроси orchestrator approval.
+- acceptance: кратко подтверждены причина, минимальный патч и отсутствие необходимости менять prototype; чужие изменения не затронуты; указано, можно ли после отчёта выдать coder scope. Designer не меняет приложение и state.
+- depends_on: []
+- parallel_group: confirm-and-retest
+- checks: Chrome MCP в отдельной странице/контексте; открыть `http://localhost:3000/transactions`, login только credentials из prompt, открыть Add Transaction и проверить console a11y error и dialog semantics; не перезапускать сервер и не выполнять Docker build.
+- forbidden: все файлы приложения, `WORKFLOW_STATE.md`, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, чужая browser page/context, git branches/commits/push.
 
-## Дизайн (designer)
-- Проверенные файлы и экраны: —
-- Применённые навыки: —
-- Findings по severity: —
-- Рекомендации coder: —
-- Непроверенные области: —
+#### tx-browser-retest
+- task_id: tx-browser-retest
+- agent: tester
+- title: Повторить незавершённые browser smoke сценарии Operations
+- scope: только browser smoke страницы Operations: login/list/filter panel/add dialog/CSV/responsive overflow; отдельная Chrome MCP страница/контекст; отчёт orchestrator
+- instructions: используй ponytail full; код и state не меняй. Повтори только ранее неполные сценарии на текущем runtime: login, список, фильтр, add dialog, CSV button, responsive overflow; отдельно отметь console error при открытии add dialog и не трактуй его как исправленный. Не занимай страницу designer и не перезапускай сервер.
+- acceptance: для каждого сценария дан pass/fail и один краткий finding; console/network ошибки записаны только кратко; credentials и финансовые данные в отчёт не попадают. Tester не меняет приложение и state.
+- depends_on: []
+- parallel_group: confirm-and-retest
+- checks: Chrome MCP, отдельная страница/контекст; `base_url=http://localhost:3000`, demo credentials только из prompt; browser smoke без build и без изменения тестовых данных сверх необходимого.
+- forbidden: все файлы приложения, `WORKFLOW_STATE.md`, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, чужая browser page/context, Docker rebuild, git branches/commits/push.
 
-## Проверки (tester)
-Проверки текущего запуска ещё не выполнялись.
+### Волна 2 — только после подтверждения dialog
 
-| Рабочая директория | Команда | Exit code | Результат / предупреждения |
-| --- | --- | --- | --- |
+#### tx-dialog-fix
+- task_id: tx-dialog-fix
+- agent: coder
+- title: Минимально устранить подтверждённую DialogTitle a11y ошибку
+- scope: только `frontend/components/transactions/add-transaction-dialog.tsx`; при явном подтверждении orchestrator — существующий `frontend/tests/add-transaction-dialog.test.cjs` только для regression этого дефекта; не трогать другие файлы
+- instructions: используй ponytail full; запускать только после положительного отчёта `tx-dialog-confirm` и явного разрешения orchestrator. Не перезаписывай чужую незакоммиченную работу: сначала сохрани и проверь фактический diff, затем внеси минимальное изменение в wrapper Dialog согласно существующим `frontend/components/ui/dialog.tsx` паттернам. Добавь/обнови только необходимый regression assert для наличия доступного DialogTitle, если он входит в подтверждённый scope. Создай отдельную ветку `llm/tx-dialog-fix`, commit только scope карточки, message с отдельным суффиксом `llm`, push запрещён. Не редактируй общий state.
+- acceptance: console a11y error устранён без изменения prototype/данных/API; regression воспроизводит прежнюю ошибку и проходит после фикса; commit создан только из scope карточки, message заканчивается `llm`; branch оставлена `llm/tx-dialog-fix`; push не выполнялся.
+- depends_on: [tx-dialog-confirm]
+- parallel_group: dialog-fix
+- checks: рабочая директория `C:\money`; перед правкой `git diff -- frontend/components/transactions/add-transaction-dialog.tsx frontend/tests/add-transaction-dialog.test.cjs`; `npm run lint` и `npm run build` из `C:\money\frontend`; targeted regression существующим способом проекта; не выполнять Docker build параллельно с другими build.
+- forbidden: `WORKFLOW_STATE.md`, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, API/store/types, exports/config/fixtures вне scope, reset/checkout чужих изменений, `git push`.
 
-- Ошибки и воспроизведение: —
-- Непроверенные критерии и риски: —
+### Волна 3 — после dialog fix
 
-## Блокеры и передача
-- Блокеры: нет.
-- Следующее действие: orchestrator запускает designer и tester параллельно для проверки текущего diff. Цепочка: planner → coder → (designer || tester) → done.
-- Итог для пользователя: —
+#### tx-final-checks
+- task_id: tx-final-checks
+- agent: tester
+- title: Выполнить финальные regression, browser smoke и build проверки
+- scope: только проверки объединённого результата; отдельная Chrome MCP страница/контекст; отчёт orchestrator
+- instructions: используй ponytail full; не меняй код и state. После интеграции dialog fix повтори regression, lint/build и весь затронутый browser smoke, включая отсутствие console a11y error при Add Transaction. Используй существующие npm scripts из `frontend/package.json`; `npm test` не предполагай.
+- acceptance: regression/lint/build/browser smoke фактически passed или есть точный blocker; ни один файл приложения не изменён tester; отчёт без credentials и сырых финансовых данных.
+- depends_on: [tx-dialog-fix]
+- parallel_group: final-verification
+- checks: `C:\money\frontend`: `npm run lint`, `npm run build`, существующий targeted regression command; Chrome MCP отдельная страница/контекст на `http://localhost:3000`; не перезапускать чужой сервер и не запускать параллельный Docker build.
+- forbidden: код приложения, `WORKFLOW_STATE.md`, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, чужая browser page/context, git branches/commits/push.
+
+#### tx-branch-consolidate
+- task_id: tx-branch-consolidate
+- agent: coder
+- title: Безопасно консолидировать накопленный HEAD в локальную plain branch llm
+- scope: только git refs/локальная интеграция; текущая ветка `llm/tx-coder-fixes` и её рабочие изменения не reset/не переключать до проверки; remote refs не менять
+- instructions: используй ponytail full; запускать только после `tx-final-checks` passed и отдельного решения orchestrator. Проверить ancestor-цепочку всех UI commits, включая `2e20f9c` и dialog fix; создать локальную plain branch `llm` от текущего накопленного HEAD безопасным fast-forward/branch operation без push и без изменения `origin/llm`. Не коммитить чужие незакоммиченные изменения и не редактировать state. Branch policy: оставить локальную ветку `llm`; если требуется commit только для интеграции, message заканчивается `llm`.
+- acceptance: локальная `llm` указывает на проверенный accumulated HEAD; `origin/llm` не изменён; текущие незакоммиченные чужие файлы сохранены или явно переданы orchestrator до операции; no reset/data loss; commit history содержит required llm suffixes; push не выполнялся.
+- depends_on: [tx-final-checks]
+- parallel_group: final-verification
+- checks: `C:\money`: `git status --short --branch`, `git merge-base --is-ancestor` для UI branches и `2e20f9c`, `git branch --list llm`, сравнение `refs/remotes/origin/llm` до/после; никаких `git push`, `git reset --hard`, `git clean`.
+- forbidden: application files, `WORKFLOW_STATE.md`, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, remote `origin/llm`, deletion/overwrite of foreign uncommitted files, Docker/browser resources.
+
+## Порядок слияния отчётов
+- Сначала orchestrator получает `tx-dialog-confirm` и `tx-browser-retest`; карточки одной группы используют разные Chrome contexts.
+- Только после подтверждения и явного решения о foreign diff запускается `tx-dialog-fix`; его Docker/build ресурс не совмещается с другими build.
+- После coder commit orchestrator интегрирует его и запускает `tx-final-checks`; затем `tx-branch-consolidate` создаёт только локальную `llm` и не меняет `origin/llm`.
