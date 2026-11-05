@@ -116,6 +116,32 @@ export function formatCurrency(amount: number, currency?: Currency | string): st
     : `${formattedAmount} ${config.symbol}`;
 }
 
+/**
+ * Форматирует сумму с локалью и знаком перед валютой.
+ */
+export function formatMoney(amount: number, currency: Currency | string = 'USD', locale = 'en'): string {
+  if (amount === undefined || isNaN(amount)) return '$0.00';
+
+  const curr = currency as Currency;
+  const currencyConfig: Record<Currency, { symbol: string; position: 'before' | 'after' }> = {
+    USD: { symbol: '$', position: 'before' },
+    EUR: { symbol: '€', position: 'before' },
+    GBP: { symbol: '£', position: 'before' },
+    RUB: { symbol: '₽', position: 'after' },
+  };
+  const config = currencyConfig[curr] || currencyConfig.USD;
+  const formattedAmount = new Intl.NumberFormat(locale.startsWith('ru') ? 'ru-RU' : 'en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(amount)).replace(/[\u00a0\u202f]/g, ' ');
+  const sign = amount < 0 ? '−' : amount > 0 ? '+' : '';
+  const value = config.position === 'before'
+    ? `${config.symbol}${formattedAmount}`
+    : `${formattedAmount} ${config.symbol}`;
+
+  return `${sign}${value}`;
+}
+
 export function getCurrencySymbol(currency?: Currency | string): string {
   const curr = (currency as Currency) || 'USD';
   const currencyConfig: Record<Currency, { symbol: string }> = {
