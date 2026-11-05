@@ -145,6 +145,13 @@ def test_rate_limit_is_shared():
                 assert False, "second attempt should be blocked"
             except HTTPException as exc:
                 assert exc.status_code == 429
+            async def login_request(username):
+                body = f"username={username}&password=Password123".encode()
+                async def receive():
+                    return {"type": "http.request", "body": body}
+                return Request({"type": "http", "method": "POST", "path": "/api/v1/auth/login", "scheme": "http", "headers": [(b"content-type", b"application/x-www-form-urlencoded")], "server": ("test", 80), "client": ("127.0.0.1", 1)}, receive)
+            await rate_limit.get_rate_limiter(1)(await login_request("alice"))
+            await rate_limit.get_rate_limiter(1)(await login_request("bob"))
         finally:
             rate_limit.AsyncSessionLocal = old
             await engine.dispose()

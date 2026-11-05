@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import text
@@ -8,7 +9,11 @@ from app.db.session import AsyncSessionLocal
 
 def get_rate_limiter(requests_per_minute: int = 60):
     async def rate_limiter(request: Request):
-        key = f"{request.url.path}:{request.client.host if request.client else 'unknown'}"
+        identity = request.client.host if request.client else 'unknown'
+        if request.url.path.endswith('/login'):
+            form = await request.form()
+            identity += ':' + hashlib.sha256(str(form.get('username', '')).encode()).hexdigest()
+        key = f"{request.url.path}:{identity}"
         async with AsyncSessionLocal() as db:
             if db.bind.dialect.name == "sqlite":
                 await db.execute(text("BEGIN IMMEDIATE"))
