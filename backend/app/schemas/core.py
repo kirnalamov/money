@@ -2,13 +2,14 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from enum import Enum
+from app.schemas.money import Money
 
 # Shared properties
 class CategoryBase(BaseModel):
     name: str
     icon: Optional[str] = None
     color: Optional[str] = None
-    limit: Optional[float] = Field(0.0, allow_inf_nan=False)
+    limit: Optional[Money] = 0
 
 class CategoryCreate(CategoryBase):
     pass
@@ -17,7 +18,7 @@ class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     icon: Optional[str] = None
     color: Optional[str] = None
-    limit: Optional[float] = Field(None, allow_inf_nan=False)
+    limit: Optional[Money] = None
 
 class CategoryInDBBase(CategoryBase):
     id: int
@@ -68,7 +69,7 @@ class Currency(str, Enum):
 from pydantic import field_validator
 
 class TransactionBase(BaseModel):
-    amount: float = Field(gt=0, allow_inf_nan=False)
+    amount: Money = Field(gt=0)
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType = TransactionType.EXPENSE
@@ -87,7 +88,7 @@ class TransactionCreate(TransactionBase):
     tags: Optional[list[str]] = None
 
 class TransactionUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0, allow_inf_nan=False)
+    amount: Optional[Money] = Field(None, gt=0)
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: Optional[TransactionType] = None

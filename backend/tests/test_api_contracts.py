@@ -46,6 +46,16 @@ def test_money_values_must_be_finite():
                 schema(**kwargs)
 
 
+def test_money_is_decimal_and_rejects_fractional_cents():
+    from decimal import Decimal
+    value = TransactionCreate(accountId=1, amount="0.10")
+    assert value.amount == Decimal("0.10")
+    assert isinstance(value.amount, Decimal)
+    assert '0.1' in value.model_dump_json()
+    with pytest.raises(ValidationError):
+        TransactionCreate(accountId=1, amount="0.001")
+
+
 def test_transaction_update_is_partial():
     payload = TransactionUpdate(description="Updated description")
 

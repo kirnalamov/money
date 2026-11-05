@@ -16,6 +16,7 @@ from app.models.account import Account
 from app.models.category import Category
 from app.models.transaction import Transaction
 from app.schemas.core import Currency
+from app.schemas.money import Money
 from app.api.api_v1.endpoints.transactions import _apply_transaction_effect
 
 router = APIRouter()
@@ -26,7 +27,7 @@ class Limit(BaseModel):
     id: str = Field(min_length=1, max_length=200)
     category: str = Field(min_length=1, max_length=200)
     period: Literal["daily", "weekly", "monthly"]
-    amount: float = Field(gt=0, allow_inf_nan=False)
+    amount: Money = Field(gt=0)
     currency: Currency
     spent: float = Field(ge=0, allow_inf_nan=False)
 
@@ -45,7 +46,7 @@ class Position(BaseModel):
 class RecurringExpense(BaseModel):
     id: str = Field(min_length=1, max_length=200)
     name: str = Field(min_length=1, max_length=200)
-    amount: float = Field(gt=0, allow_inf_nan=False)
+    amount: Money = Field(gt=0)
     currency: Currency
     category: str = Field(min_length=1, max_length=200)
     dueDay: int = Field(ge=1, le=31)

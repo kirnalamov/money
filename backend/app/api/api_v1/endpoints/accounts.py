@@ -62,7 +62,7 @@ async def update_account(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     if item_in.balance is not None:
-        if item_in.expected_balance is None or item_in.expected_balance != float(account.balance):
+        if item_in.expected_balance is None or item_in.expected_balance != account.balance:
             raise HTTPException(status_code=409, detail="Account balance has changed; reload before editing")
     if item_in.currency is not None and item_in.currency != account.currency:
         if item_in.balance is not None and Decimal(str(item_in.balance)) != account.balance:

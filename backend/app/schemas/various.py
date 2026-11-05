@@ -3,12 +3,13 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from pydantic import Field
 from app.schemas.core import Currency
+from app.schemas.money import Money
 
 # Goal
 class GoalBase(BaseModel):
     name: str
-    target_amount: float = Field(gt=0, allow_inf_nan=False)
-    current_amount: float = Field(default=0.0, ge=0, allow_inf_nan=False)
+    target_amount: Money = Field(gt=0)
+    current_amount: Money = Field(default=0, ge=0)
     deadline: Optional[datetime] = None
     currency: Currency = Currency.USD
     linked_account_id: Optional[int] = None
@@ -18,8 +19,8 @@ class GoalCreate(GoalBase):
 
 class GoalUpdate(GoalBase):
     name: Optional[str] = None
-    target_amount: Optional[float] = Field(None, gt=0, allow_inf_nan=False)
-    current_amount: Optional[float] = Field(None, ge=0, allow_inf_nan=False)
+    target_amount: Optional[Money] = Field(None, gt=0)
+    current_amount: Optional[Money] = Field(None, ge=0)
     deadline: Optional[datetime] = None
     currency: Optional[Currency] = None
     linked_account_id: Optional[int] = None
@@ -33,7 +34,7 @@ class Goal(GoalBase):
 # Savings
 class SavingsBase(BaseModel):
     name: str
-    balance: float = Field(default=0.0, ge=0, allow_inf_nan=False)
+    balance: Money = Field(default=0, ge=0)
     interest_rate: float = Field(default=0.0, ge=0, allow_inf_nan=False)
 
 class SavingsCreate(SavingsBase):
@@ -41,7 +42,7 @@ class SavingsCreate(SavingsBase):
 
 class SavingsUpdate(SavingsBase):
     name: Optional[str] = None
-    balance: Optional[float] = Field(None, ge=0, allow_inf_nan=False)
+    balance: Optional[Money] = Field(None, ge=0)
     interest_rate: Optional[float] = Field(None, ge=0, allow_inf_nan=False)
 
 class Savings(SavingsBase):
