@@ -18,6 +18,7 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
     const { t } = useTranslation();
     const percentage = limit.amount > 0 ? (limit.spent / limit.amount) * 100 : 0;
     const remaining = Math.max(0, limit.amount - limit.spent);
+    const overrun = Math.max(0, limit.spent - limit.amount);
 
     // Determine color based on percentage
     let indicatorColor = "bg-primary";
@@ -58,7 +59,13 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
                             {Math.round(percentage)}% {t('limits.spent')}
                         </span>
                         <span className="text-muted-foreground">
-                            {formatMoney(remaining, limit.currency)} {t('limits.remaining')}
+                            {percentage > 100 ? (
+                                <span className="text-expense">
+                                    {t("limits.overrun", { amount: formatMoney(overrun, limit.currency) })}
+                                </span>
+                            ) : (
+                                `${formatMoney(remaining, limit.currency)} ${t("limits.remaining")}`
+                            )}
                         </span>
                     </div>
                     <Progress value={Math.min(100, percentage)} className="h-2" indicatorClassName={indicatorColor} />

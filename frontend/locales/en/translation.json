@@ -393,6 +393,7 @@
     "add_hint": "Set limits to track your spending and save more.",
     "subtitle": "Track your spending limits and goals",
     "remaining": "remaining",
+    "overrun": "Over by {{amount}}",
     "validation": {
       "category": "Select a category.",
       "amount": "Enter an amount greater than zero.",
