@@ -189,6 +189,7 @@
   "transactions": {
     "title": "Transactions",
     "results_count": "{{count}} transactions found",
+    "add_short": "Add",
     "add_button": "Add Transaction",
     "export_csv": "Export CSV",
     "add_dialog_title": "Add New Transaction",

@@ -196,6 +196,7 @@
   "transactions": {
     "title": "Операции",
     "results_count": "Найдено операций: {{count}}",
+    "add_short": "Добавить",
     "add_button": "Добавить операцию",
     "export_csv": "Экспорт CSV",
     "add_dialog_title": "Новая операция",
