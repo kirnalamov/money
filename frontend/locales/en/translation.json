@@ -169,6 +169,7 @@
       "all": "All"
     },
     "categories": {
+      "salary": "Salary",
       "housing": "Housing",
       "food": "Food",
       "transport": "Transport",

@@ -41,6 +41,12 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
     }, []);
 
     const getAccountName = (id: number | undefined) => accounts.find(a => a.id === id)?.name || t('transactions.unknown_account');
+    const getCategoryName = (category: string) => {
+        const categoryKey = category.toLowerCase();
+        return ['salary', 'transport', 'food', 'housing', 'shopping'].includes(categoryKey)
+            ? t(`dashboard.categories.${categoryKey}`, { defaultValue: category })
+            : category;
+    };
 
     const isAmountSort = sort === 'largest' || sort === 'smallest';
     const groupedTransactions = isAmountSort
@@ -153,7 +159,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                     </div>
                                     <div className="flex min-w-0 flex-col gap-0.5">
                                         <div className="flex min-w-0 items-center gap-2">
-                                            <span className="max-w-[160px] truncate text-sm font-semibold sm:max-w-[260px]" title={tx.category}>{tx.category}</span>
+                                            <span className="max-w-[160px] truncate text-sm font-semibold sm:max-w-[260px]" title={tx.category}>{getCategoryName(tx.category)}</span>
                                         </div>
                                         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                             <span className="flex items-center gap-1">

@@ -58,6 +58,8 @@ export function TransactionFilters({
                 <div className="relative min-w-0 flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
+                        id="transaction-search"
+                        name="search"
                         placeholder={t('transactions.filters.search_placeholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
