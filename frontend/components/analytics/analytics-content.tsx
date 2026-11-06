@@ -53,7 +53,7 @@ export function AnalyticsContent() {
                     <button
                         onClick={() => handleTabChange("net-worth")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
+                            "inline-flex min-h-11 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "net-worth" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >
@@ -62,7 +62,7 @@ export function AnalyticsContent() {
                     <button
                         onClick={() => handleTabChange("expenses")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
+                            "inline-flex min-h-11 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "expenses" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >
@@ -71,7 +71,7 @@ export function AnalyticsContent() {
                     <button
                         onClick={() => handleTabChange("tags")}
                         className={cn(
-                            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
+                            "inline-flex min-h-11 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-none md:flex-1",
                             activeTab === "tags" ? "bg-background text-foreground " : "hover:bg-background/50"
                         )}
                     >

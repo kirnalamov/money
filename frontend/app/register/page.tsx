@@ -97,7 +97,7 @@ export default function RegisterPage() {
                     </CardHeader>
                     <CardFooter className="flex justify-center">
                         <Button asChild>
-                            <Link href="/login" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{t("auth.go_to_login")}</Link>
+                            <Link href="/login" className="inline-flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{t("auth.go_to_login")}</Link>
                         </Button>
                     </CardFooter>
                 </Card>
@@ -218,7 +218,7 @@ export default function RegisterPage() {
 
                         <p className="text-sm text-center text-muted-foreground">
                             {t("auth.has_account")} {" "}
-                            <Link href="/login" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <Link href="/login" className="inline-flex min-h-11 min-w-11 items-center justify-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                                 {t("auth.log_in")}
                             </Link>
                         </p>
