@@ -132,7 +132,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                      <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted/95 px-4 py-3 text-sm font-medium text-foreground backdrop-blur-sm">
                          <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language)}</span>
                     </h2>
-                    <div className="divide-y divide-white/[.09]">
+                    <div className="divide-y divide-border">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
