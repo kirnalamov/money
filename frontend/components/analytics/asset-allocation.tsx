@@ -51,7 +51,7 @@ export function AssetAllocation() {
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full" aria-label={t('portfolio.allocation_title')}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                         <PieChart>
                             <Pie
                                 data={data}

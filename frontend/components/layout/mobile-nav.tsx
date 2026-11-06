@@ -47,7 +47,7 @@ export function MobileNav() {
             )}
           >
             <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <span className="text-[10px] font-medium leading-tight text-center max-w-full truncate">{t(item.labelKey)}</span>
+            <span className="text-xs font-medium leading-tight text-center max-w-full truncate">{t(item.labelKey)}</span>
           </Link>
         );
       })}
@@ -63,7 +63,7 @@ export function MobileNav() {
             aria-expanded={undefined}
           >
             <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
-            <span className="text-[10px] font-medium leading-tight">{t("common.more")}</span>
+            <span className="text-xs font-medium leading-tight">{t("common.more")}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="mb-2 min-w-48">

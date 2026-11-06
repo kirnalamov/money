@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 import { useMemo } from "react";
 
 export function NetWorthStats() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { accounts, defaultCurrency } = useStore();
 
     const stats = useMemo(() => {
@@ -39,7 +39,7 @@ export function NetWorthStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-primary">
-                        {formatMoney(stats.total, defaultCurrency)}
+                        {formatMoney(stats.total, defaultCurrency, i18n.language)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
                         {t('analytics.stats.current_snapshot')}
@@ -56,7 +56,7 @@ export function NetWorthStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
-                        {formatMoney(stats.liquid, defaultCurrency)}
+                        {formatMoney(stats.liquid, defaultCurrency, i18n.language)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                         {stats.total > 0 ? `${((stats.liquid / stats.total) * 100).toFixed(1)}% ` : ""}{t('analytics.stats.of_total')}
