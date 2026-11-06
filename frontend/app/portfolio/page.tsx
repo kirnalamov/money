@@ -157,7 +157,7 @@ export default function PortfolioPage() {
     <ProtectedRoute>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">{t("portfolio.title")}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("portfolio.title")}</h2>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => handleOpenDialog()} disabled={brokerageAccounts.length === 0}>
@@ -394,6 +394,8 @@ export default function PortfolioPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-11 w-11 shrink-0"
+                                aria-label={t("portfolio.edit_position")}
                                 onClick={() => handleOpenDialog(position)}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -401,6 +403,8 @@ export default function PortfolioPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-11 w-11 shrink-0 text-expense hover:text-expense"
+                                aria-label={t("portfolio.delete_position")}
                                 onClick={() => handleDelete(position.symbol, position.accountId)}
                               >
                                 <Trash2 className="h-4 w-4" />

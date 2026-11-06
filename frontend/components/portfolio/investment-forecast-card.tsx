@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
@@ -42,6 +42,15 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
   const [returnRate, setReturnRate] = useState(DEFAULT_RETURN_RATE);
   const [inflationRate, setInflationRate] = useState(DEFAULT_INFLATION_RATE);
   const [horizonYears, setHorizonYears] = useState(DEFAULT_HORIZON);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+    observer.observe(chartRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const forecast = useMemo(() => {
     const contribution = Math.max(0, Number(monthlyContribution) || 0);
@@ -175,6 +184,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
         </div>
 
         <div
+          ref={chartRef}
           className="h-[340px] w-full min-w-0"
           role="img"
           aria-label={t("portfolio.forecast.accessibility", {
@@ -183,54 +193,62 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
             real: formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language),
           })}
         >
-          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+          {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={340}>
             <LineChart data={forecast.points} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="year" tickLine={false} axisLine={false} tickMargin={8} />
+              <XAxis dataKey="year" tickLine={false} axisLine={false} tickMargin={8} tick={{ className: "fill-muted-foreground text-xs" }} />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 width={72}
+                tick={{ className: "fill-muted-foreground text-xs" }}
                 tickFormatter={(value) => formatMoney(Number(value), defaultCurrency, i18n.language)}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  borderColor: "hsl(var(--border))",
-                  borderRadius: "8px",
-                }}
-                formatter={(value, name) => [
-                  formatMoney(Number(value), defaultCurrency, i18n.language),
-                  t(`portfolio.forecast.series.${String(name)}`),
-                ]}
-                labelFormatter={(label) => `${t("portfolio.forecast.year")} ${label}`}
+                content={({ active, payload, label }) => active && payload?.length ? (
+                  <div className="rounded-xl border bg-popover p-3 text-sm text-popover-foreground">
+                    <p>{t("portfolio.forecast.year")} {label}</p>
+                    {payload.map(point => (
+                      <p key={String(point.dataKey)} className="tabular-nums">
+                        {t(`portfolio.forecast.series.${String(point.dataKey)}`)}: {formatMoney(Number(point.value), defaultCurrency, i18n.language)}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
               />
               <Legend
-                formatter={(value) => t(`portfolio.forecast.series.${value}`)}
+                content={<div className="flex flex-wrap justify-center gap-3 text-xs text-foreground">
+                  {([['invested', 'bg-chart-3'], ['nominal', 'bg-chart-1'], ['real', 'bg-chart-4']] as const).map(([key, color]) => (
+                    <span key={key} className="inline-flex items-center gap-1">
+                      <span className={`h-0.5 w-3 ${color}`} aria-hidden="true" />
+                      {t(`portfolio.forecast.series.${key}`)}
+                    </span>
+                  ))}
+                </div>}
               />
               <Line
                 type="monotone"
                 dataKey="invested"
-                stroke="hsl(var(--muted-foreground))"
+                className="stroke-chart-3 [&_.recharts-line-curve]:stroke-chart-3"
                 strokeWidth={2}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="nominal"
-                stroke="hsl(var(--primary))"
+                className="stroke-chart-1 [&_.recharts-line-curve]:stroke-chart-1"
                 strokeWidth={3}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="real"
-                stroke="hsl(var(--chart-4))"
+                className="stroke-chart-4 [&_.recharts-line-curve]:stroke-chart-4"
                 strokeWidth={3}
                 dot={false}
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
 
         <p className="text-xs text-muted-foreground">
