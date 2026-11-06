@@ -36,7 +36,7 @@ const DEFAULT_INFLATION_RATE = "4";
 const DEFAULT_HORIZON = "20";
 
 export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { defaultCurrency } = useStore();
   const [monthlyContribution, setMonthlyContribution] = useState(DEFAULT_MONTHLY_CONTRIBUTION);
   const [returnRate, setReturnRate] = useState(DEFAULT_RETURN_RATE);
@@ -174,7 +174,15 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
           </div>
         </div>
 
-        <div className="h-[340px] w-full min-w-0">
+        <div
+          className="h-[340px] w-full min-w-0"
+          role="img"
+          aria-label={t("portfolio.forecast.accessibility", {
+            years: forecast.years,
+            nominal: formatMoney(forecast.finalPoint.nominal, defaultCurrency, i18n.language),
+            real: formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language),
+          })}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={forecast.points} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />

@@ -290,6 +290,7 @@
   "portfolio": {
     "title": "Аналитика портфеля",
     "allocation_title": "Распределение активов",
+    "allocation_accessibility": "Распределение активов на сумму {{total}} по {{count}} классам.",
     "total_value": "Стоимость портфеля",
     "invested_capital": "Вложенный капитал",
     "day_pnl": "PnL за день",
@@ -313,7 +314,8 @@
         "invested": "Вложенный капитал",
         "nominal": "Номинальный прогноз",
         "real": "С учётом инфляции"
-      }
+      },
+      "accessibility": "Прогноз на {{years}} лет: номинальная стоимость {{nominal}}, с учётом инфляции {{real}}."
     },
     "chart_placeholder": "Здесь будет график доходности",
     "add_position": "Добавить позицию",

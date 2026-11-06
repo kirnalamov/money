@@ -68,7 +68,14 @@ export function AssetAllocationChart({ className }: AssetAllocationChartProps) {
                 <h3 className="font-semibold leading-none tracking-tight text-lg">{t("portfolio.allocation_title")}</h3>
             </div>
             <div className="flex-1 w-full min-h-0 flex flex-col md:flex-row items-center justify-center px-4 pb-6 gap-8" aria-label={t("portfolio.allocation_title")}>
-                <div className="relative w-full h-full max-w-[280px] max-h-[280px] flex-shrink-0">
+                <div
+                    className="relative w-full h-full max-w-[280px] max-h-[280px] flex-shrink-0"
+                    role="img"
+                    aria-label={t("portfolio.allocation_accessibility", {
+                        total: formatMoney(total, defaultCurrency, i18n.language),
+                        count: data.length,
+                    })}
+                >
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
                         <span className="text-3xl font-bold tracking-tight tabular-nums">{formatMoney(total, defaultCurrency, i18n.language)}</span>
                         <span className="text-sm text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t("dashboard.charts.total")}</span>

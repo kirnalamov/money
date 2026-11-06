@@ -283,6 +283,7 @@
   "portfolio": {
     "title": "Portfolio Analytics",
     "allocation_title": "Asset Allocation",
+    "allocation_accessibility": "Asset allocation totaling {{total}} across {{count}} asset classes.",
     "total_value": "Total Value",
     "invested_capital": "Invested Capital",
     "day_pnl": "Day PnL",
@@ -306,7 +307,8 @@
         "invested": "Invested capital",
         "nominal": "Nominal forecast",
         "real": "After inflation"
-      }
+      },
+      "accessibility": "{{years}}-year forecast: nominal value {{nominal}}, or {{real}} after inflation."
     },
     "chart_placeholder": "Performance Chart Placeholder",
     "add_position": "Add Position",
