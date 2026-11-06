@@ -188,8 +188,8 @@ export default function SavingsPage() {
                 </p>
 
                 <div className="flex items-end justify-between mb-2">
-                  <span className="text-2xl font-bold">{formatMoney(goal.currentAmount, goal.currency)}</span>
-                  <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatMoney(goal.targetAmount, goal.currency)}</span>
+                  <span className="text-2xl font-bold">{formatMoney(goal.currentAmount, goal.currency, i18n.language)}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('savings.progress.of')} {formatMoney(goal.targetAmount, goal.currency, i18n.language)}</span>
                 </div>
 
                 <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
@@ -202,7 +202,7 @@ export default function SavingsPage() {
                   {progress}%
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{t("savings.remaining")}: {formatMoney(remaining, goal.currency)}</span>
+                  <span>{t("savings.remaining")}: {formatMoney(remaining, goal.currency, i18n.language)}</span>
                   <span>{goal.currency}</span>
                 </div>
               </div>
@@ -288,13 +288,13 @@ export default function SavingsPage() {
             <div className="flex flex-col justify-center items-center bg-secondary/20 rounded-xl p-6 text-center">
               <span className="text-sm text-muted-foreground mb-2">{t("savings.calculator.projected_total", { years: calcYears })}</span>
               <span className="text-4xl md:text-5xl font-bold text-primary mb-2">
-                {formatMoney(calculateSavings(), defaultCurrency)}
+                {formatMoney(calculateSavings(), defaultCurrency, i18n.language)}
               </span>
               <span className="text-sm text-muted-foreground">
-                {t("savings.calculator.total_contributed")}: {formatMoney(totalContributed, defaultCurrency)}
+                {t("savings.calculator.total_contributed")}: {formatMoney(totalContributed, defaultCurrency, i18n.language)}
               </span>
               <div className="mt-4 px-4 py-2 bg-income/10 text-income rounded-full text-xs font-semibold">
-                {formatMoney(Math.max(0, calculateSavings() - totalContributed), defaultCurrency)} {t("savings.calculator.interest_earned")}
+                {formatMoney(Math.max(0, calculateSavings() - totalContributed), defaultCurrency, i18n.language)} {t("savings.calculator.interest_earned")}
               </div>
             </div>
           </div>

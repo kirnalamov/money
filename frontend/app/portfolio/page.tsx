@@ -30,7 +30,7 @@ import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-ch
 import { InvestmentForecastCard } from "@/components/portfolio/investment-forecast-card";
 
 export default function PortfolioPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { positions, accounts, defaultCurrency, addPosition, updatePosition, deletePosition } = useStore();
   const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: number } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -327,16 +327,16 @@ export default function PortfolioPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_value")}</p>
-                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalValue, defaultCurrency)}</p>
+                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalValue, defaultCurrency, i18n.language)}</p>
               </div>
               <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.invested_capital")}</p>
-                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalCost, defaultCurrency)}</p>
+                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalCost, defaultCurrency, i18n.language)}</p>
               </div>
               <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
                 <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-income' : 'text-expense'}`}>
-                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency)}
+                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency, i18n.language)}
                 </p>
               </div>
               <div className="border rounded-xl p-6 bg-card ">
@@ -414,15 +414,15 @@ export default function PortfolioPage() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">{t("portfolio.avg_price")}</span>
-                              <span className="text-sm font-medium">{formatMoney(position.avgPrice, position.currency)}</span>
+                              <span className="text-sm font-medium">{formatMoney(position.avgPrice, position.currency, i18n.language)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-sm text-muted-foreground">{t("portfolio.current_price")}</span>
-                              <span className="text-sm font-medium">{formatMoney(position.currentPrice, position.currency)}</span>
+                              <span className="text-sm font-medium">{formatMoney(position.currentPrice, position.currency, i18n.language)}</span>
                             </div>
                             <div className="flex justify-between pt-2 border-t">
                               <span className="text-sm text-muted-foreground">{t("portfolio.value")}</span>
-                              <span className="text-sm font-bold">{formatMoney(valueInDefault, defaultCurrency)}</span>
+                              <span className="text-sm font-bold">{formatMoney(valueInDefault, defaultCurrency, i18n.language)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">{t("portfolio.pnl")}</span>
@@ -433,7 +433,7 @@ export default function PortfolioPage() {
                                   <TrendingDown className="h-4 w-4 text-expense" />
                                 )}
                                 <span className={`text-sm font-bold ${pnl >= 0 ? 'text-income' : 'text-expense'}`}>
-                                  {formatMoney(pnl, position.currency)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
+                                  {formatMoney(pnl, position.currency, i18n.language)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
                                 </span>
                               </div>
                             </div>

@@ -158,19 +158,19 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.projected_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.nominal, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.nominal, defaultCurrency, i18n.language)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.real_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.real, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.invested")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.invested, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.invested, defaultCurrency, i18n.language)}</p>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="text-xs text-muted-foreground">{t("portfolio.forecast.inflation_impact")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.inflationImpact, defaultCurrency)}</p>
+            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.inflationImpact, defaultCurrency, i18n.language)}</p>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
             real: formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language),
           })}
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
             <LineChart data={forecast.points} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="year" tickLine={false} axisLine={false} tickMargin={8} />
@@ -191,7 +191,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
                 tickLine={false}
                 axisLine={false}
                 width={72}
-                tickFormatter={(value) => formatMoney(Number(value), defaultCurrency)}
+                tickFormatter={(value) => formatMoney(Number(value), defaultCurrency, i18n.language)}
               />
               <Tooltip
                 contentStyle={{
@@ -200,7 +200,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
                   borderRadius: "8px",
                 }}
                 formatter={(value, name) => [
-                  formatMoney(Number(value), defaultCurrency),
+                  formatMoney(Number(value), defaultCurrency, i18n.language),
                   t(`portfolio.forecast.series.${String(name)}`),
                 ]}
                 labelFormatter={(label) => `${t("portfolio.forecast.year")} ${label}`}
@@ -234,7 +234,7 @@ export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardP
         </div>
 
         <p className="text-xs text-muted-foreground">
-          {t("portfolio.forecast.note", { years: forecast.years, profit: formatMoney(forecast.nominalProfit, defaultCurrency) })}
+          {t("portfolio.forecast.note", { years: forecast.years, profit: formatMoney(forecast.nominalProfit, defaultCurrency, i18n.language) })}
         </p>
       </CardContent>
     </Card>
