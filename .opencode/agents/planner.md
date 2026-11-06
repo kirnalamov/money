@@ -1,7 +1,7 @@
 ---
 description: Разбивает задачу Money на task cards для coder, designer и tester
 mode: subagent
-model: codexsale/gpt-6.1-terra
+model: codexsale/gpt-6.1-terra#higt
 permission:
   edit:
     "*": deny

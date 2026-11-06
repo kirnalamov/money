@@ -1,7 +1,7 @@
 ---
 description: Ведёт пайплайн Money: planner → coder → designer/tester → исправления
 mode: primary
-model: codexsale/gpt-6-luna
+model: codexsale/gpt-6-terra#higt
 permission:
   edit:
     "*": deny

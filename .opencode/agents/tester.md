@@ -1,7 +1,7 @@
 ---
 description: Проверяет изменения Money (регрессия, сборка, браузерный smoke) и возвращает воспроизводимые ошибки
 mode: subagent
-model: codexsale/gpt-6-luna
+model: codexsale/gpt-6-luna#higt
 permission:
   edit: deny
   bash:
