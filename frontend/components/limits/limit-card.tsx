@@ -15,7 +15,7 @@ interface LimitCardProps {
 }
 
 export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const percentage = limit.amount > 0 ? (limit.spent / limit.amount) * 100 : 0;
     const remaining = Math.max(0, limit.amount - limit.spent);
     const overrun = Math.max(0, limit.spent - limit.amount);
@@ -46,9 +46,9 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold tabular-nums">
-                    {formatMoney(limit.spent, limit.currency)}
+                    {formatMoney(limit.spent, limit.currency, i18n.language)}
                     <span className="text-sm text-muted-foreground font-normal ml-2">
-                        / {formatMoney(limit.amount, limit.currency)}
+                        / {formatMoney(limit.amount, limit.currency, i18n.language)}
                     </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{limit.currency}</p>
@@ -61,10 +61,10 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
                         <span className="text-muted-foreground">
                             {percentage > 100 ? (
                                 <span className="text-expense">
-                                    {t("limits.overrun", { amount: formatMoney(overrun, limit.currency) })}
+                                    {t("limits.overrun", { amount: formatMoney(overrun, limit.currency, i18n.language) })}
                                 </span>
                             ) : (
-                                `${formatMoney(remaining, limit.currency)} ${t("limits.remaining")}`
+                                `${formatMoney(remaining, limit.currency, i18n.language)} ${t("limits.remaining")}`
                             )}
                         </span>
                     </div>
