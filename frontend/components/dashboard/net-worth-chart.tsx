@@ -104,6 +104,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
   const [chartType, setChartType] = useState<ChartType>('area');
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(0);
+  const [chartHeight, setChartHeight] = useState(0);
 
   // Получаем стабильный список ID счетов
   const accountIds = useMemo(() => accounts.map(acc => acc.id), [accounts]);
@@ -138,7 +139,10 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
     const element = chartRef.current;
     if (!element) return;
 
-    const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+    const observer = new ResizeObserver(([entry]) => {
+      setChartWidth(entry.contentRect.width);
+      setChartHeight(entry.contentRect.height);
+    });
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
@@ -383,7 +387,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
         </div>
       </div>
       <div ref={chartRef} className="min-h-0 w-full min-w-0 flex-1 px-2 pb-2 sm:px-3">
-        <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0}>
+        {chartWidth > 0 && chartHeight > 0 && <ResponsiveContainer width={chartWidth} height={chartHeight} minHeight={0} minWidth={0}>
           {chartType === 'area' && (
             <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 2, left: 0 }}>
               <defs>
@@ -605,7 +609,7 @@ export function NetWorthChart({ dateRange, showAnalyticsLink = false, periodCont
               )}
             </LineChart>
           )}
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );
