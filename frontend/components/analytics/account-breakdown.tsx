@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 
 export function AccountBreakdown() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { accounts, defaultCurrency } = useStore();
 
     const totalNetWorth = accounts.reduce((sum, acc) =>
@@ -60,10 +60,10 @@ export function AccountBreakdown() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {formatMoney(acc.balance, acc.currency)}
+                                        {formatMoney(acc.balance, acc.currency, i18n.language)}
                                         {acc.currency !== defaultCurrency && (
                                             <div className="text-xs text-muted-foreground">
-                                                ≈ {formatMoney(val, defaultCurrency)}
+                                                ≈ {formatMoney(val, defaultCurrency, i18n.language)}
                                             </div>
                                         )}
                                     </TableCell>

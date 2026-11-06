@@ -37,11 +37,11 @@ export function AnalyticsFilter({ dateRange, setDateRange }: AnalyticsFilterProp
 
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
-                    <Button variant="ghost" size="sm" className="h-8 bg-card px-2 text-xs shrink-0" onClick={() => setPreset(7)}>{t('dashboard.date_filters.7d')}</Button>
-                    <Button variant="ghost" size="sm" className="h-8 bg-card px-2 text-xs shrink-0" onClick={() => setPreset(30)}>{t('dashboard.date_filters.1m')}</Button>
-                    <Button variant="ghost" size="sm" className="h-8 bg-card px-2 text-xs shrink-0" onClick={() => setPreset(90)}>{t('dashboard.date_filters.3m')}</Button>
-                    <Button variant="ghost" size="sm" className="h-8 bg-card px-2 text-xs shrink-0" onClick={() => setPreset(180)}>{t('dashboard.date_filters.6m')}</Button>
-                    <Button variant="ghost" size="sm" className="h-8 bg-card px-2 text-xs shrink-0" onClick={() => setPreset(365)}>{t('dashboard.date_filters.1y')}</Button>
+                    <Button variant="ghost" size="sm" className="h-11 min-w-11 bg-card px-2 text-xs shrink-0 focus-visible:ring-2" onClick={() => setPreset(7)}>{t('dashboard.date_filters.7d')}</Button>
+                    <Button variant="ghost" size="sm" className="h-11 min-w-11 bg-card px-2 text-xs shrink-0 focus-visible:ring-2" onClick={() => setPreset(30)}>{t('dashboard.date_filters.1m')}</Button>
+                    <Button variant="ghost" size="sm" className="h-11 min-w-11 bg-card px-2 text-xs shrink-0 focus-visible:ring-2" onClick={() => setPreset(90)}>{t('dashboard.date_filters.3m')}</Button>
+                    <Button variant="ghost" size="sm" className="h-11 min-w-11 bg-card px-2 text-xs shrink-0 focus-visible:ring-2" onClick={() => setPreset(180)}>{t('dashboard.date_filters.6m')}</Button>
+                    <Button variant="ghost" size="sm" className="h-11 min-w-11 bg-card px-2 text-xs shrink-0 focus-visible:ring-2" onClick={() => setPreset(365)}>{t('dashboard.date_filters.1y')}</Button>
                 </div>
                 <DatePickerWithRange
                     date={dateRange}

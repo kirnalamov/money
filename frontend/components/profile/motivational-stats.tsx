@@ -58,7 +58,7 @@ export function MotivationalStats() {
 
         const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
         const guiltyPleasure = topCategory
-            ? t("profile.stats.favorite_category", { category: topCategory[0].split('.').pop() })
+            ? t("profile.stats.favorite_category", { category: t(`dashboard.categories.${topCategory[0].toLowerCase()}`, { defaultValue: topCategory[0] }) })
             : t("profile.stats.no_favorite_category");
 
         return {

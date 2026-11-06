@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { ru, enUS } from "date-fns/locale";
 
 import { useRef, useEffect } from "react";
 
 export function SpendingHeatmap() {
     const { transactions, defaultCurrency, accounts } = useStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Scroll to end on mount
@@ -51,7 +52,7 @@ export function SpendingHeatmap() {
         dayOfWeekStats[day] += dailySpend[dateStr];
     });
 
-    const daysOfWeek = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+    const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     let maxDayIndex = 0;
     let maxDayValue = 0;
     Object.entries(dayOfWeekStats).forEach(([dayIndex, val]) => {
@@ -60,7 +61,7 @@ export function SpendingHeatmap() {
             maxDayIndex = parseInt(dayIndex);
         }
     });
-    const peakDay = maxDayValue > 0 ? daysOfWeek[maxDayIndex] : "N/A";
+    const peakDay = maxDayValue > 0 ? t(`analytics.habits.days.${daysOfWeek[maxDayIndex]}`) : t('common.no_data');
 
     // Determine color intensity
     const getIntensityClass = (value: number) => {
@@ -105,8 +106,8 @@ export function SpendingHeatmap() {
                                             />
                                         </TooltipTrigger>
                                         <TooltipContent side="top">
-                                            <p className="text-xs font-bold">{format(day, 'MMM d, yyyy')}</p>
-                                            <p className="text-xs">{formatMoney(value, defaultCurrency)}</p>
+                                            <p className="text-xs font-bold">{format(day, 'PPP', { locale: i18n.language.startsWith('ru') ? ru : enUS })}</p>
+                                            <p className="text-xs">{formatMoney(value, defaultCurrency, i18n.language)}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>

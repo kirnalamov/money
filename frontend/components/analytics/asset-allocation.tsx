@@ -3,13 +3,21 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { convertCurrency, formatMoney } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AssetAllocation() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { accounts, defaultCurrency } = useStore();
+    const chartRef = useRef<HTMLDivElement>(null);
+    const [chartWidth, setChartWidth] = useState(0);
+    useEffect(() => {
+        if (!chartRef.current) return;
+        const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+        observer.observe(chartRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     const data = useMemo(() => {
         const groups: Record<string, number> = {};
@@ -50,8 +58,8 @@ export function AssetAllocation() {
                 <CardTitle>{t('portfolio.allocation_title')}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="h-[300px] w-full" aria-label={t('portfolio.allocation_title')}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                <div ref={chartRef} className="h-[300px] w-full min-w-0" aria-label={t('portfolio.allocation_title')}>
+                    {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={300}>
                         <PieChart>
                             <Pie
                                 data={data}
@@ -67,7 +75,7 @@ export function AssetAllocation() {
                                 ))}
                             </Pie>
                             <Tooltip
-                                formatter={(value: number) => formatMoney(value, defaultCurrency)}
+                                formatter={(value: number, name) => [formatMoney(value, defaultCurrency, i18n.language), getLabel(String(name))]}
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                             />
@@ -93,7 +101,7 @@ export function AssetAllocation() {
                                 )}
                             />
                         </PieChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer>}
                 </div>
             </CardContent>
         </Card>

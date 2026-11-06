@@ -30,16 +30,16 @@ export function LimitCard({ limit, onEdit, onDelete }: LimitCardProps) {
         <Card className="overflow-hidden rounded-2xl border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                    <span className="max-w-[180px] truncate" title={limit.category}>{t(limit.category, { defaultValue: limit.category })}</span>
+                    <span className="max-w-[180px] truncate" title={limit.category}>{t(`dashboard.categories.${limit.category.toLowerCase()}`, { defaultValue: limit.category })}</span>
                     <span className="ml-2 text-xs text-muted-foreground font-normal">
                         ({t(`limits.periods.${limit.period}`)})
                     </span>
                 </CardTitle>
                 <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(limit)} title={t("common.edit")} aria-label={t("common.edit")}>
+                    <Button variant="ghost" size="icon" className="h-11 w-11 focus-visible:ring-2" onClick={() => onEdit(limit)} title={t("common.edit")} aria-label={t("common.edit")}>
                         <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(limit.id)} title={t("common.delete")} aria-label={t("common.delete")}>
+                    <Button variant="ghost" size="icon" className="h-11 w-11 text-expense focus-visible:ring-2" onClick={() => onDelete(limit.id)} title={t("common.delete")} aria-label={t("common.delete")}>
                         <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>

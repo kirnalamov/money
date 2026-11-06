@@ -6,7 +6,7 @@ import { formatMoney, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -25,10 +25,19 @@ type ChartType = 'pie' | 'bar';
 
 export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     const { transactions, defaultCurrency, accounts, categories } = useStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const categoryLabel = (name: string) => t(`dashboard.categories.${name.toLowerCase()}`, { defaultValue: name });
     const [chartType, setChartType] = useState<ChartType>('pie');
     const [excludedCategories, setExcludedCategories] = useState<Set<string>>(new Set());
     const [selectedAccounts, setSelectedAccounts] = useState<Set<number>>(new Set(accounts.map(a => a.id)));
+    const chartRef = useRef<HTMLDivElement>(null);
+    const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+    useEffect(() => {
+        if (!chartRef.current) return;
+        const observer = new ResizeObserver(([entry]) => setChartSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+        observer.observe(chartRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     // Toggle logic
     const toggleCategory = (cat: string) => {
@@ -91,7 +100,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     const data = Object.entries(categoryData)
         .map(([name, value]) => {
             const catObj = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
-            return { name, value, color: catObj?.color };
+            return { name: categoryLabel(name), value, color: catObj?.color };
         })
         .sort((a, b) => b.value - a.value);
 
@@ -149,11 +158,11 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold mt-1">
-                                    {formatMoney(forecast.projectedSpend, defaultCurrency)}
+                                    {formatMoney(forecast.projectedSpend, defaultCurrency, i18n.language)}
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground flex items-center justify-between">
-                                    <span>{t('analytics.forecast.current')}: {formatMoney(forecast.currentSpend, defaultCurrency)}</span>
-                                    <span>{t('analytics.forecast.burn')}: {formatMoney(forecast.burnRate, defaultCurrency)}/day</span>
+                                    <span>{t('analytics.forecast.current')}: {formatMoney(forecast.currentSpend, defaultCurrency, i18n.language)}</span>
+                                    <span>{t('analytics.forecast.burn')}: {formatMoney(forecast.burnRate, defaultCurrency, i18n.language)}{t('analytics.forecast.per_day')}</span>
                                 </div>
                                 <div className="w-full bg-secondary h-2 rounded-full mt-3 overflow-hidden">
                                     <div
@@ -179,7 +188,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatMoney(totalSpend, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalSpend, defaultCurrency, i18n.language)}</div>
                             <p className="text-xs text-muted-foreground mt-1">{t('analytics.stats.in_selected_period')}</p>
                         </CardContent>
                     </Card>
@@ -190,8 +199,8 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatMoney(avgDaily, defaultCurrency)}</div>
-                            <p className="text-xs text-muted-foreground mt-1">~{formatMoney(avgDaily * 30, defaultCurrency)} {t('analytics.stats.per_month')}</p>
+                            <div className="text-2xl font-bold">{formatMoney(avgDaily, defaultCurrency, i18n.language)}</div>
+                            <p className="text-xs text-muted-foreground mt-1">~{formatMoney(avgDaily * 30, defaultCurrency, i18n.language)} {t('analytics.stats.per_month')}</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-card border rounded-2xl p-5">
@@ -201,7 +210,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold truncate">{topCategory?.name || "N/A"}</div>
+                            <div className="text-2xl font-bold truncate">{topCategory?.name || t('common.no_data')}</div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 {topCategory ? `${((topCategory.value / totalSpend) * 100).toFixed(1)}% ${t('analytics.stats.of_total')}` : t('common.no_data')}
                             </p>
@@ -217,7 +226,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <Building className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatMoney(totalFixed, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalFixed, defaultCurrency, i18n.language)}</div>
                             <p className="text-xs text-muted-foreground">
                                 {fixedRatio.toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
@@ -229,7 +238,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatMoney(totalVariable, defaultCurrency)}</div>
+                            <div className="text-2xl font-bold">{formatMoney(totalVariable, defaultCurrency, i18n.language)}</div>
                             <p className="text-xs text-muted-foreground">
                                 {(100 - fixedRatio).toFixed(0)}{t('analytics.stats.of_total_spending')}
                             </p>
@@ -248,7 +257,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <Button
                                 variant={chartType === 'pie' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-8 px-2 text-xs"
+                                className="h-11 min-w-11 px-2 text-xs focus-visible:ring-2"
                                 onClick={() => setChartType('pie')}
                             >
                                 <PieIcon className="w-4 h-4 mr-2" />
@@ -258,7 +267,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <Button
                                 variant={chartType === 'bar' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-8 px-2 text-xs"
+                                className="h-11 min-w-11 px-2 text-xs focus-visible:ring-2"
                                 onClick={() => setChartType('bar')}
                             >
                                 <BarIcon className="w-4 h-4 mr-2" />
@@ -268,13 +277,13 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                         </div>
                     </div>
 
-                    <div className="flex-1 w-full min-h-0">
+                    <div ref={chartRef} className="flex-1 w-full min-h-0 min-w-0">
                         {data.length === 0 ? (
                             <div className="flex items-center justify-center h-full text-muted-foreground">
                                 {t('analytics.common.no_data')}
                             </div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                        ) : chartSize.width > 0 && chartSize.height > 0 ? (
+                            <ResponsiveContainer width={chartSize.width} height={chartSize.height}>
                                 {chartType === 'pie' ? (
                                     <PieChart>
                                         <Pie
@@ -293,7 +302,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                         <Tooltip
                                             contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                             itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                            formatter={(value: number) => [formatMoney(value, defaultCurrency), 'Spend']}
+                                            formatter={(value: number) => [formatMoney(value, defaultCurrency, i18n.language), t('analytics.stats.total_spend')]}
                                         />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
@@ -306,7 +315,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             cursor={{ fill: 'hsl(var(--accent))', opacity: 0.1 }}
                                             contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                             itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                            formatter={(value: number) => [formatMoney(value, defaultCurrency), 'Spend']}
+                                            formatter={(value: number) => [formatMoney(value, defaultCurrency, i18n.language), t('analytics.stats.total_spend')]}
                                         />
                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                             {data.map((entry, index) => (
@@ -316,7 +325,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                     </BarChart>
                                 )}
                             </ResponsiveContainer>
-                        )}
+                        ) : null}
                     </div>
                 </Card>
             </div>
@@ -341,7 +350,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             checked={selectedAccounts.has(acc.id)}
                                             onCheckedChange={() => toggleAccount(acc.id)}
                                         />
-                                        <Label htmlFor={`acc-${acc.id}`} className="text-sm font-normal truncate cursor-pointer">
+                                        <Label htmlFor={`acc-${acc.id}`} className="flex min-h-11 min-w-11 flex-1 items-center text-sm font-normal truncate cursor-pointer">
                                             {acc.name}
                                         </Label>
                                     </div>
@@ -365,8 +374,8 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             checked={excludedCategories.has(cat)}
                                             onCheckedChange={() => toggleCategory(cat)}
                                         />
-                                        <Label htmlFor={`cat-${cat}`} className="text-sm font-normal truncate cursor-pointer">
-                                            {cat}
+                                        <Label htmlFor={`cat-${cat}`} className="flex min-h-11 min-w-11 flex-1 items-center text-sm font-normal truncate cursor-pointer">
+                                            {categoryLabel(cat)}
                                         </Label>
                                     </div>
                                 ))}

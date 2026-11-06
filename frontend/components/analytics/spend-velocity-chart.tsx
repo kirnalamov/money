@@ -7,10 +7,19 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
 
 export function SpendVelocityChart() {
     const { transactions, defaultCurrency, accounts } = useStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const chartRef = useRef<HTMLDivElement>(null);
+    const [chartWidth, setChartWidth] = useState(0);
+    useEffect(() => {
+        if (!chartRef.current) return;
+        const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+        observer.observe(chartRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     // Base logic: Compare Current Month vs Previous Month Cumulative Spend
     const today = new Date();
@@ -95,8 +104,8 @@ export function SpendVelocityChart() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                <div ref={chartRef} className="h-[250px] w-full min-w-0">
+                    {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={250}>
                         <LineChart data={mergedData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis
@@ -105,8 +114,8 @@ export function SpendVelocityChart() {
                                 domain={[1, maxDays]}
                                 tickLine={false}
                                 axisLine={false}
-                                fontSize={10}
-                                tickFormatter={(val) => `Day ${val}`}
+                                fontSize={12}
+                                tickFormatter={(val) => `${t('analytics.velocity.day')} ${val}`}
                             />
                             <YAxis
                                 hide
@@ -114,17 +123,17 @@ export function SpendVelocityChart() {
                             />
                             <Tooltip
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                                formatter={(value: number, name: string) => [
-                                    formatMoney(value, defaultCurrency),
-                                    name === 'current' ? t('analytics.forecast.current') : t('dashboard.date_filters.1m')
+                                formatter={(value: number, _name, item) => [
+                                    formatMoney(value, defaultCurrency, i18n.language),
+                                    item.dataKey === 'current' ? t('analytics.velocity.current_month') : t('analytics.velocity.previous_month')
                                 ]}
-                                labelFormatter={(day) => `Day ${day}`}
+                                labelFormatter={(day) => `${t('analytics.velocity.day')} ${day}`}
                             />
                             <Legend verticalAlign="top" height={36} iconType="circle" />
                             <Line
                                 type="monotone"
                                 dataKey="previous"
-                                name={t('dashboard.vs_last_month')}
+                                name={t('analytics.velocity.previous_month')}
                                 stroke="hsl(var(--muted-foreground))"
                                 strokeWidth={2}
                                 strokeDasharray="4 4"
@@ -134,7 +143,7 @@ export function SpendVelocityChart() {
                             <Line
                                 type="monotone"
                                 dataKey="current"
-                                name="Current Month"
+                                name={t('analytics.velocity.current_month')}
                                 stroke="hsl(var(--primary))"
                                 strokeWidth={3}
                                 dot={false}
@@ -142,7 +151,7 @@ export function SpendVelocityChart() {
                                 connectNulls
                             />
                         </LineChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer>}
                 </div>
                 <div className={cn(
                     "mt-3 text-xs p-2.5 rounded-lg border flex items-center justify-center gap-2 transition-colors",
@@ -153,12 +162,12 @@ export function SpendVelocityChart() {
                     {isSpendingFaster ? (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.caution')}:</span>
-                            <span>{t('analytics.velocity.outpacing', { amount: formatMoney(velocityDiff, defaultCurrency) })}</span>
+                            <span>{t('analytics.velocity.outpacing', { amount: formatMoney(velocityDiff, defaultCurrency, i18n.language) })}</span>
                         </>
                     ) : (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.great_job')}</span>
-                            <span>{t('analytics.velocity.saved', { amount: formatMoney(Math.abs(velocityDiff), defaultCurrency) })}</span>
+                            <span>{t('analytics.velocity.saved', { amount: formatMoney(Math.abs(velocityDiff), defaultCurrency, i18n.language) })}</span>
                         </>
                     )}
                 </div>

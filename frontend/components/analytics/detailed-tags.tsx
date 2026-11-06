@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
 import { Tag, TrendingUp, Award } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface DetailedTagsProps {
     dateRange: DateRange | undefined;
@@ -14,7 +15,9 @@ interface DetailedTagsProps {
 
 export function DetailedTags({ dateRange }: DetailedTagsProps) {
     const { transactions, defaultCurrency, accounts, tags } = useStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const chartRef = useRef<HTMLDivElement>(null);
+    const [chartWidth, setChartWidth] = useState(0);
 
     // Filter transactions by date range
     const filteredTransactions = transactions.filter(tx => {
@@ -60,6 +63,13 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
     const topTag = data[0];
     // Most frequent tag
     const mostFrequent = [...data].sort((a, b) => b.count - a.count)[0];
+    const hasData = data.length > 0;
+    useEffect(() => {
+        if (!chartRef.current) return;
+        const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+        observer.observe(chartRef.current);
+        return () => observer.disconnect();
+    }, [hasData]);
 
     const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -83,9 +93,9 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         <Award className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold capitalize">{topTag?.name || "N/A"}</div>
+                        <div className="text-2xl font-bold">{topTag?.name || t('common.no_data')}</div>
                         <p className="text-xs text-muted-foreground">
-                            {formatMoney(topTag?.value || 0, defaultCurrency)} {t('analytics.tags.total')}
+                            {formatMoney(topTag?.value || 0, defaultCurrency, i18n.language)} {t('analytics.tags.total')}
                         </p>
                     </CardContent>
                 </Card>
@@ -95,7 +105,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         <TrendingUp className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold capitalize">{mostFrequent?.name || "N/A"}</div>
+                        <div className="text-2xl font-bold">{mostFrequent?.name || t('common.no_data')}</div>
                         <p className="text-xs text-muted-foreground">
                             {t('analytics.tags.used_in_transactions', { count: mostFrequent?.count || 0 })}
                         </p>
@@ -123,11 +133,11 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         <p className="text-sm text-muted-foreground">{t('analytics.tags.chart_subtitle')}</p>
                     </div>
                 </div>
-                <div className="h-[500px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                <div ref={chartRef} className="h-[500px] w-full min-w-0">
+                    {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={500}>
                         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" tickFormatter={(val) => formatMoney(val, defaultCurrency)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <XAxis type="number" tickFormatter={(val) => formatMoney(val, defaultCurrency, i18n.language)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
                             <YAxis
                                 dataKey="name"
                                 type="category"
@@ -140,7 +150,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                                 cursor={{ fill: 'hsl(var(--accent))', opacity: 0.1 }}
                                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: number) => [formatMoney(value, defaultCurrency), t('analytics.stats.total_spend')]}
+                                formatter={(value: number) => [formatMoney(value, defaultCurrency, i18n.language), t('analytics.stats.total_spend')]}
                             />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                                 {data.map((entry, index) => (
@@ -148,7 +158,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                                 ))}
                             </Bar>
                         </BarChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer>}
                 </div>
             </Card>
         </div>
