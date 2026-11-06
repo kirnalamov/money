@@ -342,6 +342,8 @@
     "title": "Savings & Goals",
     "subtitle": "Track your financial goals and dreams",
     "add_goal": "New Goal",
+    "edit_goal": "Edit goal: {{name}}",
+    "delete_goal": "Delete goal: {{name}}",
     "create_new_card": "Create New Goal",
     "delete_confirm": "Are you sure you want to delete this goal?",
     "remaining": "Remaining",

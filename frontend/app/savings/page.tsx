@@ -129,7 +129,7 @@ export default function SavingsPage() {
       <div className="space-y-8 pb-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{t("savings.title")}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("savings.title")}</h2>
             <p className="text-muted-foreground mt-1">{t("savings.subtitle")}</p>
           </div>
           <Button onClick={() => handleOpenDialog()} className="md:w-auto w-full">
@@ -167,11 +167,11 @@ export default function SavingsPage() {
                   <div className={`p-2 rounded-lg ${isCompleted ? 'bg-income/10 text-income' : 'bg-primary/10 text-primary'}`}>
                     <Target className="h-6 w-6" />
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(goal)}>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-11 w-11" aria-label={t("savings.edit_goal", { name: goal.name })} onClick={() => handleOpenDialog(goal)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(goal.id)}>
+                    <Button variant="ghost" size="icon" className="h-11 w-11 text-expense hover:text-expense" aria-label={t("savings.delete_goal", { name: goal.name })} onClick={() => handleDelete(goal.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -236,10 +236,12 @@ export default function SavingsPage() {
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="grid gap-2">
-                <Label>{t("savings.calculator.monthly_contribution")}</Label>
+                <Label htmlFor="savings-calc-monthly">{t("savings.calculator.monthly_contribution")}</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
                   <Input
+                    id="savings-calc-monthly"
+                    name="savings-calc-monthly"
                     type="number"
                     value={calcMonthly}
                     onChange={(e) => setCalcMonthly(e.target.value)}
@@ -249,8 +251,10 @@ export default function SavingsPage() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label>{t("savings.calculator.time_period")}</Label>
+                <Label htmlFor="savings-calc-years">{t("savings.calculator.time_period")}</Label>
                 <Input
+                  id="savings-calc-years"
+                  name="savings-calc-years"
                   type="number"
                   value={calcYears}
                   onChange={(e) => setCalcYears(e.target.value)}
@@ -262,18 +266,23 @@ export default function SavingsPage() {
                   <span>{t("savings.calculator.year_50")}</span>
                 </div>
                 <input
+                  id="savings-calc-years-range"
+                  name="savings-calc-years-range"
+                  aria-label={t("savings.calculator.time_period")}
                   type="range"
                   min="1"
                   max="50"
                   value={calcYears}
                   onChange={(e) => setCalcYears(e.target.value)}
-                  className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-11 accent-primary bg-transparent appearance-none cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:bg-secondary [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:-mt-1 [&::-moz-range-track]:h-2 [&::-moz-range-track]:bg-secondary [&::-moz-range-track]:rounded-lg"
                 />
               </div>
               <div className="grid gap-2">
-                <Label>{t("savings.calculator.interest_rate")}</Label>
+                <Label htmlFor="savings-calc-interest">{t("savings.calculator.interest_rate")}</Label>
                 <div className="relative">
                   <Input
+                    id="savings-calc-interest"
+                    name="savings-calc-interest"
                     type="number"
                     value={calcInterest}
                     onChange={(e) => setCalcInterest(e.target.value)}
