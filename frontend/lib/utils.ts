@@ -109,17 +109,18 @@ export function formatCurrency(amount: number, currency?: Currency | string): st
   const formattedAmount = new Intl.NumberFormat(config.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(Math.abs(amount));
 
+  const sign = amount < 0 && Number(Math.abs(amount).toFixed(2)) !== 0 ? '−' : '';
   return config.position === 'before'
-    ? `${config.symbol}${formattedAmount}`
-    : `${formattedAmount} ${config.symbol}`;
+    ? `${sign}${config.symbol}${formattedAmount}`
+    : `${sign}${formattedAmount} ${config.symbol}`;
 }
 
 /**
  * Форматирует сумму с локалью и знаком перед валютой.
  */
-export function formatMoney(amount: number, currency: Currency | string = 'USD', locale = 'en'): string {
+export function formatMoney(amount: number, currency: Currency | string = 'USD', locale = 'en', signed = false): string {
   if (amount === undefined || isNaN(amount)) return '$0.00';
 
   const curr = currency as Currency;
@@ -134,12 +135,43 @@ export function formatMoney(amount: number, currency: Currency | string = 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount)).replace(/[\u00a0\u202f]/g, ' ');
-  const sign = amount < 0 ? '−' : amount > 0 ? '+' : '';
+  const sign = amount < 0 ? '−' : signed && amount > 0 ? '+' : '';
   const value = config.position === 'before'
     ? `${config.symbol}${formattedAmount}`
     : `${formattedAmount} ${config.symbol}`;
 
   return `${sign}${value}`;
+}
+
+/**
+ * Компактная сумма для осей: en `$14.9K`, ru `14,9 тыс. ₽`; без переносов строк.
+ */
+export function formatMoneyCompact(amount: number, currency: Currency | string = 'USD', locale = 'en', signed = false): string {
+  if (amount === undefined || isNaN(amount)) return '$0';
+  const symbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', RUB: '₽' };
+  const symbol = symbols[currency as string] || '$';
+  const ru = locale.startsWith('ru');
+  const number = new Intl.NumberFormat(ru ? 'ru-RU' : 'en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(Math.abs(amount)).replace(/[  ]/g, ' ');
+  const sign = amount < 0 ? '−' : signed && amount > 0 ? '+' : '';
+  return `${sign}${currency === 'RUB' ? `${number} ${symbol}` : `${symbol}${number}`}`.replace(/ /g, ' ');
+}
+
+/**
+ * Проценты с локалью (значение уже в процентах): ru `−0,1%`, en `-0.1%`.
+ */
+export function formatPercent(value: number, locale = 'en', signed = false, digits = 1): string {
+  if (value === undefined || isNaN(value)) return '0%';
+  const ru = locale.startsWith('ru');
+  const number = new Intl.NumberFormat(ru ? 'ru-RU' : 'en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Math.abs(value));
+  const rounded = Number(Math.abs(value).toFixed(digits)) === 0;
+  const sign = rounded ? '' : value < 0 ? (ru ? '−' : '-') : signed ? '+' : '';
+  return `${sign}${number}%`;
 }
 
 export function getCurrencySymbol(currency?: Currency | string): string {
@@ -170,10 +202,11 @@ export function formatCurrencyCompact(amount: number, currency?: Currency | stri
   const formattedAmount = new Intl.NumberFormat(config.locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(Math.abs(amount));
 
+  const sign = amount < 0 && Math.round(Math.abs(amount)) !== 0 ? '−' : '';
   return config.position === 'before'
-    ? `${config.symbol}${formattedAmount}`
-    : `${formattedAmount} ${config.symbol}`;
+    ? `${sign}${config.symbol}${formattedAmount}`
+    : `${sign}${formattedAmount} ${config.symbol}`;
 }
 

@@ -27,8 +27,8 @@ test('money uses the selected locale in all scoped analytics components', () => 
     const source = read('lib/utils.ts').match(/export function formatMoney[\s\S]*?\n}/)[0];
     const js = ts.transpile(source.replace('export ', ''), { target: ts.ScriptTarget.ES2020 });
     const formatMoney = vm.runInNewContext(`${js}; formatMoney`);
-    assert.equal(formatMoney(1234.5, 'USD', 'ru'), '+$1 234,50');
-    assert.equal(formatMoney(1234.5, 'USD', 'en'), '+$1,234.50');
+    assert.equal(formatMoney(1234.5, 'USD', 'ru'), '$1 234,50');
+    assert.equal(formatMoney(1234.5, 'USD', 'en'), '$1,234.50');
     for (const file of ['account-breakdown', 'detailed-expenses', 'spend-velocity-chart', 'asset-allocation', 'detailed-tags', 'spending-heatmap']) {
         const ast = ts.createSourceFile(file, read(`components/analytics/${file}.tsx`), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
         const visit = node => {

@@ -336,7 +336,7 @@ export default function PortfolioPage() {
               <div className="border rounded-xl p-6 bg-card ">
                 <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
                 <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-income' : 'text-expense'}`}>
-                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency, i18n.language)}
+                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency, i18n.language, true)}
                 </p>
               </div>
               <div className="border rounded-xl p-6 bg-card ">
@@ -437,7 +437,7 @@ export default function PortfolioPage() {
                                   <TrendingDown className="h-4 w-4 text-expense" />
                                 )}
                                 <span className={`text-sm font-bold ${pnl >= 0 ? 'text-income' : 'text-expense'}`}>
-                                  {formatMoney(pnl, position.currency, i18n.language)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
+                                  {formatMoney(pnl, position.currency, i18n.language, true)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
                                 </span>
                               </div>
                             </div>

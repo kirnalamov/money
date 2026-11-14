@@ -130,7 +130,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
             ) : sortedDates.map((dateKey) => (
                 <div key={dateKey} className="overflow-hidden rounded-2xl border border-border bg-card">
                      <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted/95 px-4 py-3 text-sm font-medium text-foreground backdrop-blur-sm">
-                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language)}</span>
+                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language, true)}</span>
                     </h2>
                     <div className="divide-y divide-border">
                         {groupedTransactions[dateKey].map((tx) => (
@@ -186,7 +186,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                     <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
                                         tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
                                         }`}>
-                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : tx.amount, tx.currency, i18n.language)}
+                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : tx.amount, tx.currency, i18n.language, true)}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                         {format(new Date(tx.date), 'HH:mm')}
