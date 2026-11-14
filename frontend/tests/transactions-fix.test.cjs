@@ -21,3 +21,9 @@ test('list: Р·Р°РіРѕР»РѕРІРѕРє РіСЂСѓРїРїС‹ РїСЂРё СЃРѕСЂС‚РёСЂРѕРІРєРµ РїРѕ СЃС
   const src = read('transaction-list.tsx');
   assert.match(src, /dateKey === 'all'\) return t\('transactions\.all_operations'\)/);
 });
+
+test('page: фильтр категории по categoryKey, sr-only заголовок не дублирует группу при сортировке по сумме', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../app/transactions/page.tsx'), 'utf8');
+  assert.match(src, /categoryKey\(tx\.category\) !== categoryKey\(category\)/);
+  assert.match(src, /sort !== 'largest' && sort !== 'smallest' && <h2 className="sr-only">/);
+});

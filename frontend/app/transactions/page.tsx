@@ -14,7 +14,7 @@ import { useSearchParams } from "next/navigation";
 import { TransactionFilters, TransactionSort } from "@/components/transactions/transaction-filters";
 import { TransactionSummary } from "@/components/transactions/transaction-summary";
 import { TransactionInsights } from "@/components/transactions/transaction-insights";
-import { TransactionList } from "@/components/transactions/transaction-list";
+import { TransactionList, categoryKey } from "@/components/transactions/transaction-list";
 import { TransactionType } from "@/types";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, isSameDay, isValid, parse, startOfMonth } from "date-fns";
@@ -94,7 +94,7 @@ function TransactionsContent() {
 
     if (type !== 'all' && tx.type !== type) return false;
 
-    if (category !== 'all' && tx.category !== category) return false;
+    if (category !== 'all' && categoryKey(tx.category) !== categoryKey(category)) return false;
 
     if (accountId !== 'all' && tx.accountId.toString() !== accountId && tx.toAccountId?.toString() !== accountId) return false;
 
@@ -241,7 +241,7 @@ function TransactionsContent() {
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-5">
-        <h2 className="sr-only">{t('transactions.all_operations')}</h2>
+        {sort !== 'largest' && sort !== 'smallest' && <h2 className="sr-only">{t('transactions.all_operations')}</h2>}
          {isLoading ? (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5" role="status" aria-label={t('common.loading')}>
             {[0, 1, 2, 3, 4].map(item => <Skeleton key={item} className="h-12 w-full" />)}
