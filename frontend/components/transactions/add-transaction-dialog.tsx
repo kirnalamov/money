@@ -45,7 +45,7 @@ const AMOUNT_COLOR: Record<TransactionType, string> = {
   transfer: "text-foreground",
 };
 const SIGN: Record<TransactionType, string> = { expense: "−", income: "+", transfer: "" };
-const pill = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const pill = "inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function currencySymbol(currency: string, language: string) {
   const parts = new Intl.NumberFormat(language, { style: "currency", currency }).formatToParts(0);
@@ -191,7 +191,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
   const short = !!account && type !== "income" && hasAmount && account.balance < parsed;
 
   return (
-    <form onSubmit={submit} className="grid gap-5" noValidate>
+    <form onSubmit={submit} className="grid min-w-0 grid-cols-1 gap-5" noValidate>
       <div role="tablist" aria-label={t("transactions.dialog.title")} className="grid grid-cols-3 gap-2">
         {TYPES.map((item) => (
           <button
@@ -207,14 +207,15 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
         ))}
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <Label htmlFor="add-tx-amount">{t("transactions.dialog.amount")}</Label>
         <div className="flex min-h-14 items-center gap-2 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-          <span className={cn("shrink-0 text-[32px] font-bold leading-none tabular-nums", AMOUNT_COLOR[type])} aria-hidden="true">
+          <span className={cn("max-w-[40%] shrink-0 truncate text-3xl font-bold leading-none tabular-nums", AMOUNT_COLOR[type])} aria-hidden="true">
             {SIGN[type]}{account ? currencySymbol(account.currency, language) : ""}
           </span>
           <input
             id="add-tx-amount"
+            name="amount"
             inputMode="decimal"
             autoComplete="off"
             value={amount}
@@ -224,15 +225,15 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
               const value = event.target.value.replace(",", ".");
               if (/^\d*\.?\d*$/.test(value)) setAmount(value);
             }}
-            className={cn("min-w-0 flex-1 bg-transparent py-2 text-[32px] font-bold leading-none tabular-nums placeholder:text-muted-foreground focus:outline-none", AMOUNT_COLOR[type])}
+            className={cn("w-full min-w-0 flex-1 bg-transparent py-2 text-3xl font-bold leading-none tabular-nums placeholder:text-muted-foreground focus:outline-none", AMOUNT_COLOR[type])}
           />
         </div>
         <p id="add-tx-hint" className={cn("min-h-4 text-xs tabular-nums", short ? "text-expense" : "text-muted-foreground")}>{balanceHint}</p>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <Label htmlFor="add-tx-account">{type === "transfer" ? t("transactions.dialog.from_account") : t("transactions.dialog.account")}</Label>
-        <Select value={accountId} onValueChange={changeAccount}>
+        <Select name="account" value={accountId} onValueChange={changeAccount}>
           <SelectTrigger id="add-tx-account" className="min-h-11"><SelectValue placeholder={t("transactions.dialog.select_account")} /></SelectTrigger>
           <SelectContent>
             {accounts.map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.name} ({item.currency})</SelectItem>)}
@@ -241,9 +242,9 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
       </div>
 
       {type === "transfer" ? (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Label htmlFor="add-tx-to">{t("transactions.dialog.to_account")}</Label>
-          <Select value={toAccountId} onValueChange={setToAccountId}>
+          <Select name="toAccount" value={toAccountId} onValueChange={setToAccountId}>
             <SelectTrigger id="add-tx-to" className="min-h-11"><SelectValue placeholder={t("transactions.dialog.destination_label")} /></SelectTrigger>
             <SelectContent>
               {destinations.map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.name} ({item.currency})</SelectItem>)}
@@ -253,7 +254,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
           {account && destinations.length === 0 && <p className="text-xs text-muted-foreground">{t("transactions.dialog.no_destination")}</p>}
         </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Label id="add-tx-category-label">{t("transactions.dialog.category")}</Label>
           {categories.length === 0 ? (
             <CreatableCombobox options={[]} value={category} onChange={setCategory} placeholder={t("transactions.placeholders.category")} />
@@ -271,7 +272,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
                     className={cn(pill, active ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground")}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
-                    {getCategoryLabel(t, item.name)}
+                    <span className="truncate">{getCategoryLabel(t, item.name)}</span>
                   </button>
                 );
               })}
@@ -280,7 +281,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
         </div>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <Label id="add-tx-date-label">{t("transactions.dialog.date")}</Label>
         <div role="group" aria-labelledby="add-tx-date-label" className="flex flex-wrap gap-2">
           <button type="button" aria-pressed={isToday} onClick={() => setDay(new Date())} className={cn(pill, isToday ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground")}>{t("transactions.dialog.today")}</button>
@@ -318,11 +319,11 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
         </button>
         {more && (
           <div className="grid gap-4">
-            <div className="grid gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <Label htmlFor="add-tx-description">{t("transactions.dialog.description")}</Label>
-              <Input id="add-tx-description" className="min-h-11" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("transactions.dialog.description_placeholder")} />
+              <Input id="add-tx-description" name="description" className="min-h-11" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("transactions.dialog.description_placeholder")} />
             </div>
-            <div className="grid gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <Label id="add-tx-tags-label">{t("transactions.dialog.tags")}</Label>
               <MultiSelectCreatable
                 aria-labelledby="add-tx-tags-label"
@@ -337,18 +338,18 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: Transaction
       </div>
 
       {type === "expense" && (
-        <div className="grid gap-2">
-          <div className="flex min-h-11 items-center justify-between gap-3 rounded-xl border p-3">
-            <div className="grid gap-0.5">
-              <Label htmlFor="add-tx-recurring">{t("transactions.dialog.recurring")}</Label>
-              <p className="text-xs text-muted-foreground">{t("transactions.dialog.recurring_hint")}</p>
-            </div>
-            <Switch id="add-tx-recurring" checked={recurring} onCheckedChange={setRecurring} />
-          </div>
-          <div className="flex min-h-11 items-center justify-between gap-3 rounded-xl border p-3">
-            <Label htmlFor="add-tx-mandatory">{t("transactions.dialog.mandatory")}</Label>
-            <Switch id="add-tx-mandatory" checked={mandatory} onCheckedChange={setMandatory} />
-          </div>
+        <div className="grid grid-cols-1 gap-2">
+          <Label htmlFor="add-tx-recurring" className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3">
+            <span className="grid min-w-0 gap-0.5">
+              <span>{t("transactions.dialog.recurring")}</span>
+              <span className="text-xs font-normal text-muted-foreground">{t("transactions.dialog.recurring_hint")}</span>
+            </span>
+            <Switch id="add-tx-recurring" name="recurring" checked={recurring} onCheckedChange={setRecurring} />
+          </Label>
+          <Label htmlFor="add-tx-mandatory" className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border p-3">
+            <span className="min-w-0">{t("transactions.dialog.mandatory")}</span>
+            <Switch id="add-tx-mandatory" name="mandatory" checked={mandatory} onCheckedChange={setMandatory} />
+          </Label>
         </div>
       )}
 
@@ -412,7 +413,7 @@ export function AddTransactionDialog({
         onCloseAutoFocus={(event) => {
           if (openerRef.current?.isConnected) { event.preventDefault(); openerRef.current.focus(); }
         }}
-        className="left-0 top-0 h-[100dvh] max-h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 gap-5 rounded-none border-0 bg-card p-4 data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[464px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border sm:p-6 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]"
+        className="left-0 top-0 grid-cols-1 overflow-x-hidden h-[100dvh] max-h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 gap-5 rounded-none border-0 bg-card p-4 data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[464px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border sm:p-6 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]"
       >
         <DialogTitle className="pr-10 text-base font-semibold leading-6">{t("transactions.dialog.title")}</DialogTitle>
         <AddTransactionForm defaultType={defaultType} onClose={() => setOpen(false)} />

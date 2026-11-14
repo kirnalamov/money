@@ -39,6 +39,31 @@ assert.match(code, /onCloseAutoFocus/);
 assert.match(code, /openerRef\.current\.focus\(\)/);
 assert.match(code, /<Dialog open=\{open\} onOpenChange=\{setOpen\}>/, 'Radix Dialog handles Esc');
 
+// layout: no horizontal overflow (min-w-0 / single minmax(0,1fr) column), no arbitrary font size
+assert.doesNotMatch(code, /text-\[32px\]/);
+assert.match(code, /id="add-tx-amount"[\s\S]*?w-full min-w-0 flex-1/, 'amount input must shrink');
+assert.match(code, /<form [^>]*min-w-0 grid-cols-1/, 'form grid must not grow with content');
+assert.match(code, /grid-cols-1 overflow-x-hidden/, 'DialogContent grid must use a single shrinkable column');
+assert.match(code, /pill = "[^"]*max-w-full/, 'chips must not exceed the dialog');
+
+// switches: whole row is a >=44px label bound by htmlFor/id
+for (const id of ['recurring', 'mandatory']) {
+  assert.match(code, new RegExp(`<Label htmlFor="add-tx-${id}" className="[^"]*min-h-11[^"]*"`));
+  assert.match(code, new RegExp(`<Switch id="add-tx-${id}"`));
+}
+
+// every form control has id and name
+assert.match(code, /id="add-tx-amount"\s+name="amount"/);
+assert.match(code, /<Select name="account"/);
+assert.match(code, /<Select name="toAccount"/);
+assert.match(code, /<Input id="add-tx-description" name="description"/);
+
+// native delete confirm key used elsewhere must exist in both locales
+for (const lang of ['ru', 'en']) {
+  const common = JSON.parse(fs.readFileSync(path.join(__dirname, `../locales/${lang}/translation.json`), 'utf8')).common;
+  assert.ok(common.confirm_delete, `${lang}.common.confirm_delete`);
+}
+
 // hotkey N guards
 const hot = code.slice(code.indexOf('const onKey'), code.indexOf('window.addEventListener("keydown"'));
 assert.match(hot, /event\.defaultPrevented/);
