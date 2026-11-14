@@ -1,5 +1,7 @@
 {
   "common": {
+    "close": "Закрыть",
+    "remove_item": "Удалить: {{name}}",
     "overview": "Обзор",
     "today": "Сегодня",
     "yesterday": "Вчера",

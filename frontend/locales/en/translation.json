@@ -1,5 +1,7 @@
 {
   "common": {
+    "close": "Close",
+    "remove_item": "Remove {{name}}",
     "overview": "Overview",
     "today": "Today",
     "yesterday": "Yesterday",

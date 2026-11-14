@@ -39,7 +39,7 @@ export function DatePickerWithRange({
   compactLabel = false,
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
-  const locale = localeMap[i18n.language] || enUS
+  const locale = localeMap[i18n.language?.slice(0, 2)] || enUS
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -49,21 +49,21 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "h-11 w-full justify-between rounded-full border-[#292F2B] bg-[#111311] px-4 text-left text-[13px] font-medium transition-colors hover:bg-[#191D1A]",
-              !date && "text-muted-foreground"
+              "h-11 w-full justify-between rounded-full border-border bg-card px-4 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent",
+              date && "text-foreground"
             )}
           >
             <span className="flex min-w-0 items-center"><CalendarIcon className="mr-2 h-[17px] w-[17px]" />{date?.from ? (
               date.to ? (
                 <>
-                  {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "dd.MM.yyyy", { locale })} - ${format(date.to, "dd.MM.yyyy", { locale })}`}
+                  {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "P", { locale })} - ${format(date.to, "P", { locale })}`}
                 </>
               ) : (
-                format(date.from, "dd.MM.yyyy", { locale })
+                format(date.from, "P", { locale })
               )
             ) : (
               <span>{t("common.pick_date")}</span>
-            )}</span><ChevronDown className="ml-3 h-4 w-4 shrink-0 text-[#89928B]" />
+            )}</span><ChevronDown className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
           <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] rounded-2xl p-0 shadow-xl" align={align}>
