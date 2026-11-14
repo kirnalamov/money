@@ -178,6 +178,7 @@
     },
     "date_filters": {
       "7d": "7D",
+      "30d": "30D",
       "1m": "1M",
       "3m": "3M",
       "6m": "6M",
@@ -200,12 +201,18 @@
       "savings": "Savings"
     },
     "quick_actions": {
+      "title": "Quick actions",
       "new_expense": "Expense",
       "add_income": "Income",
       "transfer": "Transfer",
       "set_goal": "Save"
     },
-    "recent_transactions": "Recent Transactions"
+    "recent_transactions": "Recent Transactions",
+    "growth": {
+      "title": "Your net worth is growing!",
+      "description": "{{percent}}% more than last month",
+      "action": "Details"
+    }
   },
   "transactions": {
     "dialog": {
