@@ -13,12 +13,14 @@ interface TransactionSummaryProps {
 export function TransactionSummary({ income, expense, net }: TransactionSummaryProps) {
     const { t, i18n } = useTranslation();
     const { defaultCurrency } = useStore();
+    const label = "whitespace-nowrap text-xs text-muted-foreground";
+    const value = "mt-0.5 whitespace-nowrap text-base font-semibold tabular-nums";
 
     return (
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-muted px-4 py-3 md:px-6">
-            <div><p className="text-xs uppercase tracking-[.14em] text-muted-foreground">{t('transactions.summary.total_income')}</p><p className="mt-0.5 text-base font-semibold tabular-nums text-income">{formatMoney(income, defaultCurrency, i18n.language)}</p></div>
-            <div><p className="text-xs uppercase tracking-[.14em] text-muted-foreground">{t('transactions.summary.total_expense')}</p><p className="mt-0.5 text-base font-semibold tabular-nums text-expense">{formatMoney(expense, defaultCurrency, i18n.language)}</p></div>
-            <div className="ml-auto"><p className="text-xs uppercase tracking-[.14em] text-muted-foreground">{t('transactions.summary.net_result')}</p><p className={`mt-0.5 text-lg font-semibold tabular-nums ${net >= 0 ? 'text-income' : 'text-expense'}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-card p-5">
+            <div><p className={label}>{t('transactions.summary.total_income')}</p><p className={`${value} text-income`}>{formatMoney(income, defaultCurrency, i18n.language)}</p></div>
+            <div><p className={label}>{t('transactions.summary.total_expense')}</p><p className={`${value} text-expense`}>{formatMoney(expense, defaultCurrency, i18n.language)}</p></div>
+            <div className="sm:ml-auto"><p className={label}>{t('transactions.summary.net_result')}</p><p className={`${value} ${net >= 0 ? 'text-income' : 'text-expense'}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div>
         </div>
     );
 }

@@ -4,8 +4,9 @@ import { useStore } from "@/lib/store";
 import { format, isToday, isYesterday } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { formatMoney, convertCurrency } from "@/lib/utils";
-import { ShoppingBag, ArrowUpRight, ArrowRightLeft, Wallet } from "lucide-react";
+import { ShoppingBag, ArrowUpRight, ArrowRightLeft, Wallet, Banknote, Home, Utensils, Car, Zap, ShoppingCart, UtensilsCrossed, Clapperboard, Gamepad2, TrendingUp, PiggyBank, Tag, type LucideIcon } from "lucide-react";
 import { Transaction } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,36 @@ const localeMap: Record<string, Locale> = {
     ru: ru,
     en: enUS,
 };
+
+const categoryIcons: Record<string, LucideIcon> = {
+    salary: Banknote,
+    housing: Home,
+    food: Utensils,
+    transport: Car,
+    shopping: ShoppingBag,
+    utilities: Zap,
+    groceries: ShoppingCart,
+    dining_out: UtensilsCrossed,
+    entertainment: Clapperboard,
+    leisure: Gamepad2,
+    investments: TrendingUp,
+    savings: PiggyBank,
+};
+
+// Ключ словаря dashboard.categories.*; сохранённое имя категории не меняется.
+export const categoryKey = (category: string) => category.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+export function getCategoryLabel(t: TFunction, category: string) {
+    const key = categoryKey(category);
+    return /^[\p{L}\d_]+$/u.test(key) ? t(`dashboard.categories.${key}`, { defaultValue: category }) : category;
+}
+
+export function getCategoryIcon(type: string, category: string): LucideIcon {
+    if (type === 'transfer') return ArrowRightLeft;
+    const icon = categoryIcons[categoryKey(category)];
+    if (icon) return icon;
+    return type === 'income' ? ArrowUpRight : Tag;
+}
 
 interface TransactionListProps {
     transactions: Transaction[];
@@ -41,11 +72,12 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
     }, []);
 
     const getAccountName = (id: number | undefined) => accounts.find(a => a.id === id)?.name || t('transactions.unknown_account');
-    const getCategoryName = (category: string) => {
-        const categoryKey = category.toLowerCase();
-        return ['salary', 'transport', 'food', 'housing', 'shopping'].includes(categoryKey)
-            ? t(`dashboard.categories.${categoryKey}`, { defaultValue: category })
-            : category;
+    const getCategoryName = (category: string) => getCategoryLabel(t, category);
+    const lastRowRef = useRef<HTMLElement | null>(null);
+    const openDetails = (tx: Transaction, row: HTMLElement) => {
+        lastRowRef.current = row;
+        setSelectedTx(tx);
+        setIsDetailsOpen(true);
     };
 
     const isAmountSort = sort === 'largest' || sort === 'smallest';
@@ -76,11 +108,10 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         return format(date, 'd MMMM yyyy, EEEE', { locale });
     };
 
-    const getIcon = (type: string) => {
-        if (type === 'income') return <ArrowUpRight className="h-5 w-5 text-emerald-500" />;
-        if (type === 'transfer') return <ArrowRightLeft className="h-5 w-5 text-chart-2" />;
-        // Specific icons based on category name could go here, for now generic expense
-        return <ShoppingBag className="h-5 w-5 text-expense" />;
+    const getIcon = (tx: Transaction) => {
+        const Icon = getCategoryIcon(tx.type, tx.category);
+        const color = tx.type === 'income' ? 'text-income' : tx.type === 'transfer' ? 'text-chart-2' : 'text-expense';
+        return <Icon className={`h-5 w-5 ${color}`} aria-hidden="true" />;
     };
 
     const handleDeleted = (transaction: Transaction) => {
@@ -124,7 +155,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
             {transactions.length === 0 ? (
                 <div className="rounded-xl border border-dashed bg-card px-6 py-12 text-center">
                     <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-medium text-muted-foreground">{emptyMessage || t('transactions.empty_state')}</h3>
+                    <h3 className="text-base font-semibold text-muted-foreground">{emptyMessage || t('transactions.empty_state')}</h3>
                     {emptyAction && <div className="mt-5 flex justify-center">{emptyAction}</div>}
                 </div>
             ) : sortedDates.map((dateKey) => (
@@ -137,15 +168,11 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                             <div
                                 key={tx.id}
                                  className="group flex min-h-[66px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
-                                onClick={() => {
-                                    setSelectedTx(tx);
-                                    setIsDetailsOpen(true);
-                                }}
+                                onClick={(event) => openDetails(tx, event.currentTarget)}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
                                         event.preventDefault();
-                                        setSelectedTx(tx);
-                                        setIsDetailsOpen(true);
+                                        openDetails(tx, event.currentTarget);
                                     }
                                 }}
                                 role="button"
@@ -155,7 +182,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                     <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-income/10' :
                                         tx.type === 'transfer' ? 'bg-chart-2/10' : 'bg-expense/10'
                                         }`}>
-                                        {getIcon(tx.type)}
+                                        {getIcon(tx)}
                                     </div>
                                     <div className="flex min-w-0 flex-col gap-0.5">
                                         <div className="flex min-w-0 items-center gap-2">
@@ -173,10 +200,10 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                                 </>
                                             )}
                                             {tx.description && (
-                                                <>
+                                                <span className="flex min-w-0 items-center gap-1.5">
                                                     <span aria-hidden="true">&middot;</span>
                                                     <span className="max-w-[180px] truncate sm:max-w-[260px]" title={tx.description}>{tx.description}</span>
-                                                </>
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -186,14 +213,14 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                     <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
                                         tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
                                         }`}>
-                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.type === 'income' ? tx.amount : tx.amount, tx.currency, i18n.language, true)}
+                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.amount, tx.currency, i18n.language, tx.type !== 'transfer')}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                         {format(new Date(tx.date), 'HH:mm')}
                                     </span>
                                     {tx.currency !== defaultCurrency && (
                                         <span className="text-xs tabular-nums text-muted-foreground">
-                                            &asymp; {formatMoney(convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language)}
+                                            &asymp; {formatMoney((tx.type === 'expense' ? -1 : 1) * convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language, tx.type !== 'transfer')}
                                         </span>
                                     )}
                                 </div>
@@ -207,6 +234,10 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                 open={isDetailsOpen} 
                 onOpenChange={setIsDetailsOpen}
                 onDeleted={handleDeleted}
+                onCloseAutoFocus={(event) => {
+                    event.preventDefault();
+                    lastRowRef.current?.focus();
+                }}
             />
         </div>
     );

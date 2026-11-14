@@ -194,7 +194,10 @@
       "utilities": "Utilities",
       "groceries": "Groceries",
       "dining_out": "Dining Out",
-      "entertainment": "Entertainment"
+      "entertainment": "Entertainment",
+      "investments": "Investments",
+      "leisure": "Leisure",
+      "savings": "Savings"
     },
     "quick_actions": {
       "new_expense": "Expense",
@@ -213,6 +216,7 @@
     "add_dialog_title": "Add New Transaction",
     "add_dialog_desc": "Record an expense, income, or a transfer between accounts.",
     "currency_after_account": "Account currency",
+    "delete_button": "Delete transaction",
     "edit_dialog_title": "Transaction Details",
     "edit_dialog_desc": "View or update transaction details.",
     "confirm_delete": "Are you sure you want to delete this transaction?",

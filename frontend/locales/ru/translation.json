@@ -195,7 +195,10 @@
       "utilities": "Коммунальные",
       "groceries": "Продукты",
       "dining_out": "Рестораны",
-      "entertainment": "Развлечения"
+      "entertainment": "Развлечения",
+      "investments": "Инвестиции",
+      "leisure": "Досуг",
+      "savings": "Накопления"
     },
     "quick_actions": {
       "title": "Быстрые действия",
@@ -220,6 +223,7 @@
     "add_dialog_title": "Новая операция",
     "add_dialog_desc": "Запишите расход, доход или перевод между счетами.",
     "currency_after_account": "Валюта счёта",
+    "delete_button": "Удалить операцию",
     "edit_dialog_title": "Детали операции",
     "edit_dialog_desc": "Просмотрите или обновите детали операции.",
     "confirm_delete": "Вы уверены, что хотите удалить эту операцию?",

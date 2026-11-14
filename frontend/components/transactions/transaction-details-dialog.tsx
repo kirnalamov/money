@@ -28,12 +28,14 @@ import { MultiSelectCreatable } from '@/components/ui/multi-select-creatable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted?: (transaction: Transaction) => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 interface TransactionDetailsFormProps extends Omit<TransactionDetailsDialogProps, 'transaction'> {
@@ -46,8 +48,9 @@ export function TransactionDetailsDialog(props: TransactionDetailsDialogProps) {
   return <TransactionDetailsForm key={props.transaction.id} {...props} transaction={props.transaction} />;
 }
 
-function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: TransactionDetailsFormProps) {
-  const { t } = useTranslation();
+function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted, onCloseAutoFocus }: TransactionDetailsFormProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'ru' ? ru : enUS;
   const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction } = useStore();
 
   const [type, setType] = useState<TransactionType>(transaction.type);
@@ -138,11 +141,11 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{t('transactions.edit_dialog_title') || 'Transaction Details'}</DialogTitle>
-            <Button variant="ghost" size="icon" className="text-expense hover:text-expense hover:bg-expense/10" onClick={handleDelete}>
+            <Button type="button" variant="ghost" size="icon" aria-label={t('transactions.delete_button')} className="h-11 w-11 text-expense hover:text-expense hover:bg-expense/10" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -184,7 +187,7 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: 
                 onChange={(e) => setAmount(e.target.value)}
                 min="0.01"
                 required
-                className="pl-8"
+                className="pl-14"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
                 {transaction.currency}
@@ -201,6 +204,11 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted }: 
               onChange={(e) => setDate(e.target.value)}
               required
             />
+            {!Number.isNaN(new Date(date).getTime()) && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {format(new Date(date), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">
