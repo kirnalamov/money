@@ -101,7 +101,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         });
 
     const getDateLabel = (dateKey: string) => {
-        if (dateKey === 'all') return t(`transactions.filters.sort_${sort}`);
+        if (dateKey === 'all') return t('transactions.all_operations');
         const date = new Date(dateKey);
         if (isToday(date)) return t('common.today') || 'Today';
         if (isYesterday(date)) return t('common.yesterday') || 'Yesterday';

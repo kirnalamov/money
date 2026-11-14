@@ -39,7 +39,7 @@ test('details dialog: prefix padding, delete label, localized preview, ISO uncha
   assert.match(details, /aria-label=\{t\('transactions\.delete_button'\)\}/);
   assert.match(details, /h-11 w-11/);
   assert.match(details, /d MMMM yyyy, HH:mm', \{ locale: dateLocale \}/);
-  assert.match(details, /date: parsedDate\.toISOString\(\)/);
+  assert.match(details, /parsedDate\.toISOString\(\)/);
 });
 
 test('page: H1 outside card, skeleton and retry state; summary unsigned totals', () => {

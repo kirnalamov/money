@@ -29,6 +29,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
+import { getCategoryLabel } from './transaction-list';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
@@ -60,7 +61,8 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted, on
   const [toAccountId, setToAccountId] = useState(transaction.toAccountId?.toString() || '');
   const [category, setCategory] = useState(transaction.category);
   const [tags, setTags] = useState<string[]>(transaction.tags || []);
-  const [date, setDate] = useState(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
+  const [initialDate] = useState(() => format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
+  const [date, setDate] = useState(initialDate);
   const [isRecurring, setIsRecurring] = useState(!!transaction.isRecurring);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +116,8 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted, on
         description,
         tags,
         isRecurring,
-        date: parsedDate.toISOString(),
+        // Поле даты без секунд: если не менялось, сохраняем исходный ISO.
+        date: date === initialDate ? transaction.date : parsedDate.toISOString(),
       });
 
       onOpenChange(false);
@@ -267,7 +270,7 @@ function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted, on
           <div className="grid gap-2">
             <Label htmlFor="category">{t('transactions.category')}</Label>
             <CreatableCombobox
-              options={categories.map(c => ({ label: c.name, value: c.name }))}
+              options={categories.map(c => ({ label: getCategoryLabel(t, c.name), value: c.name }))}
               value={category}
               onChange={setCategory}
               placeholder={t('transactions.placeholders.category')}

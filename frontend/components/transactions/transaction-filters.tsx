@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { TransactionType } from "@/types";
-import { getCategoryLabel } from "./transaction-list";
+import { categoryKey, getCategoryLabel } from "./transaction-list";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type TransactionSort = 'newest' | 'oldest' | 'largest' | 'smallest';
@@ -52,6 +52,10 @@ export function TransactionFilters({
 }: TransactionFiltersProps) {
     const { t } = useTranslation();
     const { accounts } = useStore();
+    // 'salary' и 'Salary' — одна метка; выбранное значение приоритетно, чтобы Select его нашёл.
+    const uniqueCategories = Array.from(new Map(
+        [...categoryOptions].reverse().map((item) => [categoryKey(item), item] as const)
+    ).values()).reverse().map((item) => (categoryKey(item) === categoryKey(category) ? category : item));
 
     return (
         <div className="space-y-3">
@@ -79,7 +83,7 @@ export function TransactionFilters({
                      <PopoverContent align="end" className="space-y-3 border-border bg-muted">
                         <p className="text-sm font-semibold">{t('transactions.filters.title')}</p>
                         <Select value={type} onValueChange={(val) => setType(val as TransactionType | 'all')}><SelectTrigger className="h-11 min-w-11 focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.type')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t('transactions.filters.all_types')}</SelectItem><SelectItem value="expense">{t('transactions.types.expense')}</SelectItem><SelectItem value="income">{t('transactions.types.income')}</SelectItem><SelectItem value="transfer">{t('transactions.types.transfer')}</SelectItem></SelectContent></Select>
-                        <Select value={category} onValueChange={setCategory}><SelectTrigger className="h-11 min-w-11 focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.category')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t('transactions.filters.all_categories')}</SelectItem>{categoryOptions.map((item) => <SelectItem key={item} value={item}>{getCategoryLabel(t, item)}</SelectItem>)}</SelectContent></Select>
+                        <Select value={category} onValueChange={setCategory}><SelectTrigger className="h-11 min-w-11 focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.category')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t('transactions.filters.all_categories')}</SelectItem>{uniqueCategories.map((item) => <SelectItem key={item} value={item}>{getCategoryLabel(t, item)}</SelectItem>)}</SelectContent></Select>
                         <Select value={accountId} onValueChange={setAccountId}><SelectTrigger className="h-11 min-w-11 focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.account')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t('transactions.filters.all_accounts')}</SelectItem>{accounts.map(acc => <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name} ({acc.currency})</SelectItem>)}</SelectContent></Select>
                         <Button type="button" variant="ghost" onClick={resetFilters} disabled={activeFilterCount === 0}><X className="mr-2 h-4 w-4" />{t('common.reset')}</Button>
                     </PopoverContent>
