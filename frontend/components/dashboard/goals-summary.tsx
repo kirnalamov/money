@@ -2,14 +2,14 @@
 
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
-import { formatCurrency } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 import { Target, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link"; // Assuming next/link is available, or use router
 
 export function GoalsSummary() {
     const { goals } = useStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     // Take top 3 goals by priority (or just first 3 for now)
     const displayGoals = goals.slice(0, 3);
@@ -33,7 +33,7 @@ export function GoalsSummary() {
         <div className="rounded-[1.5rem] border bg-card p-5">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold leading-snug">{t("dashboard.goals_title")}</h3>
-                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                <Button variant="ghost" size="icon" className="h-11 w-11" asChild>
                     <Link href="/savings" aria-label={t("dashboard.goals_title")}><ChevronRight className="h-4 w-4" /></Link>
                 </Button>
             </div>
@@ -41,13 +41,13 @@ export function GoalsSummary() {
             <div className="space-y-3 overflow-hidden">
                 {displayGoals.map((goal, index) => {
                     const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
-                    const color = ["#b9df61", "#83b8e8", "#c3a4e8"][index];
+                    const color = `hsl(var(--chart-${index + 1}))`;
 
                     return (
                         <div key={goal.id} className="space-y-1">
                             <div className="flex justify-between text-sm">
                                 <span className="font-medium truncate">{goal.name}</span>
-                                <span className="text-muted-foreground">{progress}%</span>
+                                <span className="tabular-nums text-muted-foreground">{progress}%</span>
                             </div>
                             <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                                 <div
@@ -56,8 +56,8 @@ export function GoalsSummary() {
                                 />
                             </div>
                             <div className="flex flex-wrap justify-between gap-x-2 text-sm text-muted-foreground">
-                                <span>{formatCurrency(goal.currentAmount, goal.currency)}</span>
-                                <span>{formatCurrency(goal.targetAmount, goal.currency)}</span>
+                                <span className="tabular-nums">{formatMoney(goal.currentAmount, goal.currency, i18n.language)}</span>
+                                <span className="tabular-nums">{formatMoney(goal.targetAmount, goal.currency, i18n.language)}</span>
                             </div>
                         </div>
                     )

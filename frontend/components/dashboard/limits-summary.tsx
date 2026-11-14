@@ -2,16 +2,14 @@
 
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatCurrency, convertCurrency } from "@/lib/utils";
+import { formatMoney, formatPercent, convertCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { calculateLimitSpent } from "@/lib/limit-utils";
 
-// Categories are now fetched from store with their colors
-
 export function LimitsSummary() {
-  const { t } = useTranslation();
-  const { limits, transactions, defaultCurrency, categories } = useStore();
+  const { t, i18n } = useTranslation();
+  const { limits, transactions, defaultCurrency } = useStore();
 
   return (
     <div className="rounded-[1.5rem] border bg-card p-5 text-card-foreground">
@@ -21,7 +19,7 @@ export function LimitsSummary() {
       {limits.filter(limit => limit.period === 'monthly').length === 0 ? (
         <div className="py-2 text-sm text-muted-foreground">
           <p>{t("dashboard.empty.limits_title")}</p>
-          <Button variant="link" size="sm" asChild className="mt-1 h-auto px-0">
+          <Button variant="link" size="sm" asChild className="mt-1 min-h-[44px] px-0">
             <Link href="/limits">{t("dashboard.empty.limits_action")}</Link>
           </Button>
         </div>
@@ -32,28 +30,31 @@ export function LimitsSummary() {
           const calculatedSpent = convertCurrency(spentInLimitCurrency, limit.currency, defaultCurrency);
 
           const convertedLimit = convertCurrency(limit.amount, limit.currency, defaultCurrency);
-          const percentage = convertedLimit > 0 ? Math.min(100, (calculatedSpent / convertedLimit) * 100) : 0;
-          
-          // Try to find category in store for color
-          const storeCategory = categories.find(c => c.name === limit.category);
-          const categoryColor = storeCategory?.color || "#10b981"; // Fallback to green
+          // Реальный процент (может быть >100), полоса ограничена 100% визуально
+          const percentage = convertedLimit > 0 ? (calculatedSpent / convertedLimit) * 100 : 0;
+          const over = percentage > 100;
+          const warn = percentage >= 80 && !over;
+          const barColor = over ? "bg-expense" : warn ? "bg-warning" : "bg-primary";
+          const textColor = over ? "text-expense" : warn ? "text-warning" : "text-muted-foreground";
+          const key = limit.category.toLowerCase();
+          const name = /^[\p{L}_ ]+$/u.test(key) ? t(`dashboard.categories.${key}`, { defaultValue: limit.category }) : limit.category;
+          const money = (value: number) => formatMoney(value, defaultCurrency, i18n.language);
+          const caption = over
+            ? t("dashboard.limit_status.exceeded", { amount: money(calculatedSpent - convertedLimit) })
+            : warn
+              ? t("dashboard.limit_status.remaining", { amount: money(convertedLimit - calculatedSpent) })
+              : t("dashboard.limit_status.of", { spent: money(calculatedSpent), limit: money(convertedLimit) });
 
            return (
              <div key={limit.id} className="space-y-1">
-               <div className="flex justify-between text-sm">
-                 <span className="truncate font-medium" title={limit.category}>{t(limit.category, { defaultValue: limit.category })}</span>
-                 <span className="text-muted-foreground">{Math.round(percentage)}%</span>
+               <div className="flex justify-between gap-2 text-sm">
+                 <span className="truncate font-medium" title={name}>{name}</span>
+                 <span className={`shrink-0 font-medium tabular-nums ${textColor}`}>{formatPercent(percentage, i18n.language, false, 0)}</span>
                </div>
                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                 <div
-                   className="h-full"
-                   style={{ width: `${percentage}%`, backgroundColor: categoryColor }}
-                 />
+                 <div className={`h-full ${barColor}`} style={{ width: `${Math.min(100, percentage)}%` }} />
                </div>
-               <div className="flex flex-wrap justify-between gap-x-2 text-sm text-muted-foreground">
-                 <span>{formatCurrency(calculatedSpent, defaultCurrency)}</span>
-                 <span>{formatCurrency(convertedLimit, defaultCurrency)}</span>
-               </div>
+               <p className={`text-sm tabular-nums ${textColor}`}>{caption}</p>
              </div>
           );
           })}

@@ -44,7 +44,7 @@ export function getFinancialHealth(
 }
 
 export function getFinancialHealthColor(status: FinancialHealth): string {
-  if (status === "negative") return "#F27683";
-  if (status === "positive") return "#C0F05C";
-  return "#F2C45E";
+  if (status === "negative") return "hsl(var(--expense))";
+  if (status === "positive") return "hsl(var(--income))";
+  return "hsl(var(--warning))";
 }

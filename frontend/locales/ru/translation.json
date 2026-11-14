@@ -107,6 +107,11 @@
       "month_change": "Изменение за месяц:"
     },
     "goals_title": "Цели",
+    "limit_status": {
+      "of": "{{spent}} из {{limit}}",
+      "remaining": "Осталось {{amount}}",
+      "exceeded": "Превышено на {{amount}}"
+    },
     "empty": {
       "accounts_title": "Счета пока не добавлены",
       "accounts_description": "Добавьте первый счёт, чтобы видеть баланс и капитал.",

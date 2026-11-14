@@ -107,6 +107,11 @@
     },
     "vs_last_month": "vs last month",
     "goals_title": "Goals",
+    "limit_status": {
+      "of": "{{spent}} of {{limit}}",
+      "remaining": "{{amount}} left",
+      "exceeded": "Exceeded by {{amount}}"
+    },
     "empty": {
       "accounts_title": "No accounts yet",
       "accounts_description": "Add your first account to see balances and net worth metrics.",
