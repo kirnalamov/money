@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { convertCurrency, formatMoney } from "@/lib/utils";
+import { convertCurrency, formatMoney, formatPercent } from "@/lib/utils";
 import { startOfMonth, subMonths, getDaysInMonth } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -86,6 +86,7 @@ export function SpendVelocityChart() {
     const velocityDiff = currentTotal - prevTotalAtSameDay;
     const velocityPercent = prevTotalAtSameDay > 0 ? (velocityDiff / prevTotalAtSameDay) * 100 : 0;
     const isSpendingFaster = velocityDiff > 0;
+    const isSamePace = Math.abs(velocityPercent) < 0.05; // rounds to 0.0%
 
     return (
         <Card className="bg-card border rounded-2xl p-5 h-full">
@@ -97,16 +98,16 @@ export function SpendVelocityChart() {
                     </div>
                     <div className={cn(
                         "px-2 py-1 rounded text-xs font-bold text-nowrap",
-                        isSpendingFaster ? "bg-expense/10 text-expense" : "bg-income/10 text-income"
+                        isSamePace ? "bg-muted text-muted-foreground" : isSpendingFaster ? "bg-expense/10 text-expense" : "bg-income/10 text-income"
                     )}>
-                        {isSpendingFaster ? "+" : ""}{velocityPercent.toFixed(1)}% {isSpendingFaster ? t('analytics.velocity.faster') : t('analytics.velocity.slower')}
+                        {isSamePace ? t('analytics.velocity.same') : `${formatPercent(velocityPercent, i18n.language, true)} ${isSpendingFaster ? t('analytics.velocity.faster') : t('analytics.velocity.slower')}`}
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <div ref={chartRef} className="h-[250px] w-full min-w-0">
+                <div ref={chartRef} role="img" aria-label={t('analytics.velocity.chart_aria')} className="h-[250px] w-full min-w-0">
                     {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={250}>
-                        <LineChart data={mergedData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                        <LineChart data={mergedData} margin={{ top: 5, right: 16, left: 16, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis
                                 dataKey="day"
@@ -114,7 +115,9 @@ export function SpendVelocityChart() {
                                 domain={[1, maxDays]}
                                 tickLine={false}
                                 axisLine={false}
-                                fontSize={12}
+                                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                                minTickGap={32}
+                                tickMargin={8}
                                 tickFormatter={(val) => `${t('analytics.velocity.day')} ${val}`}
                             />
                             <YAxis
@@ -129,7 +132,7 @@ export function SpendVelocityChart() {
                                 ]}
                                 labelFormatter={(day) => `${t('analytics.velocity.day')} ${day}`}
                             />
-                            <Legend verticalAlign="top" height={36} iconType="circle" />
+                            <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                             <Line
                                 type="monotone"
                                 dataKey="previous"
@@ -144,7 +147,7 @@ export function SpendVelocityChart() {
                                 type="monotone"
                                 dataKey="current"
                                 name={t('analytics.velocity.current_month')}
-                                stroke="hsl(var(--primary))"
+                                stroke="hsl(var(--chart-1))"
                                 strokeWidth={3}
                                 dot={false}
                                 activeDot={{ r: 6 }}
@@ -155,11 +158,15 @@ export function SpendVelocityChart() {
                 </div>
                 <div className={cn(
                     "mt-3 text-xs p-2.5 rounded-lg border flex items-center justify-center gap-2 transition-colors",
-                    isSpendingFaster
-                        ? "bg-expense/5 border-expense/20 text-expense "
-                        : "bg-income/5 border-emerald-500/10 text-income "
+                    isSamePace
+                        ? "bg-muted border-border text-muted-foreground"
+                        : isSpendingFaster
+                        ? "bg-expense/5 border-expense/20 text-expense"
+                        : "bg-income/5 border-income/20 text-income"
                 )}>
-                    {isSpendingFaster ? (
+                    {isSamePace ? (
+                        <span>{t('analytics.velocity.same')}</span>
+                    ) : isSpendingFaster ? (
                         <>
                             <span className="font-semibold">{t('analytics.velocity.caution')}:</span>
                             <span>{t('analytics.velocity.outpacing', { amount: formatMoney(velocityDiff, defaultCurrency, i18n.language) })}</span>

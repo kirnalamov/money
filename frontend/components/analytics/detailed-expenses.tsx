@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, PieChart, Pie, Legend } from "recharts";
-import { formatMoney, convertCurrency } from "@/lib/utils";
+import { formatMoney, formatPercent, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
@@ -24,7 +24,7 @@ interface DetailedExpensesProps {
 type ChartType = 'pie' | 'bar';
 
 export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
-    const { transactions, defaultCurrency, accounts, categories } = useStore();
+    const { transactions, defaultCurrency, accounts } = useStore();
     const { t, i18n } = useTranslation();
     const categoryLabel = (name: string) => t(`dashboard.categories.${name.toLowerCase()}`, { defaultValue: name });
     const [chartType, setChartType] = useState<ChartType>('pie');
@@ -99,8 +99,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
 
     const data = Object.entries(categoryData)
         .map(([name, value]) => {
-            const catObj = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
-            return { name: categoryLabel(name), value, color: catObj?.color };
+            return { name: categoryLabel(name), value };
         })
         .sort((a, b) => b.value - a.value);
 
@@ -124,7 +123,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
     const forecast = calculateForecast(transactions, accounts, defaultCurrency);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 items-stretch lg:grid-cols-4 gap-5">
             {/* Main Content (Charts & Stats) */}
             <div className="lg:col-span-3 space-y-6">
 
@@ -134,7 +133,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                         <AlertTriangle className="h-4 w-4 text-destructive" />
                         <AlertTitle className="text-destructive font-semibold">{t('analytics.forecast.uncategorized_warning_title')}</AlertTitle>
                         <AlertDescription className="flex items-center justify-between text-xs sm:text-sm mt-1">
-                            <span>{t('analytics.forecast.uncategorized_warning_desc', { percent: uncategorizedShare.toFixed(1) })}</span>
+                            <span>{t('analytics.forecast.uncategorized_warning_desc', { percent: formatPercent(uncategorizedShare, i18n.language) })}</span>
                         </AlertDescription>
                     </Alert>
                 )}
@@ -151,13 +150,13 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-base text-muted-foreground flex justify-between items-center">
                                     <span>{t('analytics.forecast.title')}</span>
-                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                    <span className="text-xs bg-income/10 text-income px-2 py-0.5 rounded-full font-medium">
                                         {t('analytics.forecast.active')}
                                     </span>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-3xl font-bold mt-1">
+                                <div className="text-2xl font-bold tabular-nums mt-1">
                                     {formatMoney(forecast.projectedSpend, defaultCurrency, i18n.language)}
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground flex items-center justify-between">
@@ -167,7 +166,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                 <div className="w-full bg-secondary h-2 rounded-full mt-3 overflow-hidden">
                                     <div
                                         className="bg-primary h-full transition-all duration-500"
-                                        style={{ width: `${Math.min(100, (forecast.currentSpend / forecast.projectedSpend) * 100)}%` }}
+                                        style={{ width: `${forecast.projectedSpend > 0 ? Math.min(100, (forecast.currentSpend / forecast.projectedSpend) * 100) : 0}%` }}
                                     />
                                 </div>
                             </CardContent>
@@ -210,9 +209,9 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold truncate">{topCategory?.name || t('common.no_data')}</div>
+                            <div className="text-2xl font-bold truncate">{topCategory?.name || t('analytics.common.no_data')}</div>
                             <p className="text-xs text-muted-foreground mt-1">
-                                {topCategory ? `${((topCategory.value / totalSpend) * 100).toFixed(1)}% ${t('analytics.stats.of_total')}` : t('common.no_data')}
+                                {topCategory ? `${formatPercent((topCategory.value / totalSpend) * 100, i18n.language)} ${t('analytics.stats.of_total')}` : t('analytics.common.no_data')}
                             </p>
                         </CardContent>
                     </Card>
@@ -228,7 +227,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                         <CardContent>
                             <div className="text-2xl font-bold">{formatMoney(totalFixed, defaultCurrency, i18n.language)}</div>
                             <p className="text-xs text-muted-foreground">
-                                {fixedRatio.toFixed(0)}{t('analytics.stats.of_total_spending')}
+                                {formatPercent(fixedRatio, i18n.language, false, 0)} {t('analytics.stats.of_total_spending')}
                             </p>
                         </CardContent>
                     </Card>
@@ -240,7 +239,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                         <CardContent>
                             <div className="text-2xl font-bold">{formatMoney(totalVariable, defaultCurrency, i18n.language)}</div>
                             <p className="text-xs text-muted-foreground">
-                                {(100 - fixedRatio).toFixed(0)}{t('analytics.stats.of_total_spending')}
+                                {formatPercent(100 - fixedRatio, i18n.language, false, 0)} {t('analytics.stats.of_total_spending')}
                             </p>
                         </CardContent>
                     </Card>
@@ -250,34 +249,36 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                 <Card className="p-6 h-[500px] bg-card border rounded-2xl p-5 flex flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h3 className="font-semibold text-lg">{t('analytics.breakdown.title')}</h3>
+                            <h3 className="font-semibold text-base">{t('analytics.breakdown.title')}</h3>
                             <p className="text-sm text-muted-foreground">{t('analytics.breakdown.subtitle')}</p>
                         </div>
                         <div className="flex bg-muted p-1 rounded-lg shrink-0">
                             <Button
                                 variant={chartType === 'pie' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-11 min-w-11 px-2 text-xs focus-visible:ring-2"
+                                className="h-11 min-w-11 px-3 text-xs focus-visible:ring-2"
+                                aria-label={t('dashboard.charts.chart_types.pie')}
+                                aria-pressed={chartType === 'pie'}
                                 onClick={() => setChartType('pie')}
                             >
-                                <PieIcon className="w-4 h-4 mr-2" />
+                                <PieIcon className="w-4 h-4 sm:mr-2" aria-hidden="true" />
                                 <span className="hidden sm:inline">{t('dashboard.charts.chart_types.pie')}</span>
-                                <span className="sm:hidden">{t('dashboard.charts.chart_types.pie').slice(0, 1)}</span>
                             </Button>
                             <Button
                                 variant={chartType === 'bar' ? 'secondary' : 'ghost'}
                                 size="sm"
-                                className="h-11 min-w-11 px-2 text-xs focus-visible:ring-2"
+                                className="h-11 min-w-11 px-3 text-xs focus-visible:ring-2"
+                                aria-label={t('dashboard.charts.chart_types.bar')}
+                                aria-pressed={chartType === 'bar'}
                                 onClick={() => setChartType('bar')}
                             >
-                                <BarIcon className="w-4 h-4 mr-2" />
+                                <BarIcon className="w-4 h-4 sm:mr-2" aria-hidden="true" />
                                 <span className="hidden sm:inline">{t('dashboard.charts.chart_types.bar')}</span>
-                                <span className="sm:hidden">{t('dashboard.charts.chart_types.bar').slice(0, 1)}</span>
                             </Button>
                         </div>
                     </div>
 
-                    <div ref={chartRef} className="flex-1 w-full min-h-0 min-w-0">
+                    <div ref={chartRef} role="img" aria-label={t('analytics.breakdown.chart_aria')} className="flex-1 w-full min-h-0 min-w-0">
                         {data.length === 0 ? (
                             <div className="flex items-center justify-center h-full text-muted-foreground">
                                 {t('analytics.common.no_data')}
@@ -296,7 +297,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                             dataKey="value"
                                         >
                                             {data.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} strokeWidth={2} stroke="hsl(var(--card))" />
+                                                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} strokeWidth={2} stroke="hsl(var(--card))" />
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -307,10 +308,10 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
                                 ) : (
-                                    <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                    <BarChart data={data} layout="vertical" margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                                         <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                                        <YAxis dataKey="name" type="category" width={96} tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} tickLine={false} axisLine={false} />
                                         <Tooltip
                                             cursor={{ fill: 'hsl(var(--accent))', opacity: 0.1 }}
                                             contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
@@ -319,7 +320,7 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
                                         />
                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                             {data.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
+                                                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -331,8 +332,8 @@ export function DetailedExpenses({ dateRange }: DetailedExpensesProps) {
             </div>
 
             {/* Settings Sidebar */}
-            <div className="space-y-6">
-                <Card className="bg-card border rounded-2xl p-5">
+            <div className="flex">
+                <Card className="bg-card border rounded-2xl p-5 w-full">
                     <CardHeader>
                         <CardTitle className="text-base">{t('analytics.settings.title')}</CardTitle>
                         <CardDescription>{t('analytics.settings.subtitle')}</CardDescription>

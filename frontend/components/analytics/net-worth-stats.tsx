@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney, convertCurrency } from "@/lib/utils";
+import { formatMoney, formatPercent, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Wallet, Landmark, PiggyBank } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -32,13 +32,13 @@ export function NetWorthStats() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="bg-primary/5 border-primary/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-primary">
+                    <CardTitle className="text-sm font-medium text-income">
                         {t('dashboard.net_worth_total')}
                     </CardTitle>
-                    <Wallet className="h-4 w-4 text-primary" />
+                    <Wallet className="h-4 w-4 text-income" aria-hidden="true" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-primary">
+                    <div className="text-2xl font-bold tabular-nums text-income">
                         {formatMoney(stats.total, defaultCurrency, i18n.language)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center">
@@ -55,11 +55,11 @@ export function NetWorthStats() {
                     <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold tabular-nums">
                         {formatMoney(stats.liquid, defaultCurrency, i18n.language)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                        {stats.total > 0 ? `${((stats.liquid / stats.total) * 100).toFixed(1)}% ` : ""}{t('analytics.stats.of_total')}
+                        {stats.total > 0 ? `${formatPercent((stats.liquid / stats.total) * 100, i18n.language)} ` : ""}{t('analytics.stats.of_total')}
                     </p>
                 </CardContent>
             </Card>

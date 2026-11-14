@@ -61,17 +61,17 @@ export function SpendingHeatmap() {
             maxDayIndex = parseInt(dayIndex);
         }
     });
-    const peakDay = maxDayValue > 0 ? t(`analytics.habits.days.${daysOfWeek[maxDayIndex]}`) : t('common.no_data');
+    const peakDay = maxDayValue > 0 ? t(`analytics.habits.days.${daysOfWeek[maxDayIndex]}`) : t('analytics.common.no_data');
 
     // Determine color intensity
     const getIntensityClass = (value: number) => {
         if (value === 0) return "bg-muted/20";
         const ratio = value / maxSpend;
-        if (ratio < 0.2) return "bg-income/20"; // Very low
-        if (ratio < 0.4) return "bg-income/40";
-        if (ratio < 0.6) return "bg-income/60";
-        if (ratio < 0.8) return "bg-income/80";
-        return "bg-income"; // Max
+        if (ratio < 0.2) return "bg-expense/20"; // Very low
+        if (ratio < 0.4) return "bg-expense/40";
+        if (ratio < 0.6) return "bg-expense/60";
+        if (ratio < 0.8) return "bg-expense/80";
+        return "bg-expense"; // Max
     };
 
     return (
@@ -83,7 +83,10 @@ export function SpendingHeatmap() {
             <CardContent className="flex-1 flex flex-col justify-between min-h-0">
                 <div
                     ref={scrollRef}
-                    className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 custom-scrollbar pl-1 flex-1 items-center"
+                    role="group"
+                    tabIndex={0}
+                    aria-label={t('analytics.habits.grid_aria')}
+                    className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 custom-scrollbar pl-1 flex-1 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     {/* 
                        Simple grid approach:
@@ -103,6 +106,8 @@ export function SpendingHeatmap() {
                                                     "w-3 h-3 rounded-[2px] transition-all hover:ring-2 hover:ring-ring hover:scale-110",
                                                     getIntensityClass(value)
                                                 )}
+                                                role="img"
+                                                aria-label={`${format(day, 'PPP', { locale: i18n.language.startsWith('ru') ? ru : enUS })}: ${formatMoney(value, defaultCurrency, i18n.language)}`}
                                             />
                                         </TooltipTrigger>
                                         <TooltipContent side="top">
@@ -120,14 +125,14 @@ export function SpendingHeatmap() {
                         <span>{t('analytics.habits.less')}</span>
                         <div className="flex gap-1">
                             <div className="w-2 h-2 rounded-[1px] bg-muted/20" />
-                            <div className="w-2 h-2 rounded-[1px] bg-income/20" />
-                            <div className="w-2 h-2 rounded-[1px] bg-income/60" />
-                            <div className="w-2 h-2 rounded-[1px] bg-income" />
+                            <div className="w-2 h-2 rounded-[1px] bg-expense/20" />
+                            <div className="w-2 h-2 rounded-[1px] bg-expense/60" />
+                            <div className="w-2 h-2 rounded-[1px] bg-expense" />
                         </div>
                         <span>{t('analytics.habits.more')}</span>
                     </div>
                     {maxDayValue > 0 && (
-                        <div className="text-xs font-medium text-income bg-income/10 px-2 py-0.5 rounded-full">
+                        <div className="text-xs font-medium text-expense bg-expense/10 px-2 py-0.5 rounded-full">
                             {t('analytics.habits.peak')}: {peakDay}
                         </div>
                     )}

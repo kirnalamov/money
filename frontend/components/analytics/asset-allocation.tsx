@@ -1,23 +1,15 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { useMemo, useEffect, useRef, useState } from "react";
-import { convertCurrency, formatMoney } from "@/lib/utils";
+import { useMemo } from "react";
+import { convertCurrency, formatMoney, formatMoneyCompact, formatPercent } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AssetAllocation() {
     const { t, i18n } = useTranslation();
     const { accounts, defaultCurrency } = useStore();
-    const chartRef = useRef<HTMLDivElement>(null);
-    const [chartWidth, setChartWidth] = useState(0);
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
-        observer.observe(chartRef.current);
-        return () => observer.disconnect();
-    }, []);
 
     const data = useMemo(() => {
         const groups: Record<string, number> = {};
@@ -52,57 +44,60 @@ export function AssetAllocation() {
         return keyMap[key] || key;
     };
 
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    const chartLabel = `${t('portfolio.allocation_title')}: ${data.map((item) => `${getLabel(item.name)} ${formatPercent(item.percent, i18n.language)}`).join(', ')}`;
+
     return (
         <Card className="h-full">
             <CardHeader>
-                <CardTitle>{t('portfolio.allocation_title')}</CardTitle>
+                <CardTitle className="text-base">{t('portfolio.allocation_title')}</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div ref={chartRef} className="h-[300px] w-full min-w-0" aria-label={t('portfolio.allocation_title')}>
-                    {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={300}>
-                        <PieChart>
-                            <Pie
-                                data={data}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                formatter={(value: number, name) => [formatMoney(value, defaultCurrency, i18n.language), getLabel(String(name))]}
-                                contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                            />
-                            <Legend
-                                layout="vertical"
-                                verticalAlign="middle"
-                                align="right"
-                                content={() => (
-                                    <ul aria-label={t('portfolio.allocation_title')}>
-                                        {data.map((item, index) => (
-                                            <li key={item.name} className="flex items-center">
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="h-2.5 w-2.5 rounded-full"
-                                                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                                />
-                                                <span className="text-sm text-muted-foreground ml-2">
-                                                    {getLabel(item.name)} ({item.percent.toFixed(1)}%)
-                                                </span>
-                                            </li>
+            <CardContent className="flex flex-1 items-center">
+                {data.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t('analytics.common.no_data')}</p>
+                ) : (
+                    <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
+                        <div role="img" aria-label={chartLabel} className="relative h-[180px] w-full min-w-0 max-w-[180px] shrink-0">
+                            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
+                                <span className="max-w-[96px] whitespace-nowrap text-center text-base font-bold leading-none tabular-nums">{formatMoneyCompact(total, defaultCurrency, i18n.language)}</span>
+                                <span className="mt-1 text-xs text-muted-foreground">{t('dashboard.charts.total')}</span>
+                            </div>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180} initialDimension={{ width: 180, height: 180 }}>
+                                <PieChart>
+                                    <Pie
+                                        data={data}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={64}
+                                        outerRadius={82}
+                                        paddingAngle={3}
+                                        dataKey="value"
+                                        stroke="hsl(var(--card))"
+                                        strokeWidth={2}
+                                    >
+                                        {data.map((entry, index) => (
+                                            <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                                         ))}
-                                    </ul>
-                                )}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>}
-                </div>
+                                    </Pie>
+                                    <Tooltip
+                                        formatter={(value: number, name) => [formatMoney(value, defaultCurrency, i18n.language), getLabel(String(name))]}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <ul aria-label={t('portfolio.allocation_title')} className="w-full min-w-0 space-y-2 sm:w-auto">
+                            {data.map((item, index) => (
+                                <li key={item.name} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                    <span className="min-w-0 truncate">{getLabel(item.name)}</span>
+                                    <span className="ml-auto whitespace-nowrap tabular-nums text-foreground sm:ml-2">{formatPercent(item.percent, i18n.language)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

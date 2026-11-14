@@ -2,7 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
-import { formatMoney, convertCurrency } from "@/lib/utils";
+import { formatMoney, formatMoneyCompact, convertCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
@@ -14,7 +14,7 @@ interface DetailedTagsProps {
 }
 
 export function DetailedTags({ dateRange }: DetailedTagsProps) {
-    const { transactions, defaultCurrency, accounts, tags } = useStore();
+    const { transactions, defaultCurrency, accounts } = useStore();
     const { t, i18n } = useTranslation();
     const chartRef = useRef<HTMLDivElement>(null);
     const [chartWidth, setChartWidth] = useState(0);
@@ -55,8 +55,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
 
     const data = Object.entries(tagDataMap)
         .map(([key, stats]) => {
-            const tagObj = tags.find(t => t.name.toLowerCase() === key.toLowerCase());
-            return { name: key, color: tagObj?.color, ...stats };
+            return { name: key, ...stats };
         })
         .sort((a, b) => b.value - a.value);
 
@@ -93,7 +92,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         <Award className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{topTag?.name || t('common.no_data')}</div>
+                        <div className="text-2xl font-bold">{topTag?.name || t('analytics.common.no_data')}</div>
                         <p className="text-xs text-muted-foreground">
                             {formatMoney(topTag?.value || 0, defaultCurrency, i18n.language)} {t('analytics.tags.total')}
                         </p>
@@ -105,7 +104,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                         <TrendingUp className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{mostFrequent?.name || t('common.no_data')}</div>
+                        <div className="text-2xl font-bold">{mostFrequent?.name || t('analytics.common.no_data')}</div>
                         <p className="text-xs text-muted-foreground">
                             {t('analytics.tags.used_in_transactions', { count: mostFrequent?.count || 0 })}
                         </p>
@@ -129,20 +128,20 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
             <Card className="p-6 h-[600px] bg-card border rounded-2xl p-5">
                 <div className="mb-6 flex justify-between items-center">
                     <div>
-                        <h3 className="font-semibold text-lg">{t('analytics.tags.chart_title')}</h3>
+                        <h3 className="font-semibold text-base">{t('analytics.tags.chart_title')}</h3>
                         <p className="text-sm text-muted-foreground">{t('analytics.tags.chart_subtitle')}</p>
                     </div>
                 </div>
-                <div ref={chartRef} className="h-[500px] w-full min-w-0">
+                <div ref={chartRef} role="img" aria-label={t('analytics.tags.chart_aria')} className="h-[500px] w-full min-w-0">
                     {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={500}>
-                        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" tickFormatter={(val) => formatMoney(val, defaultCurrency, i18n.language)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <XAxis type="number" tickFormatter={(val) => formatMoneyCompact(val, defaultCurrency, i18n.language)} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} minTickGap={24} />
                             <YAxis
                                 dataKey="name"
                                 type="category"
-                                width={120}
-                                tick={{ fill: 'hsl(var(--foreground))', fontSize: 13 }}
+                                width={96}
+                                tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
                             />
@@ -154,7 +153,7 @@ export function DetailedTags({ dateRange }: DetailedTagsProps) {
                             />
                             <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                                 {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color || colors[index % colors.length]} />
+                                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                                 ))}
                             </Bar>
                         </BarChart>

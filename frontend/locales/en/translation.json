@@ -528,6 +528,7 @@
   },
   "analytics": {
     "habits": {
+      "grid_aria": "Daily spending over the last year",
       "title": "Spending Habits",
       "subtitle": "Daily spending intensity over the last year",
       "less": "Less",
@@ -554,7 +555,9 @@
       "saved": "You saved {{amount}} vs last month.",
       "day": "Day",
       "current_month": "Current month",
-      "previous_month": "Previous month"
+      "previous_month": "Previous month",
+      "same": "Same as last month",
+      "chart_aria": "Cumulative spending chart for this and last month"
     },
     "forecast": {
       "title": "Month-End Forecast",
@@ -562,7 +565,7 @@
       "current": "Current",
       "burn": "Burn",
       "uncategorized_warning_title": "High Uncategorized Spending",
-      "uncategorized_warning_desc": "{{percent}}% of your expenses are Uncategorized.",
+      "uncategorized_warning_desc": "{{percent}} of your expenses are Uncategorized.",
       "per_day": "/day"
     },
     "page_title": "Analytics & Planning",
@@ -589,9 +592,11 @@
       "current_snapshot": "Current snapshot; history is not available yet",
       "fixed_costs": "Fixed Costs (Mandatory)",
       "discretionary": "Discretionary (Variable)",
-      "of_total_spending": "% of total spending"
+      "of_total_spending": "of total spending"
     },
     "breakdown": {
+      "accounts_title": "Accounts breakdown",
+      "chart_aria": "Expense chart by category",
       "title": "Expense Breakdown",
       "subtitle": "Distribution by category"
     },
@@ -607,6 +612,7 @@
       "active_tags": "Active in this period",
       "chart_title": "Spending by Tag",
       "chart_subtitle": "Breakdown of expenses associated with tags",
+      "chart_aria": "Expense chart by tag",
       "no_data_title": "No tagged expenses found in this period.",
       "no_data_desc": "Try adjusting the date range or add tags to your transactions."
     }
