@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import {
   Dialog,
@@ -29,6 +30,8 @@ export function AddTransactionDialog({
   const [frameVersion, setFrameVersion] = useState(0);
   const open = controlledOpen ?? internalOpen;
   const setOpen = setControlledOpen ?? setInternalOpen;
+  const { t } = useTranslation();
+  const openerRef = useRef<HTMLElement | null>(null);
   const { accounts, addTransaction } = useStore();
 
   const setFrameMessage = (document: Document, message: string, bad = true) => {
@@ -52,12 +55,21 @@ export function AddTransactionDialog({
     const frameWindow = frame?.contentWindow as (Window & { save?: () => void; C?: Record<string, Record<string, string[]>>; tags?: string[]; ci?: number; off?: number; rTags?: () => void }) | null;
     if (!document || !frameWindow) return;
 
-    document.querySelector<HTMLButtonElement>(".x")?.addEventListener("click", () => setOpen(false));
+    // Размеры и фон правим только здесь: прототип не меняем.
+    const style = document.createElement("style");
+    style.textContent = ".x{width:44px;height:44px;flex:none}.amt .s{flex:none;margin-right:.25em}.amt input{min-width:1ch;max-width:100%}html,body{background:transparent;color-scheme:normal}body{padding:0}";
+    document.head.append(style);
+    const closeButton = document.querySelector<HTMLButtonElement>(".x");
+    closeButton?.setAttribute("aria-label", t("transactions.dialog.close"));
+    closeButton?.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setOpen(false);
+    });
     document.querySelector<HTMLButtonElement>(".cancel")?.addEventListener("click", () => setOpen(false));
 
     const accountSelect = document.querySelector<HTMLSelectElement>("#acc");
     if (accountSelect) {
-      accountSelect.replaceChildren(new Option("Выберите", ""));
+      accountSelect.replaceChildren(new Option(t("transactions.dialog.select_account"), ""));
       for (const account of accounts) {
         const option = new Option(`${account.name} (${account.currency})`, String(account.id));
         option.dataset.b = String(account.balance);
@@ -107,21 +119,21 @@ export function AddTransactionDialog({
       const mandatory = document.querySelector<HTMLElement>("#swMan")?.getAttribute("aria-checked") === "true";
 
       if (!amount || !selectedAccount || !selectedType || !selectedCategory) {
-        setFrameMessage(document, "Заполните сумму, счёт и категорию.");
+        setFrameMessage(document, t("transactions.dialog.fill_required"));
         return;
       }
       if (selectedType === "transfer" && !selectedDestination) {
-        setFrameMessage(document, "Выберите счёт назначения.");
+        setFrameMessage(document, t("transactions.dialog.pick_destination"));
         return;
       }
       if (!operationCurrency || operationCurrency !== selectedAccount.currency) {
-        setFrameMessage(document, `Валюта операции должна совпадать с валютой счёта: ${selectedAccount.currency}.`);
+        setFrameMessage(document, t("transactions.dialog.currency_mismatch", { currency: selectedAccount.currency }));
         return;
       }
 
       saving = true;
       saveButton.disabled = true;
-      setFrameMessage(document, "Сохраняем…", false);
+      setFrameMessage(document, t("transactions.dialog.saving"), false);
       try {
         await addTransaction({
           amount,
@@ -141,7 +153,7 @@ export function AddTransactionDialog({
       } catch (error) {
         saving = false;
         saveButton.disabled = false;
-        setFrameMessage(document, error instanceof Error ? error.message : "Не удалось сохранить операцию.");
+        setFrameMessage(document, error instanceof Error ? error.message : t("transactions.dialog.save_failed"));
       }
     };
     saveButton.addEventListener("click", () => void saveTransaction());
@@ -170,7 +182,7 @@ export function AddTransactionDialog({
       ["#swRec", "#swMan"].forEach((id) => document.querySelector<HTMLElement>(id)?.setAttribute("aria-checked", "false"));
       document.querySelector<HTMLElement>("#more")?.classList.remove("open");
       const moreButton = document.querySelector<HTMLButtonElement>("#moreBtn");
-      if (moreButton) moreButton.textContent = "＋ Описание и метки";
+      if (moreButton) moreButton.textContent = t("transactions.dialog.more");
       document.querySelector<HTMLElement>("#recS")?.style.setProperty("display", "none");
       amountInput?.focus();
     });
@@ -183,20 +195,24 @@ export function AddTransactionDialog({
     }}>
       {trigger !== null && (
         <DialogTrigger asChild>
-          {trigger || <button type="button">Новая операция</button>}
+          {trigger || <button type="button">{t("transactions.dialog.title")}</button>}
         </DialogTrigger>
       )}
       <DialogContent
         aria-describedby={undefined}
+        onOpenAutoFocus={() => { openerRef.current = window.document.activeElement as HTMLElement | null; }}
+        onCloseAutoFocus={(event) => {
+          if (openerRef.current?.isConnected) { event.preventDefault(); openerRef.current.focus(); }
+        }}
         className="max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[464px] overflow-hidden border-0 bg-transparent p-0 shadow-none sm:rounded-none [&>button:last-child]:hidden"
       >
-        <VisuallyHidden><DialogTitle>Новая операция</DialogTitle></VisuallyHidden>
+        <VisuallyHidden><DialogTitle>{t("transactions.dialog.title")}</DialogTitle></VisuallyHidden>
         <iframe
           ref={frameRef}
-          title="Новая операция"
+          title={t("transactions.dialog.title")}
           src={`/new-operation-prototype.html?v=${frameVersion}`}
           onLoad={onFrameLoad}
-          className="block h-[min(900px,calc(100dvh-1.5rem))] w-full border-0"
+          className="block h-[min(900px,calc(100dvh-1.5rem))] w-full border-0 bg-transparent [color-scheme:normal]"
         />
       </DialogContent>
     </Dialog>

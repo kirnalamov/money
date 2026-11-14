@@ -17,3 +17,14 @@ assert.match(code, /setAttribute\("aria-live", bad \? "assertive" : "polite"\)/)
 assert.match(code, /frameWindow\.save\?\.\(\);\s*document\.querySelector<HTMLButtonElement>\("#again"\)\?\.focus\(\)/);
 assert.match(code, /accountSelect\.value = ""/);
 assert.match(code, /frameWindow\.tags = \[\]/);
+
+assert.doesNotMatch(code.replace(/\/\/.*$/gm, ''), /[Р-пр-џЈИ]/, 'wrapper must not contain Russian literals outside t()');
+assert.match(code, /useTranslation\(\)/);
+assert.match(code, /title=\{t\("transactions\.dialog\.title"\)\}/);
+assert.match(code, /event\.key === "Escape"\) setOpen\(false\)/);
+assert.match(code, /onCloseAutoFocus/);
+assert.match(code, /\.x\{width:44px;height:44px/);
+for (const lang of ['ru', 'en']) {
+  const dialog = JSON.parse(fs.readFileSync(path.join(__dirname, `../locales/${lang}/translation.json`), 'utf8')).transactions.dialog;
+  for (const key of ['title', 'close', 'select_account', 'fill_required', 'pick_destination', 'currency_mismatch', 'saving', 'save_failed', 'more']) assert.ok(dialog[key], `${lang}.${key}`);
+}

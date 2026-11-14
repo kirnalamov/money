@@ -208,6 +208,17 @@
     "recent_transactions": "Recent Transactions"
   },
   "transactions": {
+    "dialog": {
+      "title": "New transaction",
+      "close": "Close",
+      "select_account": "Select",
+      "fill_required": "Fill in the amount, account and category.",
+      "pick_destination": "Select a destination account.",
+      "currency_mismatch": "The transaction currency must match the account currency: {{currency}}.",
+      "saving": "Saving…",
+      "save_failed": "Could not save the transaction.",
+      "more": "＋ Description and tags"
+    },
     "title": "Transactions",
     "results_count": "{{count}} transactions found",
     "add_short": "Add",
