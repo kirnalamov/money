@@ -445,6 +445,9 @@
   },
   "accounts": {
     "title": "Accounts",
+    "subtitle": "Your accounts and their balances",
+    "add_description": "Enter the name, type, balance and currency of the new account.",
+    "edit_description": "Update the account details. Changing the balance creates an adjustment.",
     "add_account": "Add Account",
     "edit_account": "Edit Account",
     "delete_account": "Delete Account",

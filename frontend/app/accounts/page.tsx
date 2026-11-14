@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
@@ -28,10 +28,15 @@ import { Plus, Pencil, Trash2, Wallet } from "lucide-react";
 import { Account, AccountType, Currency } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios";
+import { format } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AccountsPage() {
   const { t, i18n } = useTranslation();
-  const { accounts, defaultCurrency, addAccount, updateAccount, deleteAccount } = useStore();
+  const { accounts, defaultCurrency, isLoading, dataError, dataErrors, fetchAllData, addAccount, updateAccount, deleteAccount } = useStore();
+  const dateLocale = i18n.language === "ru" ? ru : enUS;
+  const opener = useRef<HTMLElement | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +59,8 @@ export default function AccountsPage() {
     setEditingAccount(null);
   };
 
-  const handleOpenDialog = (account?: Account) => {
+  const handleOpenDialog = (account?: Account, trigger?: HTMLElement) => {
+    opener.current = trigger ?? null;
     setError(null);
     if (account) {
       setEditingAccount(account);
@@ -126,23 +132,34 @@ export default function AccountsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">{t("accounts.title")}</h2>
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-20 md:px-4 md:pb-6 xl:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight">{t("accounts.title")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t("accounts.subtitle")}</p>
+          </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()}>
+              <Button className="h-11 w-full sm:w-auto" onClick={(e) => handleOpenDialog(undefined, e.currentTarget)}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t("accounts.add_account")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
+            <DialogContent
+              className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
+              onCloseAutoFocus={(e) => {
+                if (opener.current?.isConnected) {
+                  e.preventDefault();
+                  opener.current.focus();
+                }
+              }}
+            >
               <DialogHeader>
                 <DialogTitle>
                   {editingAccount ? t("accounts.edit_account") : t("accounts.add_account")}
                 </DialogTitle>
                 <DialogDescription>
-                  {editingAccount ? t("accounts.edit_account") : t("accounts.add_account")}
+                  {editingAccount ? t("accounts.edit_description") : t("accounts.add_description")}
                 </DialogDescription>
               </DialogHeader>
               {error && (
@@ -157,6 +174,7 @@ export default function AccountsPage() {
                   </Label>
                   <Input
                     id="name"
+                    autoComplete="off"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="sm:col-span-3"
@@ -164,7 +182,7 @@ export default function AccountsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                  <Label htmlFor="type" className="sm:text-right">
+                  <Label htmlFor="account-type" className="sm:text-right">
                     {t("accounts.account_type")}
                   </Label>
                   <Select
@@ -173,7 +191,7 @@ export default function AccountsPage() {
                       setFormData({ ...formData, type: value })
                     }
                   >
-                    <SelectTrigger className="sm:col-span-3">
+                    <SelectTrigger id="account-type" className="sm:col-span-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -191,6 +209,8 @@ export default function AccountsPage() {
                   </Label>
                   <Input
                     id="balance"
+                    autoComplete="off"
+                    inputMode="decimal"
                     type="number"
                     step="0.01"
                     value={formData.balance}
@@ -201,7 +221,7 @@ export default function AccountsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                  <Label htmlFor="currency" className="sm:text-right">
+                  <Label htmlFor="account-currency" className="sm:text-right">
                     {t("accounts.currency")}
                   </Label>
                   <Select
@@ -210,7 +230,7 @@ export default function AccountsPage() {
                       setFormData({ ...formData, currency: value })
                     }
                   >
-                    <SelectTrigger className="sm:col-span-3">
+                    <SelectTrigger id="account-currency" className="sm:col-span-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -228,6 +248,7 @@ export default function AccountsPage() {
                   </Label>
                   <Input
                     id="provider"
+                    autoComplete="organization"
                     value={formData.provider}
                     onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
                     className="sm:col-span-3"
@@ -250,9 +271,23 @@ export default function AccountsPage() {
           </Alert>
         )}
 
-        {accounts.length === 0 ? (
-          <div className="border rounded-xl p-6 flex items-center justify-center text-muted-foreground">
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="status" aria-label={t("common.loading")}>
+            {[0, 1, 2].map((item) => <Skeleton key={item} className="h-40 rounded-2xl" />)}
+          </div>
+        ) : (dataError || dataErrors.accounts) && accounts.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card px-6 py-12 text-center" role="alert">
+            <h3 className="text-base font-semibold">{t("common.data_load_failed_title")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("common.data_load_failed")}</p>
+            <Button type="button" variant="outline" onClick={() => void fetchAllData()} className="mt-5 h-11">{t("common.retry")}</Button>
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-card p-5 py-10 text-center text-sm text-muted-foreground">
             {t("accounts.no_accounts")}
+            <Button className="h-11" onClick={(e) => handleOpenDialog(undefined, e.currentTarget)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("accounts.add_account")}
+            </Button>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -277,7 +312,8 @@ export default function AccountsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleOpenDialog(account)}
+                        className="h-11 w-11"
+                        onClick={(e) => handleOpenDialog(account, e.currentTarget)}
                         title={t("common.edit")}
                         aria-label={t("common.edit")}
                       >
@@ -286,6 +322,7 @@ export default function AccountsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-11 w-11"
                         onClick={() => handleDelete(account.id)}
                         title={t("common.delete")}
                         aria-label={t("common.delete")}
@@ -297,12 +334,12 @@ export default function AccountsPage() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-muted-foreground">{t("accounts.balance")}</p>
-                      <p className="text-2xl font-bold">
+                      <p className="text-2xl font-bold tabular-nums">
                         {formatMoney(account.balance, account.currency, i18n.language)}
                       </p>
                       <p className="text-xs font-medium text-muted-foreground">{account.currency}</p>
                       {convertedBalance !== null && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground tabular-nums">
                           ≈ {formatMoney(convertedBalance, defaultCurrency, i18n.language)}
                         </p>
                       )}
@@ -315,7 +352,7 @@ export default function AccountsPage() {
                     )}
                     {(account.updated_at || account.lastSync) && (
                       <p className="text-xs text-muted-foreground">
-                        {t("accounts.last_updated")}: {new Date(account.updated_at || account.lastSync || "").toLocaleDateString(i18n.language)}
+                        {t("accounts.last_updated")}: {format(new Date(account.updated_at || account.lastSync || ""), "d MMM yyyy", { locale: dateLocale })}
                       </p>
                     )}
                   </div>
