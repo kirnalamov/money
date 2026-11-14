@@ -46,7 +46,11 @@ export function LimitsSummary() {
               : t("dashboard.limit_status.of", { spent: money(calculatedSpent), limit: money(convertedLimit) });
 
            return (
-             <div key={limit.id} className="space-y-1">
+             <Link
+               key={limit.id}
+               href={`/transactions?type=expense&category=${encodeURIComponent(limit.category)}`}
+               className="block space-y-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+             >
                <div className="flex justify-between gap-2 text-sm">
                  <span className="truncate font-medium" title={name}>{name}</span>
                  <span className={`shrink-0 font-medium tabular-nums ${textColor}`}>{formatPercent(percentage, i18n.language, false, 0)}</span>
@@ -55,7 +59,7 @@ export function LimitsSummary() {
                  <div className={`h-full ${barColor}`} style={{ width: `${Math.min(100, percentage)}%` }} />
                </div>
                <p className={`text-sm tabular-nums ${textColor}`}>{caption}</p>
-             </div>
+             </Link>
           );
           })}
         </div>

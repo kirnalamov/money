@@ -6,7 +6,7 @@ import { cn, formatMoney, formatMoneyCompact, convertCurrency } from "@/lib/util
 import { useStore } from "@/lib/store";
 import Link from "next/link";
 import { DateRange } from "react-day-picker";
-import { isWithinInterval } from "date-fns";
+import { format, isWithinInterval } from "date-fns";
 
 // Цвета категорий циклически берутся из токенов chart-1..5
 const CHART_COLORS = [1, 2, 3, 4, 5].map((n) => `hsl(var(--chart-${n}))`);
@@ -53,6 +53,9 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
         // Ключ только из букв/пробелов/_, иначе i18next разберёт "." и ":" как разделители
         return /^[\p{L}_ ]+$/u.test(key) ? t(`dashboard.categories.${key}`, { defaultValue: category }) : category;
     };
+    const rangeQuery = dateRange?.from
+        ? `&from=${format(dateRange.from, "yyyy-MM-dd")}${dateRange.to ? `&to=${format(dateRange.to, "yyyy-MM-dd")}` : ""}`
+        : "";
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
     const totalLabel = formatMoneyCompact(total, defaultCurrency, i18n.language);
     const totalFontSize = totalLabel.length > 8 ? "text-base" : "text-xl";
@@ -145,10 +148,11 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                         const isDimmed = activeIndex !== undefined && activeIndex !== index;
 
                         return (
-                            <div
+                            <Link
                                 key={item.nameKey}
+                                href={`/transactions?type=expense&category=${encodeURIComponent(item.nameKey)}${rangeQuery}`}
                                 className={cn(
-                                    "flex min-h-11 items-center justify-between px-2.5 rounded-lg transition-all cursor-pointer border border-transparent select-none",
+                                    "flex min-h-11 items-center justify-between px-2.5 rounded-lg transition-all cursor-pointer border border-transparent select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                     isHovered ? "bg-accent border-border" : "hover:bg-accent",
                                     isDimmed && "opacity-40 grayscale-[0.5]"
                                 )}
@@ -164,7 +168,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                                 <div className="text-xs font-semibold tabular-nums ml-2 flex-shrink-0">
                                     {percentage}%
                                 </div>
-                            </div>
+                            </Link>
                         )
                     })}
                 </div>

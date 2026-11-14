@@ -36,7 +36,7 @@ export function RecentTransactions() {
             <div className="p-6 pb-2 flex items-center justify-between">
                 <h3 className="text-lg font-semibold leading-snug">{t("dashboard.recent_transactions")}</h3>
                 <Button variant="ghost" size="sm" className="min-h-[44px] text-xs text-muted-foreground" asChild>
-                    <Link href="/transactions" className="focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>
+                    <Link href={`/transactions?from=${format(new Date(recent[recent.length - 1].date), "yyyy-MM-dd")}&to=${format(new Date(recent[0].date), "yyyy-MM-dd")}`} className="focus-visible:ring-2 focus-visible:ring-ring">{t("common.view_all")}</Link>
                 </Button>
             </div>
             <div className="px-3 pb-3 pt-1 space-y-1">
