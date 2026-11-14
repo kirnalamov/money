@@ -9,13 +9,14 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { TransactionFilters, TransactionSort } from "@/components/transactions/transaction-filters";
 import { TransactionSummary } from "@/components/transactions/transaction-summary";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionType } from "@/types";
 import { DateRange } from "react-day-picker";
-import { endOfMonth, isSameDay, startOfMonth } from "date-fns";
+import { endOfMonth, isSameDay, isValid, parse, startOfMonth } from "date-fns";
 import { convertCurrency } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,18 +25,51 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const PAGE_SIZE = 20;
 
+// Query-параметры задают только начальное состояние фильтров; невалидные значения игнорируются.
+function parseInitialFilters(params: { get(name: string): string | null }) {
+  const day = (name: string) => {
+    const value = params.get(name);
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+    const date = parse(value, 'yyyy-MM-dd', new Date());
+    return isValid(date) ? date : undefined;
+  };
+  const type = params.get('type');
+  let from = day('from');
+  let to = day('to');
+  from = from ?? to;
+  to = to ?? from;
+  const dateRange = from && to && from <= to ? { from, to } : undefined;
+  return {
+    type: (type === 'expense' || type === 'income' || type === 'transfer' ? type : 'all') as TransactionType | 'all',
+    category: params.get('category')?.trim() || 'all',
+    accountId: params.get('account')?.trim() || 'all',
+    search: params.get('q') ?? '',
+    dateRange,
+  };
+}
+
 export default function TransactionsPage() {
+  return (
+    <Suspense fallback={null}>
+      <TransactionsContent />
+    </Suspense>
+  );
+}
+
+function TransactionsContent() {
   const { t } = useTranslation();
   const { transactions, accounts, categories, defaultCurrency, isLoading, dataError, dataErrors, fetchAllData } = useStore();
   const loadFailed = Boolean(dataErrors.transactions) || (Boolean(dataError) && transactions.length === 0);
 
   // Filters State
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<TransactionType | 'all'>('all');
-  const [category, setCategory] = useState<string>('all');
-  const [accountId, setAccountId] = useState<string>('all');
+  const searchParams = useSearchParams();
+  const [initial] = useState(() => parseInitialFilters(searchParams));
+  const [search, setSearch] = useState(initial.search);
+  const [type, setType] = useState<TransactionType | 'all'>(initial.type);
+  const [category, setCategory] = useState<string>(initial.category);
+  const [accountId, setAccountId] = useState<string>(initial.accountId);
   const [sort, setSort] = useState<TransactionSort>('newest');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initial.dateRange ?? {
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
