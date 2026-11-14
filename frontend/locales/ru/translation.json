@@ -100,6 +100,12 @@
     "net_worth_total": "Общий капитал",
     "current_snapshot": "Текущее состояние; истории пока нет",
     "vs_last_month": "к прошл. месяцу",
+    "net_worth_breakdown": {
+      "available": "Свободно",
+      "investments": "Инвестиции",
+      "savings": "Накопления",
+      "month_change": "Изменение за месяц:"
+    },
     "goals_title": "Цели",
     "empty": {
       "accounts_title": "Счета пока не добавлены",
@@ -145,6 +151,9 @@
       "dynamic_scale": "Масштаб по диапазону значений, не от нуля",
       "zero_scale": "Масштаб столбцов начинается от нуля",
       "net_worth_subtitle": "Последние 7 месяцев",
+      "net_worth_aria": "График динамики капитала",
+      "net_worth_mini_aria": "График капитала за 30 дней",
+      "expenses_aria": "Круговая диаграмма расходов по категориям",
       "expenses_title": "Расходы по категориям",
       "tags_title": "Расходы по тегам",
       "monthly_limits": "Месячные лимиты",
@@ -177,6 +186,7 @@
       "food": "Еда",
       "transport": "Транспорт",
       "shopping": "Покупки",
+      "подработка": "Подработка",
       "utilities": "Коммунальные",
       "groceries": "Продукты",
       "dining_out": "Рестораны",

@@ -99,6 +99,12 @@
     "subtitle": "Your financial health at a glance",
     "net_worth_total": "Total Net Worth",
     "current_snapshot": "Current snapshot; history is not available yet",
+    "net_worth_breakdown": {
+      "available": "Available",
+      "investments": "Investments",
+      "savings": "Savings",
+      "month_change": "Change over the month:"
+    },
     "vs_last_month": "vs last month",
     "goals_title": "Goals",
     "empty": {
@@ -145,6 +151,9 @@
       "dynamic_scale": "Scale follows the values and does not start at zero",
       "zero_scale": "Bar scale starts at zero",
       "net_worth_subtitle": "Last 7 months",
+      "net_worth_aria": "Net worth over time chart",
+      "net_worth_mini_aria": "Net worth chart for the last 30 days",
+      "expenses_aria": "Expenses by category donut chart",
       "expenses_title": "Expenses by Category",
       "tags_title": "Spending Tags",
       "monthly_limits": "Monthly Limits",
@@ -176,6 +185,7 @@
       "food": "Food",
       "transport": "Transport",
       "shopping": "Shopping",
+      "подработка": "Side job",
       "utilities": "Utilities",
       "groceries": "Groceries",
       "dining_out": "Dining Out",

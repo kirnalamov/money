@@ -2,34 +2,14 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
-import { cn, formatCurrency, convertCurrency, getCurrencySymbol } from "@/lib/utils";
+import { cn, formatMoney, formatMoneyCompact, convertCurrency } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import Link from "next/link";
 import { DateRange } from "react-day-picker";
 import { isWithinInterval } from "date-fns";
 
-function formatDonutTotal(amount: number, currency: string, language: string) {
-    const absolute = Math.abs(amount);
-    const sign = amount < 0 ? "-" : "";
-    const locale = language === "ru" ? "ru-RU" : "en-US";
-    const symbol = getCurrencySymbol(currency);
-    const withSymbol = (value: string, suffix: string) => currency === "RUB"
-        ? `${sign}${value}${suffix} ${symbol}`
-        : `${sign}${symbol}${value}${suffix}`;
-    const format = (value: number) => new Intl.NumberFormat(locale, {
-        maximumFractionDigits: value >= 100 ? 0 : 1,
-    }).format(value);
-
-    if (absolute >= 1_000_000) {
-        const suffix = language === "ru" ? " млн" : "m";
-        return withSymbol(format(absolute / 1_000_000), suffix);
-    }
-    if (absolute >= 1_000) {
-        const suffix = language === "ru" ? " тыс." : "k";
-        return withSymbol(format(absolute / 1_000), suffix);
-    }
-    return formatCurrency(amount, currency);
-}
+// Цвета категорий циклически берутся из токенов chart-1..5
+const CHART_COLORS = [1, 2, 3, 4, 5].map((n) => `hsl(var(--chart-${n}))`);
 
 export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
     const { t, i18n } = useTranslation();
@@ -62,18 +42,20 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
             .map(([name, value]) => ({ nameKey: name, value }))
             .sort((a, b) => b.value - a.value);
 
-        // Predefined colors
-        const colors = ["#b9df61", "#83b8e8", "#c3a4e8", "#e88c9f", "#e4b87d", "#79c7b1", "#a6b1de"];
-
         return sorted.map((item, index) => ({
             ...item,
-            color: colors[index % colors.length]
+            color: CHART_COLORS[index % CHART_COLORS.length]
         }));
     }, [transactions, defaultCurrency, dateRangeFrom, dateRangeTo]);
 
+    const categoryName = (category: string) => {
+        const key = category.toLowerCase();
+        // Ключ только из букв/пробелов/_, иначе i18next разберёт "." и ":" как разделители
+        return /^[\p{L}_ ]+$/u.test(key) ? t(`dashboard.categories.${key}`, { defaultValue: category }) : category;
+    };
     const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
-    const totalLabel = formatDonutTotal(total, defaultCurrency, i18n.language);
-    const totalFontSize = totalLabel.length > 10 ? "text-base" : totalLabel.length > 7 ? "text-xl" : "text-2xl";
+    const totalLabel = formatMoneyCompact(total, defaultCurrency, i18n.language);
+    const totalFontSize = totalLabel.length > 8 ? "text-base" : "text-xl";
 
     if (data.length === 0) {
         return (
@@ -91,20 +73,20 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                 <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t("common.view_all")}</Link>
             </div>
             <div className="w-full flex flex-col sm:flex-row items-center justify-center px-4 pb-4 gap-3 sm:gap-6">
-                <div ref={containerRef} className="relative w-full h-[160px] max-w-[180px] flex-shrink-0">
-                    {/* Center Text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-4">
-                        <span className={cn("max-w-[112px] text-center whitespace-nowrap font-bold leading-none tracking-tight", totalFontSize)}>{totalLabel}</span>
-                        <span className="text-sm text-muted-foreground mt-1">{t("dashboard.charts.total")}</span>
+                <div ref={containerRef} role="img" aria-label={t("dashboard.charts.expenses_aria")} className="relative h-[160px] min-h-[160px] w-full min-w-0 max-w-[180px] flex-shrink-0">
+                    {/* Center Text: диаметр внутреннего круга 2*58=116px, текст уже его */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                        <span className={cn("max-w-[88px] text-center whitespace-nowrap font-bold leading-none tracking-tight tabular-nums", totalFontSize)}>{totalLabel}</span>
+                        <span className="text-xs text-muted-foreground mt-1">{t("dashboard.charts.total")}</span>
                     </div>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={160} initialDimension={{ width: 180, height: 160 }}>
                         <PieChart>
                             <Pie
                                 data={data}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={48}
-                                outerRadius={70}
+                                innerRadius={58}
+                                outerRadius={74}
                                 paddingAngle={3}
                                 dataKey="value"
                                 stroke="hsl(var(--card))"
@@ -119,9 +101,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                                         fill={entry.color}
                                         className="transition-all duration-300 outline-none cursor-pointer"
                                         style={{
-                                            filter: activeIndex === index ? 'brightness(1.1) drop-shadow(0 0 8px rgba(0,0,0,0.2))' : 'none',
-                                            transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)',
-                                            transformOrigin: 'center',
+                                            filter: activeIndex === index ? 'brightness(1.1)' : 'none',
                                             opacity: activeIndex !== undefined && activeIndex !== index ? 0.3 : 1
                                         }}
                                     />
@@ -137,11 +117,11 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                                                         className="h-2.5 w-2.5 rounded-full ring-2 ring-background"
                                                         style={{ backgroundColor: payload[0].payload.color }}
                                                     />
-                                                    <span className="text-sm font-semibold">{t(payload[0].payload.nameKey) || payload[0].payload.nameKey}</span>
+                                                    <span className="text-sm font-semibold">{categoryName(payload[0].payload.nameKey)}</span>
                                                 </div>
                                                 <div className="flex items-baseline gap-2">
-                                                    <span className="text-xl font-bold tabular-nums">
-                                                        {formatCurrency(Number(payload[0].value), defaultCurrency)}
+                                                    <span className="text-base font-bold tabular-nums">
+                                                        {formatMoney(Number(payload[0].value), defaultCurrency, i18n.language)}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground font-medium">
                                                         ({Math.round((Number(payload[0].value) / total) * 100)}%)
@@ -158,7 +138,7 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                 </div>
 
                 {/* Custom Legend */}
-                <div className="flex flex-col gap-2 w-full md:w-auto md:min-w-[180px] md:max-w-[220px] overflow-y-auto max-h-[160px] md:max-h-full pr-2 custom-scrollbar">
+                <div className="flex min-w-0 flex-col gap-1 w-full md:w-auto md:min-w-[180px] md:max-w-[220px] overflow-y-auto max-h-[160px] md:max-h-full px-1 custom-scrollbar">
                     {data.map((item, index) => {
                         const percentage = Math.round((item.value / total) * 100);
                         const isHovered = activeIndex === index;
@@ -168,8 +148,8 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                             <div
                                 key={item.nameKey}
                                 className={cn(
-                                    "flex items-center justify-between p-2.5 rounded-lg transition-all cursor-pointer border border-transparent select-none",
-                                    isHovered ? "bg-accent/80 border-border/50 shadow-sm transform scale-[1.02]" : "hover:bg-accent/40",
+                                    "flex min-h-11 items-center justify-between px-2.5 rounded-lg transition-all cursor-pointer border border-transparent select-none",
+                                    isHovered ? "bg-accent border-border" : "hover:bg-accent",
                                     isDimmed && "opacity-40 grayscale-[0.5]"
                                 )}
                                 onMouseEnter={() => setActiveIndex(index)}
@@ -179,9 +159,9 @@ export function ExpensesDonut({ dateRange }: { dateRange?: DateRange }) {
                                     <div className="h-3 w-3 rounded-full flex-shrink-0 ring-2 ring-transparent transition-all"
                                         style={{ backgroundColor: item.color, transform: isHovered ? 'scale(1.2)' : 'scale(1)' }}
                                     />
-                                    <span className="text-sm font-medium truncate" title={t(item.nameKey)}>{t(item.nameKey)}</span>
+                                    <span className="text-sm font-medium truncate" title={categoryName(item.nameKey)}>{categoryName(item.nameKey)}</span>
                                 </div>
-                                <div className="text-xs font-semibold tabular-nums ml-2 opacity-80 flex-shrink-0">
+                                <div className="text-xs font-semibold tabular-nums ml-2 flex-shrink-0">
                                     {percentage}%
                                 </div>
                             </div>
