@@ -111,7 +111,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
     const getIcon = (tx: Transaction) => {
         const Icon = getCategoryIcon(tx.type, tx.category);
         const color = tx.type === 'income' ? 'text-income' : tx.type === 'transfer' ? 'text-chart-2' : 'text-expense';
-        return <Icon className={`h-5 w-5 ${color}`} aria-hidden="true" />;
+        return <Icon className={`h-4 w-4 ${color}`} aria-hidden="true" />;
     };
 
     const handleDeleted = (transaction: Transaction) => {
@@ -159,15 +159,15 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                     {emptyAction && <div className="mt-5 flex justify-center">{emptyAction}</div>}
                 </div>
             ) : sortedDates.map((dateKey) => (
-                <div key={dateKey} className="overflow-hidden rounded-2xl border border-border bg-card">
-                     <h2 className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted/95 px-4 py-3 text-sm font-medium text-foreground backdrop-blur-sm">
+                <div key={dateKey} className="overflow-clip rounded-2xl border border-border bg-card">
+                     <h2 className="sticky top-0 z-10 flex scroll-mt-0 items-center justify-between border-b border-border bg-muted px-4 py-3 text-sm font-medium text-foreground">
                          <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language, true)}</span>
                     </h2>
                     <div className="divide-y divide-border">
                         {groupedTransactions[dateKey].map((tx) => (
                             <div
                                 key={tx.id}
-                                 className="group flex min-h-[66px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
+                                 className="group flex min-h-[56px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
                                 onClick={(event) => openDetails(tx, event.currentTarget)}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
@@ -179,14 +179,12 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 tabIndex={0}
                             >
                                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                                    <div className={`rounded-xl p-2.5 ${tx.type === 'income' ? 'bg-income/10' :
-                                        tx.type === 'transfer' ? 'bg-chart-2/10' : 'bg-expense/10'
-                                        }`}>
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
                                         {getIcon(tx)}
                                     </div>
                                     <div className="flex min-w-0 flex-col gap-0.5">
                                         <div className="flex min-w-0 items-center gap-2">
-                                            <span className="max-w-[160px] truncate text-sm font-semibold sm:max-w-[260px]" title={tx.category}>{getCategoryName(tx.category)}</span>
+                                            <span className="break-words text-sm font-medium leading-snug" title={tx.category}>{getCategoryName(tx.category)}</span>
                                         </div>
                                         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                             <span className="flex items-center gap-1">
@@ -202,7 +200,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                             {tx.description && (
                                                 <span className="flex min-w-0 items-center gap-1.5">
                                                     <span aria-hidden="true">&middot;</span>
-                                                    <span className="max-w-[180px] truncate sm:max-w-[260px]" title={tx.description}>{tx.description}</span>
+                                                    <span className="min-w-0 break-words" title={tx.description}>{tx.description}</span>
                                                 </span>
                                             )}
                                         </div>
@@ -210,14 +208,16 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                                 </div>
 
                                 <div className="ml-auto flex shrink-0 flex-col items-end gap-0.5">
-                                    <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
-                                        tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
-                                        }`}>
-                                        {formatMoney(tx.type === 'expense' ? -tx.amount : tx.amount, tx.currency, i18n.language, tx.type !== 'transfer')}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {format(new Date(tx.date), 'HH:mm')}
-                                    </span>
+                                    <div className="flex items-baseline gap-2 whitespace-nowrap">
+                                        <span className="text-xs tabular-nums text-muted-foreground">
+                                            {format(new Date(tx.date), 'HH:mm')}
+                                        </span>
+                                        <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
+                                            tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
+                                            }`}>
+                                            {formatMoney(tx.type === 'expense' ? -tx.amount : tx.amount, tx.currency, i18n.language, tx.type !== 'transfer')}
+                                        </span>
+                                    </div>
                                     {tx.currency !== defaultCurrency && (
                                         <span className="text-xs tabular-nums text-muted-foreground">
                                             &asymp; {formatMoney((tx.type === 'expense' ? -1 : 1) * convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language, tx.type !== 'transfer')}
