@@ -220,6 +220,13 @@
       "more": "＋ Description and tags"
     },
     "title": "Transactions",
+    "all_operations": "All transactions",
+    "insights": {
+      "title": "Top expense categories",
+      "empty": "No expenses in the selected period.",
+      "analytics": "Analytics",
+      "limits": "Limits"
+    },
     "results_count": "{{count}} transactions found",
     "add_short": "Add",
     "add_button": "Add Transaction",

@@ -13,14 +13,15 @@ interface TransactionSummaryProps {
 export function TransactionSummary({ income, expense, net }: TransactionSummaryProps) {
     const { t, i18n } = useTranslation();
     const { defaultCurrency } = useStore();
-    const label = "whitespace-nowrap text-xs text-muted-foreground";
-    const value = "mt-0.5 whitespace-nowrap text-base font-semibold tabular-nums";
+    const tile = "rounded-2xl border border-border bg-card p-5";
+    const label = "text-sm text-muted-foreground";
+    const value = "mt-1 truncate text-2xl font-bold tabular-nums";
 
     return (
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-card p-5">
-            <div><p className={label}>{t('transactions.summary.total_income')}</p><p className={`${value} text-income`}>{formatMoney(income, defaultCurrency, i18n.language)}</p></div>
-            <div><p className={label}>{t('transactions.summary.total_expense')}</p><p className={`${value} text-expense`}>{formatMoney(expense, defaultCurrency, i18n.language)}</p></div>
-            <div className="sm:ml-auto"><p className={label}>{t('transactions.summary.net_result')}</p><p className={`${value} ${net >= 0 ? 'text-income' : 'text-expense'}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div>
+        <div className="grid gap-3 sm:grid-cols-3">
+            <div className={tile}><p className={label}>{t('transactions.summary.total_income')}</p><p className={`${value} text-income`}>{formatMoney(income, defaultCurrency, i18n.language)}</p></div>
+            <div className={tile}><p className={label}>{t('transactions.summary.total_expense')}</p><p className={`${value} text-expense`}>{formatMoney(expense, defaultCurrency, i18n.language)}</p></div>
+            <div className={tile}><p className={label}>{t('transactions.summary.net_result')}</p><p className={`${value} ${net >= 0 ? 'text-income' : 'text-expense'}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div>
         </div>
     );
 }

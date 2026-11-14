@@ -13,6 +13,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TransactionFilters, TransactionSort } from "@/components/transactions/transaction-filters";
 import { TransactionSummary } from "@/components/transactions/transaction-summary";
+import { TransactionInsights } from "@/components/transactions/transaction-insights";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionType } from "@/types";
 import { DateRange } from "react-day-picker";
@@ -238,6 +239,9 @@ function TransactionsContent() {
           resetFilters={resetFilters}
         />
 
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-5">
+        <h2 className="sr-only">{t('transactions.all_operations')}</h2>
          {isLoading ? (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5" role="status" aria-label={t('common.loading')}>
             {[0, 1, 2, 3, 4].map(item => <Skeleton key={item} className="h-12 w-full" />)}
@@ -292,6 +296,15 @@ function TransactionsContent() {
             </div>
           </div>
         )}
+        </div>
+        {!loadFailed && (
+          <TransactionInsights
+            transactions={filteredTransactions}
+            isLoading={isLoading}
+            onSelectCategory={updateCategory}
+          />
+        )}
+        </div>
       </div></TooltipProvider>
     </ProtectedRoute>
   );
