@@ -1,4 +1,4 @@
-const test = require('node:test');
+﻿const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,7 +11,7 @@ const ru = JSON.parse(read('locales/ru/translation.json'));
 const en = JSON.parse(read('locales/en/translation.json'));
 
 test('summary: три плитки, суммы без знака, знак только у чистого результата', () => {
-  assert.match(summary, /grid gap-3 sm:grid-cols-3/);
+  assert.match(summary, /grid gap-4 sm:grid-cols-3 sm:gap-5/);
   assert.match(summary, /formatMoney\(income, defaultCurrency, i18n\.language\)/);
   assert.match(summary, /formatMoney\(expense, defaultCurrency, i18n\.language\)/);
   assert.match(summary, /formatMoney\(net, defaultCurrency, i18n\.language, true\)/);

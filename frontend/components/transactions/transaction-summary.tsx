@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { formatMoney } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ export function TransactionSummary({ income, expense, net }: TransactionSummaryP
     );
 
     return (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
             <div className={tile}>{icon(TrendingUp, 'text-income')}<div className="min-w-0"><p className={label}>{t('transactions.summary.total_income')}</p><p className={`${value} text-income`}>{formatMoney(income, defaultCurrency, i18n.language)}</p></div></div>
             <div className={tile}>{icon(TrendingDown, 'text-expense')}<div className="min-w-0"><p className={label}>{t('transactions.summary.total_expense')}</p><p className={`${value} text-expense`}>{formatMoney(expense, defaultCurrency, i18n.language)}</p></div></div>
             <div className={tile}>{icon(Scale, netColor)}<div className="min-w-0"><p className={label}>{t('transactions.summary.net_result')}</p><p className={`${value} ${netColor}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div></div>
