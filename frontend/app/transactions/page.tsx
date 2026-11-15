@@ -9,7 +9,7 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { useStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TransactionFilters, TransactionSort } from "@/components/transactions/transaction-filters";
 import { TransactionSummary } from "@/components/transactions/transaction-summary";
@@ -75,6 +75,14 @@ function TransactionsContent() {
     to: endOfMonth(new Date()),
   });
   const [page, setPage] = useState(1);
+  const [addTipOpen, setAddTipOpen] = useState(false);
+  // Tooltip would swallow the first Escape over the dialog: close it when N opens the dialog.
+  useEffect(() => {
+    if (!addTipOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key.toLowerCase() === "n") setAddTipOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [addTipOpen]);
 
   const filteredTransactions = useMemo(() => transactions.filter(tx => {
     if (search.trim()) {
@@ -210,7 +218,7 @@ function TransactionsContent() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0"><h1 className="text-2xl font-bold tracking-tight sm:text-[32px] sm:leading-10">{t('transactions.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('transactions.results_count', { count: filteredTransactions.length })}</p></div>
           <div className="flex w-full shrink-0 gap-2 sm:w-auto">
-            <Tooltip><TooltipTrigger asChild><span className="flex-1 sm:flex-none"><AddTransactionDialog trigger={<Button type="button" aria-label={t('transactions.add_button')} className="h-11 w-full bg-primary px-3 text-primary-foreground hover:bg-primary/90"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}<kbd className="ml-2 rounded border border-primary-foreground/30 px-1 text-xs font-medium">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
+            <Tooltip open={addTipOpen} onOpenChange={(o) => setAddTipOpen(o && !document.querySelector('[role="dialog"]'))}><TooltipTrigger asChild><span className="flex-1 sm:flex-none" onClick={() => setAddTipOpen(false)}><AddTransactionDialog trigger={<Button type="button" aria-label={t('transactions.add_button')} className="h-11 w-full bg-primary px-3 text-primary-foreground hover:bg-primary/90"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}<kbd className="ml-2 rounded border border-primary-foreground/30 px-1 text-xs font-medium">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
             <Button type="button" variant="outline" onClick={exportCsv} className="h-11 flex-1 border-border sm:flex-none bg-card px-3"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
           </div>
         </div>
