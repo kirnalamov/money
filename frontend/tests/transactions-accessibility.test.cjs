@@ -22,7 +22,7 @@ test('transaction controls keep 44px targets and keyboard focus styles', () => {
       assert.ok(classes.split(' ').includes(token), `SelectTrigger missing ${token}`);
     }
   }
-  assert.match(filters, /className="h-11 min-w-11 border-border bg-card pl-8"/);
+  assert.match(filters, /className="h-11 min-w-11 border-border bg-card pl-10"/);
   assert.match(filters, /className=\{`h-11 rounded-full/);
   assert.match(button, /min-h-11 min-w-11/);
   for (const source of [button, input]) {

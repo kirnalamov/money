@@ -42,7 +42,7 @@ export function TransactionInsights({ transactions, isLoading, onSelectCategory 
 
     return (
         <section aria-labelledby="transaction-insights-title" className="rounded-2xl border border-border bg-card p-5 xl:sticky xl:top-4">
-            <h2 id="transaction-insights-title" className="text-lg font-semibold leading-snug">{t('transactions.insights.title')}</h2>
+            <h2 id="transaction-insights-title" className="text-base font-semibold leading-snug">{t('transactions.insights.title')}</h2>
             {isLoading ? (
                 <div className="mt-4 space-y-3" role="status" aria-label={t('common.loading')}>
                     {[0, 1, 2, 3, 4].map(item => <Skeleton key={item} className="h-11 w-full" />)}
