@@ -90,11 +90,11 @@ export function TransactionFilters({
                 </Popover>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex max-w-full overflow-x-auto rounded-full bg-muted p-1">
+            <div className="inline-flex max-w-full overflow-x-auto rounded-full border border-border bg-muted p-1">
                 {[['all', t('transactions.filters.all_types')], ['expense', t('transactions.types.expense')], ['income', t('transactions.types.income')], ['transfer', t('transactions.types.transfer')]].map(([value, label]) => <Button key={value} type="button" variant="ghost" size="sm" aria-pressed={type === value} onClick={() => setType(value as TransactionType | 'all')} className={`h-11 rounded-full px-3 text-sm font-medium ${type === value ? 'bg-card text-foreground hover:bg-card' : 'text-muted-foreground'}`}>{label}</Button>)}
             </div>
             <div className="flex justify-end">
-                <Select value={sort} onValueChange={(value) => setSort(value as TransactionSort)}><SelectTrigger className="h-11 min-w-11 w-auto border-0 bg-transparent px-1 text-xs text-muted-foreground shadow-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.filters.sort')}><ArrowUpDown aria-hidden="true" className="mr-1.5 h-4 w-4 shrink-0" /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">{t('transactions.filters.sort_newest')}</SelectItem><SelectItem value="oldest">{t('transactions.filters.sort_oldest')}</SelectItem><SelectItem value="largest">{t('transactions.filters.sort_largest')}</SelectItem><SelectItem value="smallest">{t('transactions.filters.sort_smallest')}</SelectItem></SelectContent></Select>
+                <Select value={sort} onValueChange={(value) => setSort(value as TransactionSort)}><SelectTrigger className="h-11 min-w-11 w-auto border-0 bg-transparent px-1 text-sm text-muted-foreground shadow-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t('transactions.filters.sort')}><ArrowUpDown aria-hidden="true" className="mr-1.5 h-4 w-4 shrink-0" /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">{t('transactions.filters.sort_newest')}</SelectItem><SelectItem value="oldest">{t('transactions.filters.sort_oldest')}</SelectItem><SelectItem value="largest">{t('transactions.filters.sort_largest')}</SelectItem><SelectItem value="smallest">{t('transactions.filters.sort_smallest')}</SelectItem></SelectContent></Select>
             </div>
             </div>
         </div>
