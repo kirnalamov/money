@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { formatMoney } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
