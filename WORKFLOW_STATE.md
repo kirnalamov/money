@@ -1,171 +1,56 @@
-# Money: активная новая волна
+# Money: редизайн /transactions
 
-- Статус: verifying
-- Прежние 2 цикла не ограничивают новую волну: пользователь разрешил продолжить. Максимум 2 цикла исправлений по результатам этой волны; затем остановка и решение orchestrator.
-- Следующий этап: общий Docker build/health → final tester → designer-аудит.
-- Риски: глобальные токены затрагивают все экраны, включая Overview; не менять его код. Не менять API, CRUD, исходные финансовые расчёты, данные и fixtures; destructive-сценарии только на изолированных тестовых данных.
-- Общие правила coder: ветка `llm/<task_id>`; менять только перечисленный scope, не менять этот state, `frontend/DESIGN.md`, `frontend/public/new-operation-prototype.html`, Overview/Dashboard-экраны и остальные файлы; без зависимостей и попутного рефакторинга. Прочитать DESIGN.md и ближайший эталон раздела 11; только токены, `formatMoney` и `t()` с ключами ru/en. Нарушений по чеклисту DESIGN.md раздел 12 нет. Commit только из scope, сообщение заканчивается суффиксом `llm`, push запрещён. `docker compose up -d --build` coder выполнять нельзя.
+- Статус: planned
+- Цель: сделать страницу /transactions современной: современные иконки, свежий стиль, хорошая типографика. Две темы, 1440px и 375px.
+- Ограничения: следовать frontend/DESIGN.md; только токены, без hardcoded hex; без push; credentials не записывать; логику и API не менять.
+- Готово когда: страница визуально обновлена, build/tsc/тесты зелёные, designer и tester passed, всё вмержено в `llm`.
+- Cleanup: C:\money\tmp-d2\ (скриншоты старого аудита, внутри репо) — удалить в конце, спросить пользователя.
+- Fix-циклов: 0
 
 ## План
 
-### tokens
-- task_id: tokens
+Корень: страница уже на токенах и lucide-react (новых зависимостей и токенов не нужно: muted, income, expense, chart-2 есть). Отставание от DESIGN.md и «современности»: H1 24px на десктопе (надо 32px), заголовок insights 18px (надо 16px/600), сводка без иконок, фильтр типа — чипы с цветными рамками вместо сегмент-контрола (DESIGN §7), строка операции без иерархии время/аккаунт, мелкие иконки Filter/Wallet. Логика, API, i18n-ключи и данные не меняются. Тесты в frontend/tests — regex по исходникам, при смене классов их нужно обновить. Скрипты: в frontend/package.json только dev/build/start/lint; тесты — `node --test tests/*.cjs` (в frontend/). Все карточки последовательные (общие файлы тестов, `.next`, docker-build, вкладка браузера).
+
+### Карточка tx-ui-coder
 - agent: coder
-- title: Исправить глобальный контраст существующих токенов
-- scope: `frontend/app/globals.css`.
-- instructions: Измерить и минимально скорректировать light `primary`, `primary-foreground`, `muted-foreground`, при необходимости согласовать существующий `ring`; проверить их на реальных фонах и состояниях обеих тем. Tailwind уже экспортирует токены; новых цветов и изменений общих controls не требуется: Button уже имеет h-11, нарушения вызваны локальными override.
-- acceptance: текст и суммы ≥4.5:1, иконки и focus ≥3:1 в обеих темах на применимых фонах, включая Savings и состояние hover; общие правила coder выполнены.
+- title: Обновить визуал и типографику компонентов /transactions
+- scope (только эти файлы): frontend/app/transactions/page.tsx (только разметка шапки/классы), frontend/components/transactions/transaction-summary.tsx, transaction-list.tsx, transaction-filters.tsx, transaction-insights.tsx; frontend/tests/transaction*.test.cjs (только подгонка regex под новые классы)
+- instructions:
+  1. Прочитать frontend/DESIGN.md (разд. 3, 4, 7, 9, 12) и эталон frontend/components/dashboard/recent-transactions.tsx (+ net-worth-header.tsx для шапки/плитки). Создать ветку `llm/tx-ui-coder` от `llm`.
+  2. Только токены Tailwind, `formatMoney`/`formatPercent`, `t()`; новых ключей i18n по возможности не вводить (если нужны — ru и en одновременно). Иконки только из установленного lucide-react.
+  3. page.tsx: H1 `text-2xl sm:text-[32px] sm:leading-10 font-bold tracking-tight` (сверить с H1 на dashboard), подзаголовок 14px muted. Кнопки действий без изменения логики, hit area ≥44px.
+  4. transaction-summary.tsx: в каждую плитку иконка в плитке 40px `rounded-xl bg-muted` (lucide: TrendingUp — доход, TrendingDown — расход, Scale или Wallet — итог; цвет text-income / text-expense / по знаку net), подпись text-sm muted, сумма `text-2xl font-bold tabular-nums tracking-tight` (подстроку `text-2xl font-bold tabular-nums` сохранить, её проверяет тест). На 375px одна колонка, на sm+ три в ряд.
+  5. transaction-list.tsx: название категории `text-sm font-semibold`; вторая строка 12px muted: аккаунт (иконка 14px) · описание; справа сумма `text-sm font-semibold tabular-nums`, под ней эквивалент в базовой валюте и время 12px muted tabular-nums; на sm+ muted `ChevronRight` h-4 w-4 aria-hidden; заголовок дня `text-sm font-semibold`, итог дня 12px tabular-nums. Круг иконки 32px (`h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted`) сохранить; getCategoryIcon не менять. Пустое состояние: иконка в плитке 48px `rounded-2xl bg-muted`.
+  6. transaction-filters.tsx: поиск с Search слева (pl-10, не перекрывает текст); кнопка фильтров с SlidersHorizontal; фильтр типа — сегмент-контрол DESIGN §7: контейнер `inline-flex rounded-full bg-muted p-1`, пункты `rounded-full px-3 text-sm font-medium`, активный `bg-card text-foreground`, неактивный `text-muted-foreground`, высота ≥44px на мобильном; убрать цветные рамки. Сортировка: иконка ArrowUpDown h-4 w-4 в триггере. Логику setType/setSort/Select не менять.
+  7. transaction-insights.tsx: заголовок `text-base font-semibold`; остальное без изменений.
+  8. Обновить regex-тесты, ломающиеся от смены классов; проверки доступности и tabular-nums не ослаблять.
+  9. Коммит только из scope, сообщение на русском, заканчивается на ` llm` (например «style(transactions): современная шапка, сводка с иконками, сегмент-контрол фильтра llm»). Ветку вмержить в локальную `llm`. Push запрещён.
+- acceptance: изменения из instructions есть; логика/API/данные не изменены; нарушений по чеклисту DESIGN.md раздел 12 нет; dark и light, 1440px и 375px проверены в браузере, без горизонтального скролла и ошибок консоли; tap target ≥44px; commit только из scope, сообщение на русском с суффиксом `llm`, ветка `llm/tx-ui-coder` вмержена в `llm`, push не делался.
 - depends_on: []
-- parallel_group: wave-tokens
-- max_fix_cycles: 2
-- checks: `frontend`: `npm.cmd run lint`; измерение контраста фактических computed цветов в браузере на light/dark Savings и репрезентативных кнопках.
-- forbidden: все файлы вне scope; Docker rebuild.
+- parallel_group: —
+- checks: (frontend/) `npx.cmd tsc --noEmit`; `npm.cmd run lint`; `node --test tests/*.cjs`; `npm.cmd run build`. Из корня репо `docker compose up -d --build` РАЗРЕШЁН (ресурс docker-build, одновременно не запускать). Затем Chrome MCP, отдельная вкладка: http://localhost:3000/transactions, dark и light, 1440px и 375px, консоль чистая, клик по строке открывает диалог деталей.
+- forbidden: WORKFLOW_STATE.md, frontend/DESIGN.md, frontend/public/new-operation-prototype.html, globals.css, tailwind.config.ts, components/ui/*, add-transaction-dialog.tsx, transaction-details-dialog.tsx, lib/*, types, backend/, locales (кроме парных ключей ru+en при крайней необходимости), package.json/lockfile, tmp-d2/.
 
-### shared-controls
-- task_id: shared-controls
-- agent: coder
-- title: Закрепить общий минимум для интерактивных controls
-- scope: `frontend/components/ui/button.tsx`.
-- instructions: Сохранить существующие варианты и визуальный API, но зафиксировать в общем Button минимальный 44×44 размер для default, sm и icon (широкие текстовые кнопки могут расти по ширине); сохранить существующий видимый focus-visible ring. Не компенсировать это уменьшением текста или локальными отрицательными отступами. Не менять Dialog, Select, Input или вызывающие экраны.
-- acceptance: все Button-варианты по умолчанию имеют tap target не менее 44×44 и видимый focus без поломки `asChild`, disabled и keyboard поведения; общие правила coder выполнены.
-- depends_on: [tokens]
-- parallel_group: wave-shared-controls
-- max_fix_cycles: 2
-- checks: `frontend`: `npm.cmd run lint`; browser computed-size/focus smoke для default, sm, icon в обеих темах.
-- forbidden: все файлы вне scope; локальные экраны, Dashboard/Overview, Docker rebuild.
+### Карточка tx-ui-designer
+- agent: designer
+- title: Визуальная проверка и доводка /transactions
+- scope: файлы как в tx-ui-coder (кроме tests; page.tsx — только разметка/классы); экран только /transactions
+- instructions: Chrome MCP, отдельная вкладка. Открыть /transactions в dark и light, 1440px и 375px; пройти чеклист DESIGN.md разд. 12; править стили, разметку и тексты (не логику) до исчезновения high и medium, максимум 3 итерации. Проверить иерархию размеров, tabular-nums сумм, выравнивание списка и insights, состояния loading/empty/error, фокус-кольцо, hit area ≥44px на 375px, обрезания, горизонтальный скролл. Не коммитить.
+- acceptance: для каждого из dark/light × 1440/375 чеклист разд. 12 пройден, консоль без ошибок.
+- depends_on: [tx-ui-coder] (стек пересобран после неё; ресурс docker-build)
+- parallel_group: —
+- checks: Chrome MCP, отдельная вкладка, http://localhost:3000/transactions; при правках файлов пересобрать `docker compose up -d --build` (docker-build, одновременно с другими не запускать).
+- forbidden: WORKFLOW_STATE.md, DESIGN.md, globals.css, tailwind.config.ts, components/ui/*, диалоги транзакций, tests, lib/*, backend/, другие страницы.
 
-### analytics-limits-profile
-- task_id: analytics-limits-profile
-- agent: coder
-- title: Локализация и доступные controls аналитики, лимитов и профиля
-- scope: `frontend/components/analytics/account-breakdown.tsx`, `detailed-expenses.tsx`, `spend-velocity-chart.tsx`, `asset-allocation.tsx`, `detailed-tags.tsx`, `spending-heatmap.tsx`, `analytics-filter.tsx`, `frontend/components/limits/limit-card.tsx`, `frontend/components/profile/motivational-stats.tsx`, `frontend/locales/ru/translation.json`, `frontend/locales/en/translation.json`, `frontend/tests/analytics-localization.test.cjs`.
-- instructions: Использовать образец категорий из `components/transactions/transaction-list.tsx`: известные стандартные имена через `dashboard.categories.*`, пользовательские без преобразования; не менять ключи данных и агрегацию. Во всех затронутых analytics форматтерах передать i18n.language, перевести подписи, категории, tooltip и серии через t; корректно определять tooltip по dataKey, не по переведённому имени. Оси ≥12px. Убрать локальные h-8 overrides presets и edit/delete, delete — expense. Для Recharts использовать положительные размеры и при необходимости измерение/монтирование по паттерну ResizeObserver `dashboard/net-worth-chart.tsx`, не меняя Dashboard. Добавить небольшой regression на стандартную и пользовательскую категорию и локализованные строки/суммы, с существующим node:test паттерном.
-- instructions: Перед правкой прочитать `frontend/DESIGN.md` и эталон ближайшего типа из §11 (`recent-transactions`, `expenses-donut` или `limits-summary`); использовать только токены, `formatMoney` и `t()` с ключами ru/en.
-- acceptance: Analytics ru/en без смешения языков; пользовательские категории неизменны; стандартные Food/Shopping переведены в Limits и Profile; controls ≥44×44 с focus; графики видимы без предупреждений width/height -1 при переключении вкладок и resize; финансовые данные неизменны; нарушений по чеклисту DESIGN.md раздел 12 нет.
-- depends_on: [tokens, shared-controls]
-- parallel_group: wave-analytics
-- max_fix_cycles: 2
-- checks: `frontend`: `node --test tests/analytics-localization.test.cjs`; `npm.cmd run lint`; браузер: Analytics обе локали, графики и пресеты, Limits edit/delete, Profile категория.
-- forbidden: файлы вне scope; Dashboard и Overview, Docker rebuild.
-
-### savings
-- task_id: savings
-- agent: coder
-- title: Доступные controls и поля Savings
-- scope: `frontend/app/savings/page.tsx`, `frontend/locales/ru/translation.json`, `frontend/locales/en/translation.json`, `frontend/tests/savings-accessibility.test.cjs`.
-- instructions: Заголовок text-2xl; edit/delete видимы на touch и focus, ≥44×44, подписаны через t, delete — expense. Связать Label htmlFor с уникальными id/name трёх calculator inputs; range с собственным id/name и локализованным aria-label, зона касания ≥44px, сохранив визуальный track. Не менять формулу, валидацию, обработчики и CRUD. Regression по связям labels/controls и range.
-- instructions: Перед правкой прочитать `frontend/DESIGN.md` и эталон `components/dashboard/limits-summary.tsx` из §11; использовать только токены, `formatMoney` и `t()` с ключами ru/en.
-- acceptance: calculator доступен keyboard и screen reader; цели можно безопасно редактировать/удалять после confirm; размеры и focus соблюдены; расчёты неизменны; нарушений по чеклисту DESIGN.md раздел 12 нет.
-- depends_on: [analytics-limits-profile]
-- parallel_group: wave-savings
-- max_fix_cycles: 2
-- checks: `frontend`: `node --test tests/savings-accessibility.test.cjs`; `npm.cmd run lint`; браузер: calculator и CRUD на изолированной цели.
-- forbidden: файлы вне scope; Docker rebuild.
-
-### portfolio
-- task_id: portfolio
-- agent: coder
-- title: Адаптивная доступная аллокация и controls Portfolio
-- scope: `frontend/app/portfolio/page.tsx`, `frontend/components/dashboard/asset-allocation-chart.tsx`, `frontend/components/portfolio/investment-forecast-card.tsx`, `frontend/tests/portfolio-allocation.test.cjs`.
-- instructions: `asset-allocation-chart.tsx` находится в dashboard-каталоге, но его единственный caller — Portfolio; не менять остальные Dashboard файлы или Overview. Заголовок text-2xl; edit/delete ≥44×44, aria-label через существующие t, delete expense. Убрать фиксированную высоту, сжимающую мобильную легенду; min-h-11 для её controls. Центр доната адаптировать без усечения: при невозможности вместить полную `formatMoney` сумму показывать её вне кольца с доступной подписью. Округлить только отображаемые проценты методом наибольших остатков с детерминированным tie-break, согласовать легенду и tooltip, сохранить исходные значения сегментов. Обработать нулевые и некорректные значения без деления на ноль, не скрывая исходные данные. Устранить -1 Recharts в обоих графиках через положительные размеры/измерение, используя существующий ResizeObserver паттерн. Добавить node:test regression: 43+30+25+3 → 100, равные остатки, ноль и неизменность исходных значений.
-- instructions: Перед правкой прочитать `frontend/DESIGN.md` и эталон доната `components/dashboard/expenses-donut.tsx` из §11; использовать только токены, `formatMoney` и `t()` с ключами ru/en.
-- acceptance: 375px и 1440px сумма читаема целиком, легенда не сжата, проценты согласованы и дают 100 для положительного total; графики без -1 при mount/resize; API/CRUD/денежные расчёты неизменны; нарушений по чеклисту DESIGN.md раздел 12 нет.
-- depends_on: [savings]
-- parallel_group: wave-portfolio
-- max_fix_cycles: 2
-- checks: `frontend`: `node --test tests/portfolio-allocation.test.cjs`; `npm.cmd run lint`; браузер: разные суммы, распределения, resize и CRUD на изолированной позиции.
-- forbidden: файлы вне scope, включая прочие `frontend/components/dashboard/*`; Docker rebuild.
-
-### transactions
-- task_id: transactions
-- agent: coder
-- title: Доступные controls и разделители Transactions
-- scope: `frontend/app/transactions/page.tsx`, `frontend/components/transactions/transaction-filters.tsx`, `frontend/components/transactions/transaction-list.tsx`.
-- instructions: Удалить локальные overrides h-8/h-10 для Add, Export, поиска, filter, type и sort; обеспечить каждому ≥44×44, видимый focus и аккуратную mobile-компоновку; применять существующие controls и токены. В списке заменить divide-white/[.09] на divide-border. Не менять сортировку, CSV, CRUD, фильтрацию или данные.
-- instructions: Перед правкой прочитать `frontend/DESIGN.md` и эталон списка `components/dashboard/recent-transactions.tsx` из §11; использовать только токены, `formatMoney` и `t()` с ключами ru/en.
-- acceptance: targets ≥44×44, keyboard и focus работают, разделитель различим в обеих темах, поиск/filter/sort/export/delete работают как прежде; нарушений по чеклисту DESIGN.md раздел 12 нет.
-- depends_on: [portfolio]
-- parallel_group: wave-transactions
-- max_fix_cycles: 2
-- checks: `frontend`: `node --test tests/transactions-design.test.cjs tests/transaction-list-day-total.test.cjs`; `npm.cmd run lint`; браузер: фильтры, export и удаление тестовой операции с undo.
-- forbidden: файлы вне scope; Docker rebuild.
-
-### regression
-- task_id: regression
+### Карточка tx-ui-tester
 - agent: tester
-- title: Финальная сборка, regression и browser smoke
-- scope: все изменения волны; тестовые данные изолированы от рабочих.
-- instructions: Не менять приложение или общий state; отчёт orchestrator. После всех coder объединений orchestrator единолично выполняет из корня `docker compose up -d --build`, ресурс `docker-build` эксклюзивен, параллельная пересборка запрещена. Только после завершения использовать свежий стек, Chrome MCP и отдельную вкладку tester. Проверить console/network, все findings, ru/en, обе темы, 375/1440; CRUD и delete/undo только на изолированных данных, CSV без раскрытия реальных данных. Указать пропуски, а не выдумывать результаты.
-- acceptance: regression и сборка проходят; smoke проверяет консоль и сеть без неожиданных ошибок, локализацию, controls, расчёты, предупреждения Recharts и защиту пользовательских данных; отчёт отправлен orchestrator.
-- depends_on: [transactions]
-- parallel_group: wave-tester
-- max_fix_cycles: 2
-- checks: `frontend`: `node --test tests/*.test.cjs`, `npm.cmd run lint`, `npm.cmd run build` последовательно с выделенным `.next`; `backend`: `python -m pytest`; браузерные сценарии выше.
-- forbidden: изменение файлов приложения, state и fixtures; самостоятельный Docker rebuild; общие вкладки и одновременное использование `.next`.
+- title: Итоговая регрессия /transactions
+- scope: проверки без правки кода
+- instructions: после коммита правок designer в `llm`: (frontend/) `npx.cmd tsc --noEmit`, `npm.cmd run lint`, `node --test tests/*.cjs`, `npm.cmd run build`. Chrome MCP (отдельная вкладка, стек пересобран): smoke /transactions — список, фильтр типа, поиск, сортировка, пагинация, клик по строке открывает детали, кнопка «Добавить» открывает диалог, экспорт CSV; console и network без ошибок; dark/light, 1440/375.
+- acceptance: проверки зелёные, ошибок console/network нет, регрессий поведения нет; отчёт orchestrator.
+- depends_on: [tx-ui-designer]
+- parallel_group: —
+- checks: см. instructions; `docker compose up -d --build` (docker-build), если стек не свежий.
+- forbidden: WORKFLOW_STATE.md, любые файлы приложения и тестов.
 
-- max_fix_cycles: 2
-
-### designer-analytics
-- task_id: designer-analytics
-- agent: designer
-- title: Аудит Analytics
-- scope: экран Analytics, без изменений приложения.
-- instructions: Отчёт orchestrator; после tester использовать docker-build, Chrome MCP и отдельную вкладку. Проверить обе темы, 1440px/375px, ru/en, графики/оси/пресеты, keyboard, focus, contrast, loading/empty/error, overflow. Нарушений по чеклисту DESIGN.md раздел 12 нет.
-- acceptance: отдельные результаты для Analytics и обеих тем/размеров; нет смешения языков, chart warning, tap/focus/contrast нарушений; checklist DESIGN.md §12 пройден.
-- depends_on: [regression, analytics-limits-profile]
-- parallel_group: wave-designer-analytics
-- max_fix_cycles: 2
-- checks: Chrome MCP, отдельная вкладка, ресурс docker-build.
-- forbidden: приложение, state, Dashboard/Overview, prototype, Docker rebuild.
-
-### designer-limits-profile
-- task_id: designer-limits-profile
-- agent: designer
-- title: Аудит Limits и Profile
-- scope: экраны Limits и Profile, без изменений приложения.
-- instructions: Отчёт orchestrator; Chrome MCP, отдельная вкладка и docker-build после tester. Проверить обе темы, 1440px/375px, ru/en, категории, controls, focus, contrast, loading/empty/error. Нарушений по чеклисту DESIGN.md раздел 12 нет.
-- acceptance: отдельные результаты Limits и Profile; стандартные категории переведены, пользовательские сохранены, controls доступны; checklist DESIGN.md §12 пройден.
-- depends_on: [regression, analytics-limits-profile]
-- parallel_group: wave-designer-limits-profile
-- max_fix_cycles: 2
-- checks: Chrome MCP, отдельная вкладка, ресурс docker-build.
-- forbidden: приложение, state, Dashboard/Overview, prototype, Docker rebuild.
-
-### designer-savings
-- task_id: designer-savings
-- agent: designer
-- title: Аудит Savings
-- scope: экран Savings, без изменений приложения.
-- instructions: Отчёт orchestrator; Chrome MCP, отдельная вкладка и docker-build после tester. Проверить обе темы, 1440px/375px, labels/id/name/range, CRUD, focus, contrast, keyboard, loading/empty/error, overflow. Нарушений по чеклисту DESIGN.md раздел 12 нет.
-- acceptance: отдельные результаты Savings для обеих тем/размеров; поля и range доступны, targets ≥44, confirm/delete безопасны; checklist DESIGN.md §12 пройден.
-- depends_on: [regression, savings]
-- parallel_group: wave-designer-savings
-- max_fix_cycles: 2
-- checks: Chrome MCP, отдельная вкладка, ресурс docker-build.
-- forbidden: приложение, state, Dashboard/Overview, prototype, Docker rebuild.
-
-### designer-portfolio
-- task_id: designer-portfolio
-- agent: designer
-- title: Аудит Portfolio
-- scope: экран Portfolio, без изменений приложения.
-- instructions: Отчёт orchestrator; Chrome MCP, отдельная вкладка и docker-build после tester. Проверить обе темы, 1440px/375px, donut/legend/100%, charts, CRUD, aria-label, focus, contrast, loading/empty/error, overflow. Нарушений по чеклисту DESIGN.md раздел 12 нет.
-- acceptance: отдельные результаты Portfolio для обеих тем/размеров; сумма и легенда читаемы, проценты согласованы, chart warnings отсутствуют, controls доступны; checklist DESIGN.md §12 пройден.
-- depends_on: [regression, portfolio]
-- parallel_group: wave-designer-portfolio
-- max_fix_cycles: 2
-- checks: Chrome MCP, отдельная вкладка, ресурс docker-build.
-- forbidden: приложение, state, Dashboard/Overview, prototype, Docker rebuild.
-
-### designer-transactions
-- task_id: designer-transactions
-- agent: designer
-- title: Аудит Transactions
-- scope: экран Transactions, без изменений приложения.
-- instructions: Отчёт orchestrator; Chrome MCP, отдельная вкладка и docker-build после tester. Проверить обе темы, 1440px/375px, controls search/filter/sort/add/export, focus, contrast, delete/undo, разделители, loading/empty/error, overflow. Нарушений по чеклисту DESIGN.md раздел 12 нет.
-- acceptance: отдельные результаты Transactions для обеих тем/размеров; все targets ≥44, focus виден, delete/undo работает на изолированных данных, checklist DESIGN.md §12 пройден.
-- depends_on: [regression, transactions]
-- parallel_group: wave-designer-transactions
-- max_fix_cycles: 2
-- checks: Chrome MCP, отдельная вкладка, ресурс docker-build.
-- forbidden: приложение, state, Dashboard/Overview, prototype, Docker rebuild.
+Следующий этап orchestrator: запустить tx-ui-coder; правки designer закоммитить на `llm/tx-ui-coder` (или в `llm`) до tester.
