@@ -30,6 +30,12 @@ _UA = (
 _SYM_RE = re.compile(r"^[A-Z0-9.\-]{1,16}$")
 
 
+# Основные режимы торгов МосБиржи: акции, ETF/паи, облигации
+_PRIMARY_BOARDS = ["TQBR", "TQTF", "TQTD", "TQIF", "TQPI", "TQOB", "TQCB", "TQIR", "TQOD", "TQOE"]
+# LAST — цена последней сделки; остальное — запасные варианты вне торговой сессии
+_PRICE_FIELDS = ("LAST", "LCURRENTPRICE", "MARKETPRICE", "WAPRICE", "CLOSEPRICE")
+
+
 class Quote(TypedDict):
     symbol: str
     price: float
@@ -52,12 +58,19 @@ async def _moex_last(client: httpx.AsyncClient, secid: str) -> Optional[Quote]:
             rows = md.get("data") or []
             if not cols or not rows:
                 continue
-            idx = {c: i for i, c in enumerate(cols)}
+            # Ответ содержит строки по всем доскам. Брать первую нельзя: например,
+            # SPEQ (адресные сделки) отдаёт ориентировочный MARKETPRICE, заметно
+            # отличающийся от цены основных торгов. Берём основные доски по приоритету.
+            by_board = {}
             for row in rows:
-                for field in ("LAST", "MARKETPRICE", "LCURRENTPRICE", "WAPRICE"):
-                    i = idx.get(field)
-                    if i is not None and row[i]:
-                        price = float(row[i])
+                rec = dict(zip(cols, row))
+                by_board.setdefault(rec.get("BOARDID"), rec)
+            ordered = [by_board[b] for b in _PRIMARY_BOARDS if b in by_board]
+            for rec in ordered:
+                for field in _PRICE_FIELDS:
+                    value = rec.get(field)
+                    if value:
+                        price = float(value)
                         if price > 0:
                             # Облигации котируются в % от номинала — фронтенд
                             # для них живые цены не запрашивает.
