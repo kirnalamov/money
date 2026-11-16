@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { formatMoney, convertCurrency } from "@/lib/utils";
+import { convertCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -24,13 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Position, Currency } from "@/types";
-import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-chart";
+import { PortfolioSummary } from "@/components/portfolio/portfolio-summary";
+import { AssetAllocationCard } from "@/components/portfolio/asset-allocation-card";
+import { PositionsTable } from "@/components/portfolio/positions-table";
+import { IncomeForecastCard } from "@/components/portfolio/income-forecast-card";
 import { InvestmentForecastCard } from "@/components/portfolio/investment-forecast-card";
 
 export default function PortfolioPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { positions, accounts, defaultCurrency, addPosition, updatePosition, deletePosition } = useStore();
   const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: number } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,7 +49,7 @@ export default function PortfolioPage() {
 
   const brokerageAccounts = accounts.filter(acc => acc.type === 'brokerage');
 
-  const resetForm = () => {
+  const resetForm = (assetClass: Position["assetClass"] = "stock") => {
     setFormData({
       symbol: "",
       name: "",
@@ -56,12 +58,12 @@ export default function PortfolioPage() {
       currentPrice: "",
       currency: defaultCurrency,
       accountId: brokerageAccounts[0]?.id.toString() || "",
-      assetClass: "stock",
+      assetClass,
     });
     setEditingPosition(null);
   };
 
-  const handleOpenDialog = (position?: Position) => {
+  const handleOpenDialog = (position?: Position, presetClass?: Position["assetClass"]) => {
     if (position) {
       setEditingPosition({ symbol: position.symbol, accountId: position.accountId });
       setFormData({
@@ -75,7 +77,7 @@ export default function PortfolioPage() {
         assetClass: position.assetClass || "stock",
       });
     } else {
-      resetForm();
+      resetForm(presetClass);
     }
     setIsDialogOpen(true);
   };
@@ -107,13 +109,12 @@ export default function PortfolioPage() {
     resetForm();
   };
 
-  const handleDelete = async (symbol: string, accountId: string | number) => {
+  const handleDelete = async (position: Position) => {
     if (confirm(t("portfolio.delete_position") + "?")) {
-      try { await deletePosition(symbol, Number(accountId)); } catch { alert(t('common.error')); }
+      try { await deletePosition(position.symbol, Number(position.accountId)); } catch { alert(t('common.error')); }
     }
   };
 
-  // Calculate portfolio metrics
   const portfolioMetrics = useMemo(() => {
     let totalValue = 0;
     let totalCost = 0;
@@ -121,336 +122,134 @@ export default function PortfolioPage() {
     positions.forEach((position) => {
       const value = position.quantity * position.currentPrice;
       const cost = position.quantity * position.avgPrice;
-
-      const valueInDefault = convertCurrency(value, position.currency, defaultCurrency);
-      const costInDefault = convertCurrency(cost, position.currency, defaultCurrency);
-
-      totalValue += valueInDefault;
-      totalCost += costInDefault;
+      totalValue += convertCurrency(value, position.currency, defaultCurrency);
+      totalCost += convertCurrency(cost, position.currency, defaultCurrency);
     });
 
     const totalPnL = totalValue - totalCost;
     const returnPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
-
-    return {
-      totalValue,
-      totalCost,
-      totalPnL,
-      returnPercent,
-    };
-
+    return { totalValue, totalCost, totalPnL, returnPercent };
   }, [positions, defaultCurrency]);
-
-  // Group positions by account
-  const positionsByAccount = useMemo(() => {
-    const grouped: Record<string, Position[]> = {};
-    positions.forEach((position) => {
-      if (!grouped[position.accountId]) {
-        grouped[position.accountId] = [];
-      }
-      grouped[position.accountId].push(position);
-    });
-    return grouped;
-  }, [positions]);
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">{t("portfolio.title")}</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()} disabled={brokerageAccounts.length === 0}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("portfolio.add_position")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingPosition ? t("portfolio.edit_position") : t("portfolio.add_position")}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingPosition ? t("portfolio.edit_position_desc") : t("portfolio.add_position_desc")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="accountId" className="text-right">
-                    {t("portfolio.account")}
-                  </Label>
-                  <Select
-                    value={formData.accountId}
-                    onValueChange={(value) => setFormData({ ...formData, accountId: value })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder={t("portfolio.select_account")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {brokerageAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id.toString()}>
-                          {account.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      <div className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-5 pb-20 text-[#F1F3EE] md:px-4 md:pb-6 xl:px-8">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-[-0.02em] sm:text-[30px] sm:leading-[1.2]">{t("portfolio.title")}</h1>
+            <p className="mt-1 text-sm text-[#8D9388]">{t("portfolio.subtitle")}</p>
+          </div>
+          <Button
+            onClick={() => handleOpenDialog()}
+            disabled={brokerageAccounts.length === 0}
+            className="h-[42px] gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-[18px] text-sm font-semibold text-[#10170A] hover:bg-[#D3F76F]"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
+            {t("portfolio.add_position")}
+          </Button>
+        </header>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="symbol" className="text-right">
-                    {t("portfolio.symbol")}
-                  </Label>
-                  <Input
-                    id="symbol"
-                    value={formData.symbol}
-                    onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                    className="col-span-3"
-                    placeholder="AAPL"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    {t("portfolio.name")}
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="col-span-3"
-                    placeholder="Apple Inc."
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="assetClass" className="text-right">
-                    {t("portfolio.asset_class")}
-                  </Label>
-                  <Select
-                    value={formData.assetClass}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, assetClass: value as Position["assetClass"] })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="stock">{t("portfolio.asset_classes.stock")}</SelectItem>
-                      <SelectItem value="crypto">{t("portfolio.asset_classes.crypto")}</SelectItem>
-                      <SelectItem value="etf">{t("portfolio.asset_classes.etf")}</SelectItem>
-                      <SelectItem value="bond">{t("portfolio.asset_classes.bond")}</SelectItem>
-                      <SelectItem value="cash">{t("portfolio.asset_classes.cash")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quantity" className="text-right">
-                    {t("portfolio.quantity")}
-                  </Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    step="0.00000001"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="avgPrice" className="text-right">
-                    {t("portfolio.avg_price")}
-                  </Label>
-                  <Input
-                    id="avgPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.avgPrice}
-                    onChange={(e) => setFormData({ ...formData, avgPrice: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="currentPrice" className="text-right">
-                    {t("portfolio.current_price")}
-                  </Label>
-                  <Input
-                    id="currentPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.currentPrice}
-                    onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="currency" className="text-right">
-                    {t("portfolio.currency")}
-                  </Label>
-                  <Select
-                    value={formData.currency}
-                    onValueChange={(value: Currency) =>
-                      setFormData({ ...formData, currency: value })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="RUB">RUB</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  {t("common.cancel")}
-                </Button>
-                <Button onClick={handleSave} disabled={brokerageAccounts.length === 0}>
-                  {t("common.save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex flex-wrap items-stretch gap-5">
+          <PortfolioSummary
+            totalValue={portfolioMetrics.totalValue}
+            totalCost={portfolioMetrics.totalCost}
+            totalPnL={portfolioMetrics.totalPnL}
+            returnPercent={portfolioMetrics.returnPercent}
+          />
+          <AssetAllocationCard />
         </div>
 
-        {/* Portfolio Metrics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <div className="lg:col-span-4 space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="border rounded-xl p-6 bg-card ">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_value")}</p>
-                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalValue, defaultCurrency, i18n.language)}</p>
-              </div>
-              <div className="border rounded-xl p-6 bg-card ">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.invested_capital")}</p>
-                <p className="text-3xl font-bold">{formatMoney(portfolioMetrics.totalCost, defaultCurrency, i18n.language)}</p>
-              </div>
-              <div className="border rounded-xl p-6 bg-card ">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.total_pnl")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-income' : 'text-expense'}`}>
-                  {formatMoney(portfolioMetrics.totalPnL, defaultCurrency, i18n.language, true)}
-                </p>
-              </div>
-              <div className="border rounded-xl p-6 bg-card ">
-                <p className="text-sm text-muted-foreground mb-2">{t("portfolio.return_on_cost")}</p>
-                <p className={`text-3xl font-bold ${portfolioMetrics.returnPercent >= 0 ? 'text-income' : 'text-expense'}`}>
-                  {portfolioMetrics.returnPercent >= 0 ? '+' : ''}{portfolioMetrics.returnPercent.toFixed(2)}%
-                </p>
-              </div>
-            </div>
-          </div>
+        <PositionsTable
+          onEdit={(position) => handleOpenDialog(position)}
+          onDelete={handleDelete}
+          onAddBond={() => handleOpenDialog(undefined, "bond")}
+        />
 
-          {/* Asset Allocation Chart - Right Side */}
-          <div className="lg:col-span-3">
-            <AssetAllocationChart />
-          </div>
-        </div>
+        <IncomeForecastCard />
 
         <InvestmentForecastCard initialValue={portfolioMetrics.totalValue} />
 
-        {/* Positions List */}
-        {positions.length === 0 ? (
-          <div className="border rounded-xl p-6 flex items-center justify-center text-muted-foreground">
-            {brokerageAccounts.length === 0
-              ? t("portfolio.no_brokerage_accounts")
-              : t("portfolio.no_positions")}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(positionsByAccount).map(([accountId, accountPositions]) => {
-              const account = accounts.find(acc => acc.id.toString() === accountId);
-              if (!account) return null;
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPosition ? t("portfolio.edit_position") : t("portfolio.add_position")}
+              </DialogTitle>
+              <DialogDescription>
+                {editingPosition ? t("portfolio.edit_position_desc") : t("portfolio.add_position_desc")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid max-h-[60vh] gap-4 overflow-y-auto py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="accountId" className="text-right">{t("portfolio.account")}</Label>
+                <Select value={formData.accountId} onValueChange={(value) => setFormData({ ...formData, accountId: value })}>
+                  <SelectTrigger className="col-span-3"><SelectValue placeholder={t("portfolio.select_account")} /></SelectTrigger>
+                  <SelectContent>
+                    {brokerageAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id.toString()}>{account.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              return (
-                <div key={accountId} className="space-y-4">
-                  <h3 className="text-xl font-semibold">{account.name}</h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {accountPositions.map((position) => {
-                      const value = position.quantity * position.currentPrice;
-                      const cost = position.quantity * position.avgPrice;
-                      const pnl = value - cost;
-                      const pnlPercent = cost > 0 ? ((value - cost) / cost) * 100 : 0;
-                      const valueInDefault = convertCurrency(value, position.currency, defaultCurrency);
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="symbol" className="text-right">{t("portfolio.symbol")}</Label>
+                <Input id="symbol" value={formData.symbol} onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })} className="col-span-3" placeholder="AAPL" />
+              </div>
 
-                      return (
-                        <div key={`${position.symbol}-${position.accountId}`} className="border rounded-xl p-6 bg-card">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h3 className="font-semibold text-lg">{position.symbol}</h3>
-                              <p className="text-sm text-muted-foreground">{position.name}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {t(`portfolio.asset_classes.${position.assetClass || 'stock'}`)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-11 w-11 shrink-0"
-                                aria-label={t("portfolio.edit_position")}
-                                onClick={() => handleOpenDialog(position)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-11 w-11 shrink-0 text-expense hover:text-expense"
-                                aria-label={t("portfolio.delete_position")}
-                                onClick={() => handleDelete(position.symbol, position.accountId)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">{t("portfolio.quantity")}</span>
-                              <span className="text-sm font-medium">{position.quantity}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">{t("portfolio.avg_price")}</span>
-                              <span className="text-sm font-medium">{formatMoney(position.avgPrice, position.currency, i18n.language)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">{t("portfolio.current_price")}</span>
-                              <span className="text-sm font-medium">{formatMoney(position.currentPrice, position.currency, i18n.language)}</span>
-                            </div>
-                            <div className="flex justify-between pt-2 border-t">
-                              <span className="text-sm text-muted-foreground">{t("portfolio.value")}</span>
-                              <span className="text-sm font-bold">{formatMoney(valueInDefault, defaultCurrency, i18n.language)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">{t("portfolio.pnl")}</span>
-                              <div className="flex items-center gap-2">
-                                {pnl >= 0 ? (
-                                  <TrendingUp className="h-4 w-4 text-income" />
-                                ) : (
-                                  <TrendingDown className="h-4 w-4 text-expense" />
-                                )}
-                                <span className={`text-sm font-bold ${pnl >= 0 ? 'text-income' : 'text-expense'}`}>
-                                  {formatMoney(pnl, position.currency, i18n.language, true)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">{t("portfolio.name")}</Label>
+                <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="col-span-3" placeholder="Apple Inc." />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="assetClass" className="text-right">{t("portfolio.asset_class")}</Label>
+                <Select value={formData.assetClass} onValueChange={(value) => setFormData({ ...formData, assetClass: value as Position["assetClass"] })}>
+                  <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stock">{t("portfolio.asset_classes.stock")}</SelectItem>
+                    <SelectItem value="crypto">{t("portfolio.asset_classes.crypto")}</SelectItem>
+                    <SelectItem value="etf">{t("portfolio.asset_classes.etf")}</SelectItem>
+                    <SelectItem value="bond">{t("portfolio.asset_classes.bond")}</SelectItem>
+                    <SelectItem value="cash">{t("portfolio.asset_classes.cash")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="quantity" className="text-right">{t("portfolio.quantity")}</Label>
+                <Input id="quantity" type="number" step="0.00000001" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} className="col-span-3" />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="avgPrice" className="text-right">{t("portfolio.avg_price")}</Label>
+                <Input id="avgPrice" type="number" step="0.01" value={formData.avgPrice} onChange={(e) => setFormData({ ...formData, avgPrice: e.target.value })} className="col-span-3" />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="currentPrice" className="text-right">{t("portfolio.current_price")}</Label>
+                <Input id="currentPrice" type="number" step="0.01" value={formData.currentPrice} onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })} className="col-span-3" />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="currency" className="text-right">{t("portfolio.currency")}</Label>
+                <Select value={formData.currency} onValueChange={(value: Currency) => setFormData({ ...formData, currency: value })}>
+                  <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="RUB">RUB</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
+              <Button onClick={handleSave} disabled={brokerageAccounts.length === 0}>{t("common.save")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );

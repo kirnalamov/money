@@ -1,260 +1,177 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { Calculator, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { formatMoney } from "@/lib/utils";
+import { TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { formatAmount } from "@/components/transactions/money";
 
 interface InvestmentForecastCardProps {
-  initialValue: number;
+    initialValue: number;
 }
 
-interface ForecastPoint {
-  year: number;
-  invested: number;
-  nominal: number;
-  real: number;
+function parseNum(value: string, fallback: number, min: number, max: number) {
+    const parsed = parseFloat(value.replace(",", ".").replace(/\s/g, ""));
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.min(max, Math.max(min, parsed));
 }
 
-const DEFAULT_MONTHLY_CONTRIBUTION = "500";
-const DEFAULT_RETURN_RATE = "8";
-const DEFAULT_INFLATION_RATE = "4";
-const DEFAULT_HORIZON = "20";
+function Field({ label, value, onChange, suffix }: { label: string; value: string; onChange: (v: string) => void; suffix: string }) {
+    return (
+        <label className="flex flex-col gap-2 text-[13px] font-medium text-[#C9CEC3]">{label}
+            <span className="flex h-[46px] items-center rounded-xl border border-[#2A2E27] bg-[#0E0F0E] px-4 transition-colors duration-150 focus-within:border-[#C6F24E]">
+                <input type="text" inputMode="decimal" value={value} onChange={e => onChange(e.target.value)} className="min-w-0 flex-1 bg-transparent text-base font-semibold text-[#F1F3EE] outline-none" />
+                <span className="font-medium text-[#8D9388]">{suffix}</span>
+            </span>
+        </label>
+    );
+}
 
 export function InvestmentForecastCard({ initialValue }: InvestmentForecastCardProps) {
-  const { t, i18n } = useTranslation();
-  const { defaultCurrency } = useStore();
-  const [monthlyContribution, setMonthlyContribution] = useState(DEFAULT_MONTHLY_CONTRIBUTION);
-  const [returnRate, setReturnRate] = useState(DEFAULT_RETURN_RATE);
-  const [inflationRate, setInflationRate] = useState(DEFAULT_INFLATION_RATE);
-  const [horizonYears, setHorizonYears] = useState(DEFAULT_HORIZON);
-  const chartRef = useRef<HTMLDivElement>(null);
-  const [chartWidth, setChartWidth] = useState(0);
+    const { t, i18n } = useTranslation();
+    const { defaultCurrency } = useStore();
+    const locale = i18n.language;
+    const ru = locale.startsWith("ru");
+    const [contrib, setContrib] = useState("500");
+    const [ret, setRet] = useState("8");
+    const [infl, setInfl] = useState("4");
+    const [years, setYears] = useState("20");
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
-    observer.observe(chartRef.current);
-    return () => observer.disconnect();
-  }, []);
+    const model = useMemo(() => {
+        const c = parseNum(contrib, 0, 0, 1_000_000);
+        const r = parseNum(ret, 0, 0, 60) / 100;
+        const inf = parseNum(infl, 0, 0, 40) / 100;
+        const n = Math.round(parseNum(years, 1, 1, 50));
 
-  const forecast = useMemo(() => {
-    const contribution = Math.max(0, Number(monthlyContribution) || 0);
-    const annualReturn = Math.max(-99, Number(returnRate) || 0) / 100;
-    const annualInflation = Math.max(0, Number(inflationRate) || 0) / 100;
-    const years = Math.min(50, Math.max(1, Math.round(Number(horizonYears) || 1)));
-    const monthlyRate = annualReturn / 12;
+        const nominalAt = (tYear: number) => {
+            const months = tYear * 12;
+            const i = r / 12;
+            if (i === 0) return initialValue + c * months;
+            const growth = Math.pow(1 + i, months);
+            return initialValue * growth + c * (growth - 1) / i;
+        };
+        const investedAt = (tYear: number) => initialValue + c * 12 * tYear;
+        const realAt = (tYear: number) => nominalAt(tYear) / Math.pow(1 + inf, tYear);
 
-    const calculateNominal = (months: number) => {
-      const growth = Math.pow(1 + monthlyRate, months);
-      const contributions = monthlyRate === 0
-        ? contribution * months
-        : contribution * ((growth - 1) / monthlyRate);
+        const nominal = nominalAt(n);
+        // «Красивая» шкала по оси Y.
+        const raw = Math.max(nominal / 4, 1);
+        const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+        let step = pow * 10;
+        for (const k of [1, 2, 2.5, 5, 10]) { if (k * pow >= raw) { step = k * pow; break; } }
+        const ymax = step * Math.ceil(nominal / step);
 
-      return Math.max(0, initialValue * growth + contributions);
-    };
+        const px = (tYear: number) => (tYear / n) * 100;
+        const py = (v: number) => 100 - (v / ymax) * 100;
+        const pts = (fn: (tYear: number) => number) => {
+            const out: string[] = [];
+            for (let tYear = 0; tYear <= n; tYear++) out.push(`${px(tYear).toFixed(2)},${py(fn(tYear)).toFixed(2)}`);
+            return out.join(" ");
+        };
+        const nominalPts = pts(nominalAt);
 
-    const points: ForecastPoint[] = Array.from({ length: years + 1 }, (_, year) => {
-      const months = year * 12;
-      const nominal = calculateNominal(months);
-      const inflationFactor = Math.pow(1 + annualInflation, year);
+        const short = (v: number) => {
+            if (v === 0) return "0";
+            const fmt = (x: number) => {
+                const s = x.toFixed(1).replace(/\.0$/, "");
+                return ru ? s.replace(".", ",") : s;
+            };
+            if (v >= 1e6) return ru ? `${fmt(v / 1e6)} млн` : `${fmt(v / 1e6)}M`;
+            return ru ? `${fmt(v / 1000)} тыс.` : `${fmt(v / 1000)}K`;
+        };
+        const yTicks: { top: number; label: string }[] = [];
+        for (let v = 0; v <= ymax + 1e-6; v += step) yTicks.push({ top: 100 - (v / ymax) * 100, label: short(v) });
+        const xTicks = Array.from({ length: 5 }, (_, k) => {
+            const tYear = Math.round((n * k) / 4);
+            return { left: px(tYear), label: String(tYear) };
+        });
 
-      return {
-        year,
-        invested: initialValue + contribution * months,
-        nominal,
-        real: nominal / inflationFactor,
-      };
-    });
+        return {
+            years: n,
+            nominal,
+            real: realAt(n),
+            invested: investedAt(n),
+            yTicks,
+            xTicks,
+            chart: {
+                nominal: nominalPts,
+                real: pts(realAt),
+                invested: pts(investedAt),
+                area: `${nominalPts} 100,100 0,100`,
+                nTop: py(nominal),
+                rTop: py(realAt(n)),
+                iTop: py(investedAt(n)),
+            },
+        };
+    }, [contrib, ret, infl, years, initialValue]);
 
-    const finalPoint = points[points.length - 1];
+    return (
+        <section aria-label={t("portfolio.forecast.title")} className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714] text-[#F1F3EE]">
+            <div className="flex items-start gap-3.5 border-b border-[#232721] px-7 py-6">
+                <span aria-hidden="true" className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]"><TrendingUp className="h-[18px] w-[18px]" /></span>
+                <div>
+                    <h2 className="text-base font-semibold">{t("portfolio.forecast.title")}</h2>
+                    <p className="mt-1 text-[13.5px] text-[#8D9388]">{t("portfolio.forecast.description")}</p>
+                </div>
+            </div>
 
-    return {
-      points,
-      years,
-      finalPoint,
-      invested: finalPoint.invested,
-      nominalProfit: finalPoint.nominal - finalPoint.invested,
-      inflationImpact: finalPoint.nominal - finalPoint.real,
-    };
-  }, [horizonYears, inflationRate, initialValue, monthlyContribution, returnRate]);
+            <div className="flex flex-wrap items-start gap-8 p-7">
+                <div className="flex min-w-[220px] flex-[0_1_260px] flex-col gap-[18px]">
+                    <Field label={t("portfolio.forecast.monthly_contribution")} value={contrib} onChange={setContrib} suffix={defaultCurrency === "USD" ? "$" : defaultCurrency === "EUR" ? "€" : defaultCurrency === "GBP" ? "£" : "₽"} />
+                    <Field label={t("portfolio.forecast.annual_return")} value={ret} onChange={setRet} suffix="%" />
+                    <Field label={t("portfolio.forecast.inflation")} value={infl} onChange={setInfl} suffix="%" />
+                    <Field label={t("portfolio.forecast.horizon")} value={years} onChange={setYears} suffix={t("portfolio.forecast.years_suffix")} />
+                    <p className="text-[12.5px] text-[#8D9388]">{t("portfolio.forecast.start_note", { value: formatAmount(initialValue, defaultCurrency, locale) })}</p>
+                </div>
 
-  const setNumericValue = (setter: (value: string) => void, value: string) => {
-    setter(value.replace(/[^0-9.-]/g, ""));
-  };
+                <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-6">
+                    <div className="flex flex-wrap gap-3">
+                        <div className="flex-[1_1_150px] rounded-[14px] border border-[#232721] bg-[#121411] p-4">
+                            <div className="flex items-center gap-2 text-[12.5px] text-[#8D9388]"><span aria-hidden="true" className="h-[3px] w-2.5 rounded-sm bg-[#C6F24E]" />{t("portfolio.forecast.projected_value")}</div>
+                            <div className="mt-1.5 text-[21px] font-bold tabular-nums">{formatAmount(model.nominal, defaultCurrency, locale)}</div>
+                        </div>
+                        <div className="flex-[1_1_150px] rounded-[14px] border border-[#232721] bg-[#121411] p-4">
+                            <div className="flex items-center gap-2 text-[12.5px] text-[#8D9388]"><span aria-hidden="true" className="h-[3px] w-2.5 rounded-sm bg-[#FBBF24]" />{t("portfolio.forecast.real_value")}</div>
+                            <div className="mt-1.5 text-[21px] font-bold tabular-nums">{formatAmount(model.real, defaultCurrency, locale)}</div>
+                        </div>
+                        <div className="flex-[1_1_150px] rounded-[14px] border border-[#232721] bg-[#121411] p-4">
+                            <div className="flex items-center gap-2 text-[12.5px] text-[#8D9388]"><span aria-hidden="true" className="h-[3px] w-2.5 rounded-sm bg-[#8D9388]" />{t("portfolio.forecast.invested")}</div>
+                            <div className="mt-1.5 text-[21px] font-bold tabular-nums">{formatAmount(model.invested, defaultCurrency, locale)}</div>
+                        </div>
+                        <div className="flex-[1_1_150px] rounded-[14px] border border-[#232721] bg-[#121411] p-4">
+                            <div className="text-[12.5px] text-[#8D9388]">{t("portfolio.forecast.inflation_impact")}</div>
+                            <div className="mt-1.5 text-[21px] font-bold tabular-nums text-[#F87171]">{formatAmount(-(model.nominal - model.real), defaultCurrency, locale)}</div>
+                        </div>
+                    </div>
 
-  return (
-    <Card>
-      <CardHeader className="border-b">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
-              {t("portfolio.forecast.title")}
-            </CardTitle>
-            <CardDescription className="mt-2 max-w-2xl">
-              {t("portfolio.forecast.description")}
-            </CardDescription>
-          </div>
-          <TrendingUp className="hidden h-5 w-5 text-muted-foreground sm:block" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6 pt-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2">
-            <Label htmlFor="forecast-contribution">{t("portfolio.forecast.monthly_contribution")}</Label>
-            <Input
-              id="forecast-contribution"
-              type="number"
-              min="0"
-              step="50"
-              value={monthlyContribution}
-              onChange={(event) => setNumericValue(setMonthlyContribution, event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="forecast-return">{t("portfolio.forecast.annual_return")}</Label>
-            <Input
-              id="forecast-return"
-              type="number"
-              min="-99"
-              max="100"
-              step="0.5"
-              value={returnRate}
-              onChange={(event) => setNumericValue(setReturnRate, event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="forecast-inflation">{t("portfolio.forecast.inflation")}</Label>
-            <Input
-              id="forecast-inflation"
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              value={inflationRate}
-              onChange={(event) => setNumericValue(setInflationRate, event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="forecast-horizon">{t("portfolio.forecast.horizon")}</Label>
-            <Input
-              id="forecast-horizon"
-              type="number"
-              min="1"
-              max="50"
-              step="1"
-              value={horizonYears}
-              onChange={(event) => setNumericValue(setHorizonYears, event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <p className="text-xs text-muted-foreground">{t("portfolio.forecast.projected_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.nominal, defaultCurrency, i18n.language)}</p>
-          </div>
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <p className="text-xs text-muted-foreground">{t("portfolio.forecast.real_value")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language)}</p>
-          </div>
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <p className="text-xs text-muted-foreground">{t("portfolio.forecast.invested")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.invested, defaultCurrency, i18n.language)}</p>
-          </div>
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <p className="text-xs text-muted-foreground">{t("portfolio.forecast.inflation_impact")}</p>
-            <p className="mt-1 text-xl font-semibold">{formatMoney(forecast.inflationImpact, defaultCurrency, i18n.language)}</p>
-          </div>
-        </div>
-
-        <div
-          ref={chartRef}
-          className="h-[340px] w-full min-w-0"
-          role="img"
-          aria-label={t("portfolio.forecast.accessibility", {
-            years: forecast.years,
-            nominal: formatMoney(forecast.finalPoint.nominal, defaultCurrency, i18n.language),
-            real: formatMoney(forecast.finalPoint.real, defaultCurrency, i18n.language),
-          })}
-        >
-          {chartWidth > 0 && <ResponsiveContainer width={chartWidth} height={340}>
-            <LineChart data={forecast.points} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="year" tickLine={false} axisLine={false} tickMargin={8} tick={{ className: "fill-muted-foreground text-xs" }} />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                width={72}
-                tick={{ className: "fill-muted-foreground text-xs" }}
-                tickFormatter={(value) => formatMoney(Number(value), defaultCurrency, i18n.language)}
-              />
-              <Tooltip
-                content={({ active, payload, label }) => active && payload?.length ? (
-                  <div className="rounded-xl border bg-popover p-3 text-sm text-popover-foreground">
-                    <p>{t("portfolio.forecast.year")} {label}</p>
-                    {payload.map(point => (
-                      <p key={String(point.dataKey)} className="tabular-nums">
-                        {t(`portfolio.forecast.series.${String(point.dataKey)}`)}: {formatMoney(Number(point.value), defaultCurrency, i18n.language)}
-                      </p>
-                    ))}
-                  </div>
-                ) : null}
-              />
-              <Legend
-                content={<div className="flex flex-wrap justify-center gap-3 text-xs text-foreground">
-                  {([['invested', 'bg-chart-3'], ['nominal', 'bg-chart-1'], ['real', 'bg-chart-4']] as const).map(([key, color]) => (
-                    <span key={key} className="inline-flex items-center gap-1">
-                      <span className={`h-0.5 w-3 ${color}`} aria-hidden="true" />
-                      {t(`portfolio.forecast.series.${key}`)}
-                    </span>
-                  ))}
-                </div>}
-              />
-              <Line
-                type="monotone"
-                dataKey="invested"
-                className="stroke-chart-3 [&_.recharts-line-curve]:stroke-chart-3"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="nominal"
-                className="stroke-chart-1 [&_.recharts-line-curve]:stroke-chart-1"
-                strokeWidth={3}
-                dot={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="real"
-                className="stroke-chart-4 [&_.recharts-line-curve]:stroke-chart-4"
-                strokeWidth={3}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>}
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          {t("portfolio.forecast.note", { years: forecast.years, profit: formatMoney(forecast.nominalProfit, defaultCurrency, i18n.language) })}
-        </p>
-      </CardContent>
-    </Card>
-  );
+                    <div>
+                        <div className="mb-3.5 text-[13px] text-[#8D9388]">{t("portfolio.forecast.chart_title", { count: model.years })}</div>
+                        <div className="relative ml-[60px] h-[300px]">
+                            {model.yTicks.map(tick => (
+                                <div key={tick.label + tick.top} aria-hidden="true">
+                                    <div className="absolute left-0 right-0 border-t border-dashed border-[#232721]" style={{ top: `${tick.top}%` }} />
+                                    <div className="absolute w-[52px] -translate-y-1/2 text-right text-xs text-[#8D9388]" style={{ top: `${tick.top}%`, left: -60 }}>{tick.label}</div>
+                                </div>
+                            ))}
+                            <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={t("portfolio.forecast.accessibility", { years: model.years, nominal: formatAmount(model.nominal, defaultCurrency, locale), real: formatAmount(model.real, defaultCurrency, locale) })} className="absolute inset-0 h-full w-full overflow-visible">
+                                <polygon points={model.chart.area} fill="rgba(198,242,78,0.07)" stroke="none" />
+                                <polyline points={model.chart.invested} fill="none" stroke="#8D9388" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                                <polyline points={model.chart.real} fill="none" stroke="#FBBF24" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                                <polyline points={model.chart.nominal} fill="none" stroke="#C6F24E" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                            </svg>
+                            <span aria-hidden="true" className="absolute left-full h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C6F24E] shadow-[0_0_0_3px_#151714]" style={{ top: `${model.chart.nTop}%` }} />
+                            <span aria-hidden="true" className="absolute left-full h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#FBBF24] shadow-[0_0_0_3px_#151714]" style={{ top: `${model.chart.rTop}%` }} />
+                            <span aria-hidden="true" className="absolute left-full h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#8D9388] shadow-[0_0_0_3px_#151714]" style={{ top: `${model.chart.iTop}%` }} />
+                        </div>
+                        <div className="relative ml-[60px] mt-2.5 h-7">
+                            {model.xTicks.map(tick => (
+                                <span key={tick.label} className="absolute top-0 -translate-x-1/2 text-xs text-[#8D9388]" style={{ left: `${tick.left}%` }}>{tick.label}</span>
+                            ))}
+                        </div>
+                        <div className="ml-[60px] mt-0.5 text-center text-xs text-[#8D9388]">{t("portfolio.forecast.years_axis")}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
 }

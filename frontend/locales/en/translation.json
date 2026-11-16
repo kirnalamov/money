@@ -261,12 +261,23 @@
     "title": "Transactions",
     "all_operations": "All transactions",
     "insights": {
-      "title": "Top expense categories",
+      "title": "Expenses by category",
+      "total": "Total",
+      "aria": "Expense breakdown by category",
       "empty": "No expenses in the selected period.",
       "analytics": "Analytics",
       "limits": "Limits"
     },
     "results_count": "{{count}} transactions found",
+    "subtitle": "{{period}} · {{count}} found",
+    "table": {
+      "operation": "Transaction",
+      "account": "Account",
+      "time": "Time",
+      "amount": "Amount"
+    },
+    "show_more_one": "Show {{count}} more transaction",
+    "show_more_other": "Show {{count}} more transactions",
     "add_short": "Add",
     "add_button": "Add Transaction",
     "export_csv": "Export CSV",
@@ -327,6 +338,7 @@
       "active_count": "{{count}} active",
       "search_placeholder": "Search transactions...",
       "all_types": "All Types",
+      "all": "All",
       "all_categories": "All Categories",
       "all_accounts": "All Accounts",
       "sort": "Sort by",
@@ -337,9 +349,12 @@
       "filter_button": "Filters"
     },
     "summary": {
-      "total_income": "Total Income",
-      "total_expense": "Total Expense",
+      "total_income": "Income",
+      "total_expense": "Expenses",
       "net_result": "Net Result",
+      "spent_pct": "Spent {{percent}} of income",
+      "left_pct": "{{percent}} left",
+      "bar_aria": "Expenses are {{percent}} of income",
       "transactions_count": "{{count}} transactions in view"
     },
     "unknown_account": "Unknown account",

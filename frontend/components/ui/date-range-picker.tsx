@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon, ChevronDown } from "lucide-react"
-import { format } from "date-fns"
+import { endOfMonth, format, startOfMonth } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { useTranslation } from "react-i18next"
 import { ru, enUS, type Locale } from "date-fns/locale"
@@ -23,6 +23,9 @@ interface DatePickerWithRangeProps {
   disabled?: (date: Date) => boolean
   align?: "start" | "center" | "end"
   compactLabel?: boolean
+  // Если выбран целый месяц, показывает «Ноябрь 2026».
+  monthLabel?: boolean
+  triggerClassName?: string
 }
 
 const localeMap: Record<string, Locale> = {
@@ -37,9 +40,16 @@ export function DatePickerWithRange({
   disabled,
   align = "start",
   compactLabel = false,
+  monthLabel = false,
+  triggerClassName,
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
   const locale = localeMap[i18n.language?.slice(0, 2)] || enUS
+  const wholeMonth = Boolean(
+    monthLabel && date?.from && date.to &&
+    date.from.getTime() === startOfMonth(date.from).getTime() &&
+    format(date.to, "yyyy-MM-dd") === format(endOfMonth(date.from), "yyyy-MM-dd")
+  )
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -50,12 +60,13 @@ export function DatePickerWithRange({
             variant={"outline"}
             className={cn(
               "h-11 w-full justify-between rounded-full border-border bg-card px-4 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent",
-              date && "text-foreground"
+              date && "text-foreground",
+              triggerClassName
             )}
           >
             <span className="flex min-w-0 items-center"><CalendarIcon className="mr-2 h-[17px] w-[17px]" />{date?.from ? (
               date.to ? (
-                <>
+                wholeMonth ? format(date.from, "LLLL yyyy", { locale }).replace(/^./, (char) => char.toUpperCase()) : <>
                   {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "P", { locale })} - ${format(date.to, "P", { locale })}`}
                 </>
               ) : (

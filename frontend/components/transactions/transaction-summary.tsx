@@ -1,9 +1,9 @@
 "use client";
 
-import { formatMoney } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
-import { Scale, TrendingDown, TrendingUp } from "lucide-react";
+import { formatPercent } from "@/lib/utils";
+import { formatAmount } from "./money";
 
 interface TransactionSummaryProps {
     income: number;
@@ -11,22 +11,49 @@ interface TransactionSummaryProps {
     net: number;
 }
 
+const Arrow = ({ d, d2, color }: { d: string; d2: string; color: string }) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /><path d={d2} /></svg>
+);
+
 export function TransactionSummary({ income, expense, net }: TransactionSummaryProps) {
     const { t, i18n } = useTranslation();
     const { defaultCurrency } = useStore();
-    const tile = "flex min-w-0 items-center gap-4 rounded-2xl border border-border bg-card p-5";
-    const label = "text-sm text-muted-foreground";
-    const value = "mt-1 truncate text-2xl font-bold tabular-nums tracking-tight";
-    const netColor = net >= 0 ? 'text-income' : 'text-expense';
-    const icon = (Icon: typeof Scale, color: string) => (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted"><Icon aria-hidden="true" className={`h-5 w-5 ${color}`} /></div>
-    );
+    const locale = i18n.language;
+    const spent = income > 0 ? Math.round((expense / income) * 100) : null;
+    const left = spent === null ? null : Math.max(0, 100 - spent);
+    const spentLabel = spent === null ? '' : formatPercent(spent, locale, false, 0);
+    const leftLabel = left === null ? '' : formatPercent(left, locale, false, 0);
 
     return (
-        <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-            <div className={tile}>{icon(TrendingUp, 'text-income')}<div className="min-w-0"><p className={label}>{t('transactions.summary.total_income')}</p><p className={`${value} text-income`}>{formatMoney(income, defaultCurrency, i18n.language)}</p></div></div>
-            <div className={tile}>{icon(TrendingDown, 'text-expense')}<div className="min-w-0"><p className={label}>{t('transactions.summary.total_expense')}</p><p className={`${value} text-expense`}>{formatMoney(expense, defaultCurrency, i18n.language)}</p></div></div>
-            <div className={tile}>{icon(Scale, netColor)}<div className="min-w-0"><p className={label}>{t('transactions.summary.net_result')}</p><p className={`${value} ${netColor}`}>{formatMoney(net, defaultCurrency, i18n.language, true)}</p></div></div>
-        </div>
+        <section aria-label={t('transactions.summary.net_result')} className="flex flex-col gap-5 rounded-[20px] border border-[#232721] bg-[#151714] px-5 py-6 text-[#F1F3EE] sm:px-7">
+            <div className="flex flex-wrap items-end justify-between gap-x-14 gap-y-6">
+                <div>
+                    <div className="text-[13px] font-medium text-[#8D9388]">{t('transactions.summary.net_result')}</div>
+                    <div className="mt-1 text-4xl font-bold leading-[1.1] tracking-[-0.03em] tabular-nums sm:text-[44px]">{formatAmount(net, defaultCurrency, locale, true)}</div>
+                </div>
+                <div className="flex flex-wrap gap-x-12 gap-y-4">
+                    <div>
+                        <div className="flex items-center gap-2 text-[13px] font-medium text-[#8D9388]"><Arrow d="M17 7 7 17" d2="M17 17H7V7" color="#6EE7A0" />{t('transactions.summary.total_income')}</div>
+                        <div className="mt-1 text-[22px] font-semibold tabular-nums text-[#6EE7A0]">{formatAmount(income, defaultCurrency, locale)}</div>
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 text-[13px] font-medium text-[#8D9388]"><Arrow d="M7 17 17 7" d2="M7 7h10v10" color="#C9CEC3" />{t('transactions.summary.total_expense')}</div>
+                        <div className="mt-1 text-[22px] font-semibold tabular-nums">{formatAmount(expense, defaultCurrency, locale)}</div>
+                    </div>
+                </div>
+            </div>
+            {spent !== null && left !== null && (
+                <div>
+                    <div className="flex h-2 gap-[3px]" role="img" aria-label={t('transactions.summary.bar_aria', { percent: spentLabel })}>
+                        <span className="rounded bg-[#F1F3EE]" style={{ flex: `${Math.min(spent, 100)} 1 0` }} />
+                        {left > 0 && <span className="rounded bg-[#6EE7A0]" style={{ flex: `${left} 1 0` }} />}
+                    </div>
+                    <div className="mt-2 flex justify-between gap-4 text-[12.5px] text-[#8D9388]">
+                        <span>{t('transactions.summary.spent_pct', { percent: spentLabel })}</span>
+                        {left > 0 && <span>{t('transactions.summary.left_pct', { percent: leftLabel })}</span>}
+                    </div>
+                </div>
+            )}
+        </section>
     );
 }

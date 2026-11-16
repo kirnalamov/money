@@ -5,8 +5,9 @@ import { format, isToday, isYesterday } from "date-fns";
 import { ru, enUS, type Locale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { formatMoney, convertCurrency } from "@/lib/utils";
-import { ShoppingBag, ArrowUpRight, ArrowRightLeft, Wallet, Banknote, Home, Utensils, Car, Zap, ShoppingCart, UtensilsCrossed, Clapperboard, Gamepad2, TrendingUp, PiggyBank, Tag, ChevronRight, type LucideIcon } from "lucide-react";
+import { convertCurrency } from "@/lib/utils";
+import { formatAmount } from "./money";
+import { ShoppingBag, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Wallet, Banknote, Home, Utensils, Car, Zap, ShoppingCart, UtensilsCrossed, Clapperboard, Gamepad2, TrendingUp, PiggyBank, Tag, type LucideIcon } from "lucide-react";
 import { Transaction } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -50,14 +51,33 @@ export function getCategoryIcon(type: string, category: string): LucideIcon {
     return type === 'income' ? ArrowUpRight : Tag;
 }
 
+const ROW_GRID = "grid-cols-[36px_minmax(0,1fr)_auto] md:grid-cols-[36px_minmax(0,1fr)_150px_52px_150px]";
+// Цвета категорий — токены chart-1..5; полные имена классов нужны Tailwind.
+export const PALETTE = ["#A3E635", "#38BDF8", "#C4B5FD", "#FBBF24", "#6EE7A0", "#5EEAD4"];
+
+// Индекс цвета категории: сначала расходные категории по убыванию суммы, затем остальные.
+export function buildCategoryColorIndex(transactions: Transaction[], toDefault: (tx: Transaction) => number) {
+    const expense = new Map<string, number>();
+    const others = new Set<string>();
+    for (const tx of transactions) {
+        const key = categoryKey(tx.category);
+        if (tx.type === 'expense') expense.set(key, (expense.get(key) || 0) + toDefault(tx));
+        else others.add(key);
+    }
+    const ordered = [...Array.from(expense.entries()).sort((a, b) => b[1] - a[1]).map(([key]) => key), ...Array.from(others).filter(key => !expense.has(key))];
+    return new Map(ordered.map((key, index) => [key, index % PALETTE.length] as const));
+}
+
 interface TransactionListProps {
     transactions: Transaction[];
     emptyMessage?: string;
     emptyAction?: ReactNode;
     sort?: TransactionSort;
+    colorIndex?: Map<string, number>;
+    footer?: ReactNode;
 }
 
-export function TransactionList({ transactions, emptyMessage, emptyAction, sort = 'newest' }: TransactionListProps) {
+export function TransactionList({ transactions, emptyMessage, emptyAction, sort = 'newest', colorIndex, footer }: TransactionListProps) {
     const { t, i18n } = useTranslation();
     const locale = localeMap[i18n.language] || enUS;
     const { accounts, defaultCurrency, addTransaction } = useStore();
@@ -105,13 +125,7 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
         const date = new Date(dateKey);
         if (isToday(date)) return t('common.today') || 'Today';
         if (isYesterday(date)) return t('common.yesterday') || 'Yesterday';
-        return format(date, 'd MMMM yyyy, EEEE', { locale });
-    };
-
-    const getIcon = (tx: Transaction) => {
-        const Icon = getCategoryIcon(tx.type, tx.category);
-        const color = tx.type === 'income' ? 'text-income' : tx.type === 'transfer' ? 'text-chart-2' : 'text-expense';
-        return <Icon className={`h-4 w-4 ${color}`} aria-hidden="true" />;
+        return format(date, 'd MMMM, EEEE', { locale });
     };
 
     const handleDeleted = (transaction: Transaction) => {
@@ -158,78 +172,87 @@ export function TransactionList({ transactions, emptyMessage, emptyAction, sort 
                     <h3 className="text-base font-semibold text-muted-foreground">{emptyMessage || t('transactions.empty_state')}</h3>
                     {emptyAction && <div className="mt-5 flex justify-center">{emptyAction}</div>}
                 </div>
-            ) : sortedDates.map((dateKey) => (
-                <div key={dateKey} className="overflow-clip rounded-2xl border border-border bg-card">
-                     <h2 className="sticky top-0 z-10 flex scroll-mt-0 items-center justify-between border-b border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground">
-                         <span>{getDateLabel(dateKey)}</span><span className="tabular-nums text-xs text-muted-foreground">{formatMoney(getDayTotal(groupedTransactions[dateKey]), defaultCurrency, i18n.language, true)}</span>
-                    </h2>
-                    <div className="divide-y divide-border">
-                        {groupedTransactions[dateKey].map((tx) => (
-                            <div
-                                key={tx.id}
-                                 className="group flex min-h-[56px] min-w-0 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none"
-                                onClick={(event) => openDetails(tx, event.currentTarget)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                        event.preventDefault();
-                                        openDetails(tx, event.currentTarget);
-                                    }
-                                }}
-                                role="button"
-                                tabIndex={0}
-                            >
-                                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                                        {getIcon(tx)}
-                                    </div>
-                                    <div className="flex min-w-0 flex-col gap-0.5">
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            <span className="break-words text-sm font-semibold leading-snug" title={tx.category}>{getCategoryName(tx.category)}</span>
-                                        </div>
-                                        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                                                <span className="max-w-[160px] truncate sm:max-w-[220px]" title={getAccountName(tx.accountId)}>{getAccountName(tx.accountId)}</span>
-                                            </span>
-                                            {tx.type === 'transfer' && (
-                                                <>
-                                                    <ArrowRightLeft className="h-3 w-3" />
-                                                    <span className="max-w-[160px] truncate sm:max-w-[220px]" title={getAccountName(tx.toAccountId)}>{getAccountName(tx.toAccountId)}</span>
-                                                </>
-                                            )}
-                                            {tx.description && (
-                                                <span className="flex min-w-0 items-center gap-1.5">
-                                                    <span aria-hidden="true">&middot;</span>
-                                                    <span className="min-w-0 break-words" title={tx.description}>{tx.description}</span>
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="ml-auto flex shrink-0 items-center gap-2">
-                                    <div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
-                                        <span className={`font-semibold tabular-nums text-sm ${tx.type === 'income' ? 'text-income' :
-                                            tx.type === 'expense' ? 'text-expense' : 'text-chart-2'
-                                            }`}>
-                                            {formatMoney(tx.type === 'expense' ? -tx.amount : tx.amount, tx.currency, i18n.language, tx.type !== 'transfer')}
+            ) : (
+                <div className="overflow-clip rounded-[20px] border border-[#232721] bg-[#151714] text-[#F1F3EE]">
+                    <div className={`hidden items-center gap-x-4 border-b border-[#232721] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8D9388] md:grid ${ROW_GRID}`}>
+                        <span aria-hidden="true" />
+                        <span>{t('transactions.table.operation')}</span>
+                        <span>{t('transactions.table.account')}</span>
+                        <span>{t('transactions.table.time')}</span>
+                        <span className="flex items-center justify-end gap-1.5 text-right">{t('transactions.table.amount')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span>
+                    </div>
+                    <div>
+                    {sortedDates.map((dateKey) => {
+                        const dayTotal = getDayTotal(groupedTransactions[dateKey]);
+                        return (
+                        <div key={dateKey} className="[&:first-child>h2]:border-t-0">
+                            <h2 className="flex items-center justify-between border-t border-[#1E211C] bg-[#121411] px-5 py-2.5 text-[13px] font-semibold">
+                                <span>{getDateLabel(dateKey)}</span>
+                                <span className={`font-medium tabular-nums ${dayTotal > 0 ? 'text-[#6EE7A0]' : 'text-[#8D9388]'}`}>{formatAmount(dayTotal, defaultCurrency, i18n.language, true)}</span>
+                            </h2>
+                            {groupedTransactions[dateKey].map((tx) => {
+                                const accountName = getAccountName(tx.accountId);
+                                const accountLabel = tx.type === 'transfer' ? `${accountName} → ${getAccountName(tx.toAccountId)}` : accountName;
+                                const categoryName = getCategoryName(tx.category);
+                                const title = tx.description || tx.merchant || categoryName;
+                                const time = format(new Date(tx.date), 'HH:mm');
+                                const isIn = tx.type === 'income';
+                                const dot = PALETTE[(colorIndex?.get(categoryKey(tx.category)) ?? 0) % PALETTE.length];
+                                return (
+                                <div
+                                    key={tx.id}
+                                    className={`grid min-h-[56px] min-w-0 cursor-pointer items-center gap-x-4 border-t border-[#1E211C] px-5 py-3.5 text-left transition-colors duration-150 hover:bg-[#1A1D19] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] motion-reduce:transition-none ${ROW_GRID}`}
+                                    onClick={(event) => openDetails(tx, event.currentTarget)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            openDetails(tx, event.currentTarget);
+                                        }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                >
+                                    <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1E211C]">
+                                        {tx.type === 'transfer'
+                                            ? <ArrowRightLeft aria-hidden="true" className="h-4 w-4 text-[#C9CEC3]" />
+                                            : isIn
+                                                ? <ArrowDownLeft aria-hidden="true" className="h-4 w-4 text-[#6EE7A0]" />
+                                                : <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-[#C9CEC3]" />}
+                                    </span>
+                                    <span className="flex min-w-0 flex-col gap-[3px]">
+                                        <span className="truncate text-sm font-semibold" title={title}>{title}</span>
+                                        <span className="flex min-w-0 items-center gap-[7px] text-[12.5px] text-[#8D9388]">
+                                            <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dot }} />
+                                            <span className="shrink-0 md:truncate" title={tx.category}>{categoryName}</span>
+                                            <span className="truncate md:hidden">&middot; {accountLabel}</span>
+                                        </span>
+                                    </span>
+                                    <span className="hidden min-w-0 items-center gap-2 text-[13px] text-[#A2A89C] md:flex">
+                                        <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate" title={accountLabel}>{accountLabel}</span>
+                                    </span>
+                                    <span className="hidden text-[13px] tabular-nums text-[#8D9388] md:block">{time}</span>
+                                    <span className="flex flex-col items-end gap-0.5 whitespace-nowrap">
+                                        <span className={`text-[14.5px] font-semibold tabular-nums ${isIn ? 'text-[#6EE7A0]' : ''}`}>
+                                            {formatAmount(tx.type === 'expense' ? -tx.amount : tx.amount, tx.currency, i18n.language, isIn)}
                                         </span>
                                         {tx.currency !== defaultCurrency && (
-                                            <span className="text-xs tabular-nums text-muted-foreground">
-                                                &asymp; {formatMoney((tx.type === 'expense' ? -1 : 1) * convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language, tx.type !== 'transfer')}
+                                            <span className="text-xs tabular-nums text-[#8D9388]">
+                                                &asymp; {formatAmount((tx.type === 'expense' ? -1 : 1) * convertCurrency(tx.amount, tx.currency, defaultCurrency), defaultCurrency, i18n.language, isIn)}
                                             </span>
                                         )}
-                                        <span className="text-xs tabular-nums text-muted-foreground">
-                                            {format(new Date(tx.date), 'HH:mm')}
-                                        </span>
-                                    </div>
-                                    <ChevronRight aria-hidden="true" className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
+                                        <span className="text-xs tabular-nums text-[#8D9388] md:hidden">{time}</span>
+                                    </span>
                                 </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                        </div>
+                        );
+                    })}
                     </div>
+                    {footer}
                 </div>
-            ))}
+            )}
             <TransactionDetailsDialog 
                 transaction={selectedTx} 
                 open={isDetailsOpen} 

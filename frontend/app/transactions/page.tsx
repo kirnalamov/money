@@ -14,12 +14,13 @@ import { useSearchParams } from "next/navigation";
 import { TransactionFilters, TransactionSort } from "@/components/transactions/transaction-filters";
 import { TransactionSummary } from "@/components/transactions/transaction-summary";
 import { TransactionInsights } from "@/components/transactions/transaction-insights";
-import { TransactionList, categoryKey } from "@/components/transactions/transaction-list";
+import { TransactionList, buildCategoryColorIndex, categoryKey } from "@/components/transactions/transaction-list";
 import { TransactionType } from "@/types";
 import { DateRange } from "react-day-picker";
-import { endOfMonth, isSameDay, isValid, parse, startOfMonth } from "date-fns";
+import { endOfMonth, format, isSameDay, isValid, parse, startOfMonth } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
 import { convertCurrency } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -58,7 +59,7 @@ export default function TransactionsPage() {
 }
 
 function TransactionsContent() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { transactions, accounts, categories, defaultCurrency, isLoading, dataError, dataErrors, fetchAllData } = useStore();
   const loadFailed = Boolean(dataErrors.transactions) || (Boolean(dataError) && transactions.length === 0);
 
@@ -132,7 +133,13 @@ function TransactionsContent() {
 
   const pageCount = Math.max(1, Math.ceil(sortedTransactions.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const pagedTransactions = sortedTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // «Показать ещё»: page — сколько порций по PAGE_SIZE уже раскрыто.
+  const pagedTransactions = sortedTransactions.slice(0, currentPage * PAGE_SIZE);
+  const remaining = sortedTransactions.length - pagedTransactions.length;
+  const colorIndex = useMemo(() => buildCategoryColorIndex(filteredTransactions, tx => {
+    const account = accounts.find(a => a.id === tx.accountId);
+    return convertCurrency(tx.amount, account?.currency || tx.currency, defaultCurrency);
+  }), [accounts, defaultCurrency, filteredTransactions]);
 
   // Stats Calculation
   const stats = filteredTransactions.reduce((acc, tx) => {
@@ -192,6 +199,16 @@ function TransactionsContent() {
     isSameDay(dateRange.from, currentMonthStart) &&
     isSameDay(dateRange.to, currentMonthEnd)
   );
+  const dateLocale = i18n.language === 'ru' ? ru : enUS;
+  const isWholeMonth = Boolean(
+    dateRange?.from && dateRange.to &&
+    isSameDay(dateRange.from, startOfMonth(dateRange.from)) &&
+    isSameDay(dateRange.to, endOfMonth(dateRange.from))
+  );
+  const monthLabel = dateRange?.from ? format(dateRange.from, 'LLLL yyyy', { locale: dateLocale }) : '';
+  const subtitle = isWholeMonth
+    ? t('transactions.subtitle', { period: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1), count: filteredTransactions.length })
+    : t('transactions.results_count', { count: filteredTransactions.length });
   const activeFilterCount = [
     search.trim(),
     type !== 'all',
@@ -216,10 +233,10 @@ function TransactionsContent() {
     <ProtectedRoute>
       <TooltipProvider><div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 bg-background pb-20 text-foreground md:px-4 md:pb-6 xl:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0"><h1 className="text-2xl font-bold tracking-tight sm:text-[32px] sm:leading-10">{t('transactions.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('transactions.results_count', { count: filteredTransactions.length })}</p></div>
+          <div className="min-w-0"><h1 className="text-2xl font-bold tracking-[-0.02em] sm:text-[30px] sm:leading-[1.2]">{t('transactions.title')}</h1><p className="mt-1 text-sm text-[#8D9388]">{subtitle}</p></div>
           <div className="flex w-full shrink-0 gap-2 sm:w-auto">
-            <Tooltip open={addTipOpen} onOpenChange={(o) => setAddTipOpen(o && !document.querySelector('[role="dialog"]'))}><TooltipTrigger asChild><span className="flex-1 sm:flex-none" onClick={() => setAddTipOpen(false)}><AddTransactionDialog trigger={<Button type="button" aria-label={t('transactions.add_button')} className="h-11 w-full bg-primary px-3 text-primary-foreground hover:bg-primary/90"><Plus className="mr-1.5 h-4 w-4" />{t('transactions.add_short')}<kbd className="ml-2 rounded border border-primary-foreground/30 px-1 text-xs font-medium">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
-            <Button type="button" variant="outline" onClick={exportCsv} className="h-11 flex-1 border-border sm:flex-none bg-card px-3"><Download className="mr-2 h-4 w-4" />{t('transactions.export_csv')}</Button>
+            <Button type="button" variant="outline" onClick={exportCsv} className="h-[42px] flex-1 gap-2 rounded-xl border-[#2A2E27] bg-transparent px-4 text-sm font-medium text-[#C9CEC3] hover:bg-[#1B1E1A] hover:text-[#F1F3EE] sm:flex-none"><Download className="h-4 w-4" />{t('transactions.export_csv')}</Button>
+            <Tooltip open={addTipOpen} onOpenChange={(o) => setAddTipOpen(o && !document.querySelector('[role="dialog"]'))}><TooltipTrigger asChild><span className="flex-1 sm:flex-none" onClick={() => setAddTipOpen(false)}><AddTransactionDialog trigger={<Button type="button" aria-label={t('transactions.add_button')} className="h-[42px] w-full gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-2.5 text-sm font-semibold text-[#10170A] hover:bg-[#D3F76F]"><Plus className="h-4 w-4" strokeWidth={2.2} />{t('transactions.add_short')}<kbd className="flex h-5 min-w-5 items-center justify-center rounded-md bg-[#10170A]/15 px-1 font-sans text-[11px] font-bold">N</kbd></Button>} /></span></TooltipTrigger><TooltipContent>{t('transactions.add_button')} (N)</TooltipContent></Tooltip>
           </div>
         </div>
 
@@ -247,8 +264,8 @@ function TransactionsContent() {
           resetFilters={resetFilters}
         />
 
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-5">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0">
         {sort !== 'largest' && sort !== 'smallest' && <h2 className="sr-only">{t('transactions.all_operations')}</h2>}
          {isLoading ? (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5" role="status" aria-label={t('common.loading')}>
@@ -263,6 +280,16 @@ function TransactionsContent() {
          ) : <TransactionList
           transactions={pagedTransactions}
           sort={sort}
+          colorIndex={colorIndex}
+          footer={remaining > 0 ? (
+            <button
+              type="button"
+              onClick={() => setPage(currentPage + 1)}
+              className="w-full border-t border-[#1E211C] p-4 text-[13.5px] font-medium text-[#A2A89C] transition-colors duration-150 hover:text-[#F1F3EE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+            >
+              {t('transactions.show_more', { count: Math.min(PAGE_SIZE, remaining) })}
+            </button>
+          ) : undefined}
           emptyMessage={transactions.length > 0 ? t('transactions.no_matches') : undefined}
           emptyAction={transactions.length > 0 ? (
             <Button type="button" variant="outline" onClick={resetFilters}>
@@ -272,38 +299,6 @@ function TransactionsContent() {
             <AddTransactionDialog />
           )}
          />}
-
-        {pageCount > 1 && (
-          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <span className="text-sm text-muted-foreground">
-              {t('transactions.pagination.page', { current: currentPage, total: pageCount })}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                aria-label={t('transactions.pagination.previous')}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                {t('transactions.pagination.previous')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((currentPage) => Math.min(pageCount, currentPage + 1))}
-                disabled={currentPage === pageCount}
-                aria-label={t('transactions.pagination.next')}
-              >
-                {t('transactions.pagination.next')}
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
         </div>
         {!loadFailed && (
           <TransactionInsights
