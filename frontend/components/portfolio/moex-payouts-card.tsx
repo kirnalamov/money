@@ -97,7 +97,13 @@ export function MoexPayoutsCard({ positions }: Props) {
 
   const view = useMemo(() => {
     const payouts = data?.payouts || [];
-    const shown = payouts.slice(-MAX_BARS);
+    // Окно вокруг текущей даты: прошлые выплаты + ближайшие будущие
+    const firstFuture = payouts.findIndex((p) => p.isFuture);
+    const start =
+      firstFuture === -1
+        ? Math.max(0, payouts.length - MAX_BARS)
+        : Math.max(0, Math.min(firstFuture - Math.round(MAX_BARS * 0.7), payouts.length - MAX_BARS));
+    const shown = payouts.slice(start, start + MAX_BARS);
     const max = Math.max(...shown.map((p) => p.value), 0.000001);
     // «красивый» шаг сетки
     const rawStep = max / 3;
