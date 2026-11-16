@@ -2,112 +2,116 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import LogoutButton from "@/components/auth/logout-button";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import {
+  LayoutGrid,
+  ArrowRightLeft,
+  Briefcase,
+  DollarSign,
+  Gauge,
+  SlidersHorizontal,
+  Wallet,
+  CreditCard,
+  LogOut,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { PanelLeftClose, PanelLeftOpen, Wallet } from "lucide-react";
-import { isNavigationItemActive, navigationItems } from "./navigation";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
-  const initialized = useRef(false);
+  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { reset } = useStore();
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
-      initialized.current = true;
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  const navItems = [
+    { name: t("common.overview"), href: "/", icon: LayoutGrid },
+    { name: t("common.transactions"), href: "/transactions", icon: ArrowRightLeft },
+    { name: t("common.portfolio"), href: "/portfolio", icon: Briefcase },
+    { name: t("common.savings"), href: "/savings", icon: DollarSign },
+    { name: t("common.limits"), href: "/limits", icon: Gauge },
+    { name: t("accounts.title"), href: "/accounts", icon: CreditCard },
+    { name: t("common.settings"), href: "/settings", icon: SlidersHorizontal },
+  ];
 
-  useEffect(() => {
-    if (!initialized.current) return;
-    document.documentElement.style.setProperty("--sidebar-width", collapsed ? "5rem" : "225px");
-    localStorage.setItem("sidebar-collapsed", String(collapsed));
-  }, [collapsed]);
+  const handleLogout = () => {
+    reset();
+    logout();
+  };
 
-  if (isLoading || !isAuthenticated || !user) {
-    return null;
-  }
+  const initial = (user?.full_name || user?.username || "U").charAt(0).toUpperCase();
 
   return (
-    <aside className="hidden border-r bg-background transition-[width] duration-200 md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col" style={{ width: collapsed ? "5rem" : "225px" }}>
-      <div className="flex flex-col flex-grow overflow-y-auto pt-6">
-        <div className={cn("mb-12 flex h-[42px] flex-shrink-0 items-center", collapsed ? "justify-center px-3" : "px-7")}>
-          <div className={cn("flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-primary", !collapsed && "mr-3")}>
-            <Wallet className="h-6 w-6 text-primary-foreground" />
-          </div>
-          {!collapsed && <h1 className="text-xl font-bold tracking-tight text-primary">Plutus</h1>}
+    <div className="hidden md:flex md:w-[232px] md:flex-col md:fixed md:inset-y-0 z-50 border-r border-[#1E211D] bg-[#0E0F0E]">
+      <div className="flex flex-col flex-grow gap-7 pt-7 px-4 pb-5 overflow-y-auto no-scrollbar">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#C6F24E] text-[#10170A]">
+            <Wallet className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <span className="text-[19px] font-bold tracking-[-0.01em] text-[#F1F3EE]">
+            Plutus
+          </span>
         </div>
-        <div className="flex justify-end px-3">
-          <button
-            type="button"
-            onClick={() => setCollapsed((value) => !value)}
-            aria-label={t(collapsed ? "common.expand_sidebar" : "common.collapse_sidebar")}
-            aria-expanded={!collapsed}
-            title={t(collapsed ? "common.expand_sidebar" : "common.collapse_sidebar")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-        </div>
-        <nav aria-label={t("common.primary_navigation")} className={cn("flex flex-grow flex-col space-y-1", collapsed ? "px-3" : "px-3")}>
-          {navigationItems.map((item) => {
-            const isActive = isNavigationItemActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                aria-label={collapsed ? t(item.labelKey) : undefined}
-                title={collapsed ? t(item.labelKey) : undefined}
-                className={cn(
-                  "group relative flex h-[50px] items-center rounded-[14px] px-4 text-sm font-medium transition-colors",
-                  collapsed && "justify-center px-0",
-                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                   isActive
-                     ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon
+
+        {/* Nav */}
+        <nav aria-label="Main menu">
+          <div className="flex flex-col gap-0.5">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "h-5 w-5 flex-shrink-0 transition-colors",
-                    !collapsed && "mr-3",
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                    "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm no-underline transition-colors",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C6F24E] focus-visible:outline-offset-2",
+                    isActive
+                      ? "bg-[#1B1E1A] font-semibold text-[#F1F3EE] shadow-[inset_3px_0_0_#C6F24E]"
+                      : "font-medium text-[#A2A89C] hover:bg-[#151714] hover:text-[#F1F3EE]"
                   )}
-                  aria-hidden="true"
-                />
-                {!collapsed && t(item.labelKey)}
-              </Link>
-            );
-          })}
+                >
+                  <item.icon
+                    className={cn("h-[18px] w-[18px] flex-shrink-0", isActive && "text-[#C6F24E]")}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
-        {/* User Info & Logout */}
-        <div className={cn("mt-auto flex border-t p-4", collapsed ? "justify-center" : "flex-col gap-2")}>
-          {!collapsed && (
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">{(user.full_name || user.username).charAt(0).toUpperCase()}</span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{user.full_name || user.username}</p>
-                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                {user.is_superuser && (
-                  <span className="mt-1 inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                    {t("common.admin")}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-          <LogoutButton collapsed={collapsed} />
-        </div>
+        {/* User card */}
+        {isAuthenticated && user && (
+          <div className="mt-auto flex items-center gap-3 rounded-xl border border-[#232721] bg-[#151714] p-3">
+            <Link
+              href="/profile"
+              className="flex min-w-0 flex-1 items-center gap-3"
+            >
+              <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-bold text-[#10170A]">
+                {initial}
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-[13.5px] font-semibold text-[#F1F3EE]">
+                  {user.full_name || user.username}
+                </span>
+                <span className="truncate text-xs text-[#8D9388]">{user.email}</span>
+              </span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              disabled={isLoading}
+              aria-label="Logout"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[#8D9388] transition-colors hover:bg-[#232721] hover:text-[#F1F3EE]"
+            >
+              <LogOut className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+          </div>
+        )}
       </div>
-    </aside>
+    </div>
   );
 }
