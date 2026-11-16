@@ -47,6 +47,7 @@ import { Position, Currency } from "@/types";
 import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
+import { MoexPayoutsCard } from "@/components/portfolio/moex-payouts-card";
 
 type AssetClass = NonNullable<Position["assetClass"]>;
 
@@ -1119,6 +1120,9 @@ export default function PortfolioPage() {
             </div>
           </div>
         </section>
+
+        {/* MOEX PAYOUTS */}
+        <MoexPayoutsCard positions={positions} />
 
         {/* GROWTH FORECAST */}
         <section className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714]">
