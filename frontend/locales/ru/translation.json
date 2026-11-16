@@ -625,7 +625,10 @@
     "refresh": "Обновить цены",
     "now": "Сейчас",
     "through": "Через",
-    "growth_income": "Доход от роста"
+    "growth_income": "Доход от роста",
+    "payments_one": "выплата",
+    "payments_few": "выплаты",
+    "payments_many": "выплат"
   },
   "savings": {
     "title": "Цели и Накопления",

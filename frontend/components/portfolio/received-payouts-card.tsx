@@ -12,7 +12,7 @@ import {
   buildReceived,
   sellEstimate,
 } from "@/lib/payouts";
-import { fmtMoney, fmtNum } from "@/lib/plutus-format";
+import { fmtMoney, fmtNum, plural } from "@/lib/plutus-format";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -246,7 +246,12 @@ export function ReceivedPayoutsCard({
                 label={t("portfolio.received_net", "Получено на руки")}
                 value={`+${fmtMoney(sums.net, currency)}`}
                 color="#C6F24E"
-                sub={`${items.length} ${t("portfolio.payments", "выплат")}`}
+                sub={`${items.length} ${plural(
+                  items.length,
+                  t("portfolio.payments_one", "выплата"),
+                  t("portfolio.payments_few", "выплаты"),
+                  t("portfolio.payments_many", "выплат")
+                )}`}
               />
               <Tile
                 label={t("portfolio.received_gross", "Начислено (до налога)")}

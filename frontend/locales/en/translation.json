@@ -580,7 +580,10 @@
     "refresh": "Refresh prices",
     "now": "Now",
     "through": "In",
-    "growth_income": "Growth income"
+    "growth_income": "Growth income",
+    "payments_one": "payout",
+    "payments_few": "payouts",
+    "payments_many": "payouts"
   },
   "savings": {
     "title": "Savings & Goals",
