@@ -14,6 +14,7 @@ from app.models.category import Category
 from app.models.tag import Tag
 from app.models.transaction import Transaction as TransactionModel
 from app.models.user import User
+from app.services.category_style import default_category_style
 from app.schemas.core import (
     Transaction,
     TransactionCreate,
@@ -23,6 +24,11 @@ from app.schemas.core import (
 )
 
 router = APIRouter()
+
+
+def _category_style_kwargs(name: str) -> dict:
+    color, icon = default_category_style(name)
+    return {"color": color, "icon": icon}
 
 
 async def _get_owned_transaction(
@@ -209,8 +215,7 @@ async def create_transaction(
             if not category:
                 category = Category(
                     name=item_in.category_name,
-                    color="#666666",
-                    icon="help-circle",
+                    **_category_style_kwargs(item_in.category_name),
                     user_id=current_user.id,
                 )
                 db.add(category)
@@ -294,8 +299,7 @@ async def update_transaction(
                 if not category:
                     category = Category(
                         name=item_in.category_name,
-                        color="#666666",
-                        icon="help-circle",
+                        **_category_style_kwargs(item_in.category_name),
                         user_id=current_user.id,
                     )
                     db.add(category)

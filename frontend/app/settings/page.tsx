@@ -1,5 +1,6 @@
 "use client"
 
+import { categoryEmoji, hashColor } from "@/lib/plutus-format";
 import ProtectedRoute from "@/components/auth/protected-route";
 
 import { useTheme } from "next-themes";
@@ -24,10 +25,10 @@ export default function SettingsPage() {
   const [newTagName, setNewTagName] = useState("");
   const [catError, setCatError] = useState("");
   const [tagError, setTagError] = useState("");
-  const [editingCategory, setEditingCategory] = useState<{ id: number; name: string; color: string } | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{ id: number; name: string; color: string; icon: string } | null>(null);
   const [editingTag, setEditingTag] = useState<{ id: number; name: string; color: string } | null>(null);
   const hasUnsavedChanges = Boolean(
-    (editingCategory && categories.some((category) => category.id === editingCategory.id && (category.name !== editingCategory.name || (category.color || "#cccccc") !== editingCategory.color))) ||
+    (editingCategory && categories.some((category) => category.id === editingCategory.id && (category.name !== editingCategory.name || (category.color || "#cccccc") !== editingCategory.color || (categoryEmoji(category.name, category.icon) || "") !== editingCategory.icon))) ||
     (editingTag && tags.some((tag) => tag.id === editingTag.id && (tag.name !== editingTag.name || (tag.color || "#cccccc") !== editingTag.color)))
   );
 
@@ -85,7 +86,7 @@ export default function SettingsPage() {
     if (!editingCategory || !editingCategory.name.trim()) return;
     setCatError("");
     try {
-      await updateCategory(id, { name: editingCategory.name.trim(), color: editingCategory.color });
+      await updateCategory(id, { name: editingCategory.name.trim(), color: editingCategory.color, icon: editingCategory.icon.trim() });
       setEditingCategory(null);
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     } catch (error) {
@@ -232,11 +233,13 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => (
                     <Popover key={cat.id} onOpenChange={(open) => {
-                      if (open) setEditingCategory({ id: cat.id, name: cat.name, color: cat.color || '#cccccc' });
+                      if (open) setEditingCategory({ id: cat.id, name: cat.name, color: cat.color || '#cccccc', icon: categoryEmoji(cat.name, cat.icon) || '' });
                       else setEditingCategory(null);
                     }}>
                       <PopoverTrigger asChild>
                         <button aria-label={t('settings.edit_category_named', { name: cat.name })} className="min-h-11 min-w-11 max-w-full break-words border bg-secondary text-secondary-foreground px-3 py-2 rounded-full text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: cat.color && cat.color.toLowerCase() !== '#666666' ? cat.color : hashColor(cat.name) }} />
+                          {categoryEmoji(cat.name, cat.icon) && <span className="mr-1.5">{categoryEmoji(cat.name, cat.icon)}</span>}
                           {cat.name}
                         </button>
                       </PopoverTrigger>
@@ -250,6 +253,15 @@ export default function SettingsPage() {
                               value={editingCategory?.id === cat.id ? editingCategory.color : (cat.color || '#cccccc')}
                               className="w-12 h-11 p-1 cursor-pointer shrink-0"
                               onChange={(e) => setEditingCategory(prev => prev ? { ...prev, color: e.target.value } : null)}
+                            />
+                            <Input
+                              type="text"
+                              aria-label={t('settings.category_emoji', 'Эмодзи категории')}
+                              placeholder="🙂"
+                              maxLength={4}
+                              value={editingCategory?.id === cat.id ? editingCategory.icon : (categoryEmoji(cat.name, cat.icon) || '')}
+                              className="w-14 h-11 p-1 text-center text-lg shrink-0"
+                              onChange={(e) => setEditingCategory(prev => prev ? { ...prev, icon: e.target.value } : null)}
                             />
                             <Input
                               type="text"

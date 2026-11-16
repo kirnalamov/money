@@ -17,7 +17,7 @@ from app.models.category import Category
 from app.models.transaction import Transaction
 from app.schemas.core import Currency
 from app.schemas.money import Money
-from app.api.api_v1.endpoints.transactions import _apply_transaction_effect
+from app.api.api_v1.endpoints.transactions import _apply_transaction_effect, _category_style_kwargs
 
 router = APIRouter()
 Kind = Literal["limits", "positions", "recurringExpenses"]
@@ -41,6 +41,7 @@ class Position(BaseModel):
     currency: Currency
     accountId: int
     assetClass: Literal["stock", "crypto", "etf", "bond", "cash"] | None = None
+    purchaseDate: str | None = Field(default=None, max_length=40, pattern=r"^\d{4}-\d{2}-\d{2}([T ].*)?$")
 
 
 class RecurringExpense(BaseModel):
@@ -89,7 +90,7 @@ async def pay_recurring(key: str, payment: Payment, db: AsyncSession = Depends(g
         raise HTTPException(status_code=422, detail="Transaction currency must match the account currency")
     category = (await db.execute(select(Category).where(Category.user_id == user.id, Category.name == expense.category))).scalars().first()
     if not category:
-        category = Category(name=expense.category, color="#666666", icon="help-circle", user_id=user.id)
+        category = Category(name=expense.category, **_category_style_kwargs(expense.category), user_id=user.id)
         db.add(category)
         await db.flush()
     transaction = Transaction(amount=expense.amount, description=expense.name, date=now, type="expense", currency=expense.currency.value, account_id=account.id, category_id=category.id)
