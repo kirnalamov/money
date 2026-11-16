@@ -336,7 +336,7 @@
     "available_balance": "Доступно {{amount}}",
     "insufficient_balance": "Не хватает {{amount}}",
     "filters": {
-      "title": "Фильтры операций",
+      "title": "Фильтры",
       "description": "Поиск, отбор и сортировка операций",
       "active_count": "Активных: {{count}}",
       "search_placeholder": "Поиск операций...",
