@@ -84,3 +84,47 @@ export function hashColor(key: string, palette: string[] = CATEGORY_PALETTE): st
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
 }
+
+/** Подбор эмодзи категории: сначала поле icon, затем по ключевым словам названия */
+const EMOJI_RULES: [RegExp, string][] = [
+  [/зарплат|salary|оклад|wage/i, "💰"],
+  [/подработ|фриланс|side|freelance/i, "💼"],
+  [/инвест|дивиден|invest|dividend/i, "📈"],
+  [/продукт|еда|grocer|food|супермаркет/i, "🛒"],
+  [/кафе|ресторан|бар|coffee|cafe|restaurant/i, "☕"],
+  [/такси|каршеринг|транспорт|метро|бензин|taxi|transport|fuel|gas/i, "🚕"],
+  [/жиль|аренда|квартир|ипотек|дом|rent|housing|home|mortgage/i, "🏠"],
+  [/коммунал|свет|вода|элект|utilit/i, "💡"],
+  [/покупк|одежд|шоппинг|shopping|cloth/i, "🛍️"],
+  [/электроник|техник|гаджет|electronic|tech/i, "📱"],
+  [/здоров|аптек|врач|медицин|health|pharm|doctor/i, "💊"],
+  [/спорт|фитнес|зал|sport|fitness|gym/i, "🏋️"],
+  [/развлеч|кино|игр|entertain|movie|game/i, "🎮"],
+  [/путешеств|отпуск|билет|travel|vacation|flight/i, "✈️"],
+  [/образован|курс|учеб|educat|course|school/i, "📚"],
+  [/связь|интернет|телефон|mobile|internet|phone/i, "📶"],
+  [/подарк|gift/i, "🎁"],
+  [/питомц|живот|pet/i, "🐾"],
+  [/красот|салон|beauty/i, "💅"],
+  [/налог|штраф|tax|fine/i, "🧾"],
+  [/перевод|transfer/i, "🔁"],
+];
+
+export function categoryEmoji(name: string, icon?: string | null): string | null {
+  if (icon) {
+    const trimmed = icon.trim();
+    // поле icon может хранить эмодзи — используем его как есть
+    if (trimmed && /\p{Extended_Pictographic}/u.test(trimmed)) return trimmed;
+  }
+  for (const [re, e] of EMOJI_RULES) if (re.test(name)) return e;
+  return null;
+}
+
+/** Цвет с прозрачностью: "#AABBCC" + alpha 0..1 -> "#AABBCC33" */
+export function withAlpha(hex: string, alpha: number): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return hex + a;
+}

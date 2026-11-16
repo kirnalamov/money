@@ -58,6 +58,7 @@ export interface Position {
   currency: Currency;
   accountId: number;
   assetClass?: 'stock' | 'crypto' | 'etf' | 'bond' | 'cash';
+  purchaseDate?: string; // ISO date — для расчёта полученных выплат
 }
 
 export interface LimitRule {

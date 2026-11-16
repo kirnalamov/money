@@ -24,6 +24,8 @@ import {
   plural,
   donutSegments,
   hashColor,
+  categoryEmoji,
+  withAlpha,
 } from "@/lib/plutus-format";
 import {
   Download,
@@ -96,7 +98,15 @@ export default function TransactionsPage() {
 
   const categoryColor = (name: string) => {
     const cat = categories.find((c) => c.name === name);
-    return cat?.color || hashColor(name);
+    // #666666 — серый плейсхолдер старого бэкенда: считаем цвет не заданным
+    return cat?.color && cat.color.toLowerCase() !== "#666666"
+      ? cat.color
+      : hashColor(name);
+  };
+
+  const catEmoji = (name: string) => {
+    const cat = categories.find((c) => c.name === name);
+    return categoryEmoji(name, cat?.icon);
   };
 
   // Month options: current + last 11 + any months present in data
@@ -543,15 +553,42 @@ export default function TransactionsPage() {
                             isSel ? "bg-[#1F231D]" : "hover:bg-[#1A1D19]"
                           )}
                         >
-                          <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1E211C]">
-                            {tx.type === "income" ? (
-                              <ArrowDownLeft className="h-4 w-4 text-[#6EE7A0]" strokeWidth={2} />
-                            ) : tx.type === "expense" ? (
-                              <ArrowUpRight className="h-4 w-4 text-[#C9CEC3]" strokeWidth={2} />
-                            ) : (
-                              <ArrowRightLeft className="h-4 w-4 text-[#C9CEC3]" strokeWidth={2} />
-                            )}
-                          </span>
+                          {(() => {
+                            const color = categoryColor(tx.category);
+                            const emoji =
+                              tx.type === "transfer" ? null : catEmoji(tx.category);
+                            const bg =
+                              tx.type === "transfer"
+                                ? "#1E211C"
+                                : withAlpha(color, 0.14);
+                            return (
+                              <span
+                                className="flex h-9 w-9 items-center justify-center rounded-[10px]"
+                                style={{ background: bg }}
+                              >
+                                {emoji ? (
+                                  <span className="text-base leading-none">{emoji}</span>
+                                ) : tx.type === "income" ? (
+                                  <ArrowDownLeft
+                                    className="h-4 w-4"
+                                    strokeWidth={2}
+                                    style={{ color }}
+                                  />
+                                ) : tx.type === "expense" ? (
+                                  <ArrowUpRight
+                                    className="h-4 w-4"
+                                    strokeWidth={2}
+                                    style={{ color }}
+                                  />
+                                ) : (
+                                  <ArrowRightLeft
+                                    className="h-4 w-4 text-[#C9CEC3]"
+                                    strokeWidth={2}
+                                  />
+                                )}
+                              </span>
+                            );
+                          })()}
                           <span className="flex min-w-0 flex-col gap-[3px]">
                             <span className="text-sm font-semibold">{txTitle(tx)}</span>
                             <span className="flex items-center gap-[7px] text-[12.5px] text-[#8D9388]">
@@ -616,7 +653,7 @@ export default function TransactionsPage() {
           <aside className="sticky top-6 min-w-0 max-w-[380px] flex-[1_1_320px] rounded-[20px] border border-[#232721] bg-[#151714] p-6">
             {!selected ? (
               <div>
-                <h2 className="mb-5 text-base font-semibold">
+                <h2 className="mb-5 text-xl font-semibold">
                   {t("transactions.by_category", "Расходы по категориям")}
                 </h2>
                 <div className="relative mx-auto mb-6 h-[168px] w-[168px]">
@@ -656,7 +693,12 @@ export default function TransactionsPage() {
                         className="h-2.5 w-2.5 rounded-[3px]"
                         style={{ background: item.color }}
                       />
-                      <span className="flex-1 truncate font-medium">{item.name}</span>
+                      <span className="flex-1 truncate font-medium">
+                        {catEmoji(item.name) && (
+                          <span className="mr-1.5">{catEmoji(item.name)}</span>
+                        )}
+                        {item.name}
+                      </span>
                       <span className="font-semibold">
                         {fmtMoney(item.value, defaultCurrency)}
                       </span>
@@ -696,7 +738,7 @@ export default function TransactionsPage() {
                 return (
                   <div>
                     <div className="mb-5 flex items-center justify-between">
-                      <h2 className="text-base font-semibold">
+                      <h2 className="text-xl font-semibold">
                         {t("transactions.panel_title", "Операция")}
                       </h2>
                       <button
@@ -729,6 +771,9 @@ export default function TransactionsPage() {
                             className="h-2 w-2 rounded-full"
                             style={{ background: categoryColor(selected.category) }}
                           />
+                          {catEmoji(selected.category) && (
+                            <span>{catEmoji(selected.category)}</span>
+                          )}
                           {selected.category}
                         </span>
                       </div>

@@ -47,7 +47,15 @@ import { Position, Currency } from "@/types";
 import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
-import { MoexPayoutsCard } from "@/components/portfolio/moex-payouts-card";
+import { PayoutForecastCard } from "@/components/portfolio/payout-forecast-card";
+import { ReceivedPayoutsCard } from "@/components/portfolio/received-payouts-card";
+import {
+  usePayouts,
+  useLivePrices,
+  useTaxSettings,
+} from "@/components/portfolio/use-payouts";
+import { buildForecast } from "@/lib/payouts";
+import { RefreshCw } from "lucide-react";
 
 type AssetClass = NonNullable<Position["assetClass"]>;
 
@@ -85,13 +93,23 @@ export default function PortfolioPage() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language?.startsWith("ru") ? ru : enUS;
   const {
-    positions,
+    positions: storePositions,
     accounts,
     defaultCurrency,
     addPosition,
     updatePosition,
     deletePosition,
   } = useStore();
+
+  const {
+    livePositions: positions,
+    updatedAt,
+    status: liveStatus,
+    refresh: refreshPrices,
+  } = useLivePrices(storePositions);
+  const { data: payData, loading: payLoading } = usePayouts(positions);
+  const [tax, setTax] = useTaxSettings();
+  const [fcHover, setFcHover] = useState<number | null>(null);
 
   const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: number } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -105,6 +123,7 @@ export default function PortfolioPage() {
     currency: defaultCurrency as Currency,
     accountId: "",
     assetClass: "stock" as AssetClass,
+    purchaseDate: "",
   });
 
   // Forecast calculator state
@@ -125,22 +144,28 @@ export default function PortfolioPage() {
       currency: defaultCurrency,
       accountId: brokerageAccounts[0]?.id.toString() || "",
       assetClass: "stock",
+      purchaseDate: new Date().toISOString().slice(0, 10),
     });
     setEditingPosition(null);
   };
 
   const handleOpenDialog = (position?: Position) => {
     if (position) {
-      setEditingPosition({ symbol: position.symbol, accountId: position.accountId });
+      const src =
+        storePositions.find(
+          (x) => x.symbol === position.symbol && x.accountId === position.accountId
+        ) || position;
+      setEditingPosition({ symbol: src.symbol, accountId: src.accountId });
       setFormData({
-        symbol: position.symbol,
-        name: position.name,
-        quantity: position.quantity.toString(),
-        avgPrice: position.avgPrice.toString(),
-        currentPrice: position.currentPrice.toString(),
-        currency: position.currency,
-        accountId: position.accountId.toString(),
-        assetClass: (position.assetClass || "stock") as AssetClass,
+        symbol: src.symbol,
+        name: src.name,
+        quantity: src.quantity.toString(),
+        avgPrice: src.avgPrice.toString(),
+        currentPrice: src.currentPrice.toString(),
+        currency: src.currency,
+        accountId: src.accountId.toString(),
+        assetClass: (src.assetClass || "stock") as AssetClass,
+        purchaseDate: src.purchaseDate ? src.purchaseDate.slice(0, 10) : "",
       });
     } else {
       resetForm();
@@ -160,6 +185,7 @@ export default function PortfolioPage() {
       currency: formData.currency,
       accountId: parseInt(formData.accountId),
       assetClass: formData.assetClass,
+      purchaseDate: formData.purchaseDate || undefined,
     };
 
     if (editingPosition) {
@@ -253,91 +279,20 @@ export default function PortfolioPage() {
     }).filter((g) => g.items.length > 0 || g.cls === "bond");
   }, [positions, ptab, defaultCurrency]);
 
-  // ---------- Dividend / coupon forecast (estimate from positions) ----------
-  const income = useMemo(() => {
-    const start = addMonths(new Date(), 1);
-    const monthDates = Array.from({ length: 12 }, (_, i) => addMonths(start, i));
-    const dv = new Array(12).fill(0);
-    const cp = new Array(12).fill(0);
-    const events: {
-      i: number;
-      symbol: string;
-      kind: "div" | "cpn";
-      usd: number;
-      note: string;
-    }[] = [];
-
-    positions.forEach((p) => {
-      const cls = (p.assetClass || "stock") as AssetClass;
-      const y = YIELD[cls];
-      if (!y) return;
-      const valueUsd = convertCurrency(p.quantity * p.currentPrice, p.currency, defaultCurrency);
-      if (valueUsd <= 0) return;
-      let idx: number[] = [];
-      let kind: "div" | "cpn" = "div";
-      if (cls === "etf") idx = [0, 3, 6, 9];
-      else if (cls === "stock") idx = [7];
-      else if (cls === "bond") {
-        idx = [2, 8];
-        kind = "cpn";
-      }
-      const per = (valueUsd * y) / idx.length;
-      idx.forEach((i) => {
-        if (kind === "div") dv[i] += per;
-        else cp[i] += per;
-        events.push({
-          i,
-          symbol: p.symbol,
-          kind,
-          usd: per,
-          note: `${fmtNum(p.quantity, p.quantity % 1 ? 2 : 0)} × ${p.symbol}`,
-        });
-      });
+  // ---------- Dividend / coupon forecast (real payout history) ----------
+  const payoutForecast = useMemo(() => {
+    const fc = buildForecast(positions, payData, tax, defaultCurrency, payLoading);
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const d = addMonths(fc.monthStart, i);
+      const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+      return {
+        label: format(d, "LLL", { locale: dateLocale }).replace(".", ""),
+        full: cap(format(d, "LLL yyyy", { locale: dateLocale }).replace(".", "")),
+      };
     });
-
-    const mt = dv.map((v, i) => v + cp[i]);
-    const mx = Math.max(...mt, 1);
-    const rawStep = mx / 3;
-    const pw = Math.pow(10, Math.floor(Math.log10(rawStep)));
-    let st = pw * 10;
-    for (const k of [1, 2, 2.5, 5, 10]) {
-      if (k * pw >= rawStep) {
-        st = k * pw;
-        break;
-      }
-    }
-    const top = st * Math.ceil(mx / st) || 1;
-
-    const months = monthDates.map((d, i) => ({
-      label: format(d, "LLL", { locale: dateLocale }).replace(".", ""),
-      full: (() => {
-        const s = format(d, "LLL yyyy", { locale: dateLocale }).replace(".", "");
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      })(),
-      barH: (mt[i] / top) * 100,
-      cp: cp[i],
-      dv: dv[i],
-      has: mt[i] > 0,
-      amount: fmtNum(mt[i]),
-    }));
-
-    const yTicks: { top: number; label: string }[] = [];
-    for (let v = 0; v <= top + 1e-6; v += st) {
-      yTicks.push({ top: 100 - (v / top) * 100, label: v === 0 ? "0" : fmtNum(v).replace(",00", "") });
-    }
-
-    const divSum = dv.reduce((s, v) => s + v, 0);
-    const cpnSum = cp.reduce((s, v) => s + v, 0);
-
-    events.sort((a, b) => a.i - b.i || b.usd - a.usd);
-    const upcoming = events.slice(0, 5).map((e) => ({
-      ...e,
-      when: months[e.i].full,
-    }));
-
-    return { months, yTicks, divSum, cpnSum, total: divSum + cpnSum, upcoming };
+    return { ...fc, months };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, defaultCurrency, i18n.language]);
+  }, [positions, payData, tax, defaultCurrency, payLoading, i18n.language]);
 
   // ---------- Growth forecast ----------
   const forecast = useMemo(() => {
@@ -401,6 +356,12 @@ export default function PortfolioPage() {
       nom,
       real,
       inv,
+      py,
+      at: (tm: number) => ({
+        nom: nominalAt(tm),
+        real: realAt(tm),
+        inv: investedAt(tm),
+      }),
       yTicks,
       xTicks,
       chart: {
@@ -457,6 +418,33 @@ export default function PortfolioPage() {
             <p className="mt-1 text-sm text-[#8D9388]">
               {t("portfolio.page_subtitle", "Состав, результат и прогноз роста")}
             </p>
+            <div className="mt-3 flex items-center gap-2 text-[13px] text-[#8D9388]">
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  liveStatus === "ok"
+                    ? "bg-[#6EE7A0]"
+                    : liveStatus === "error"
+                      ? "bg-[#F87171]"
+                      : "bg-[#FBBF24]"
+                )}
+              />
+              {liveStatus === "ok" && updatedAt
+                ? `${t("portfolio.live_prices", "Живые цены")} · ${format(updatedAt, "HH:mm:ss")}`
+                : liveStatus === "error"
+                  ? t("portfolio.live_error", "Не удалось обновить цены — показаны сохранённые")
+                  : t("portfolio.live_loading", "Загружаем актуальные цены…")}
+              <button
+                onClick={refreshPrices}
+                aria-label={t("portfolio.refresh", "Обновить цены")}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8D9388] transition-colors hover:bg-[#232721] hover:text-[#F1F3EE]"
+              >
+                <RefreshCw
+                  className={cn("h-3.5 w-3.5", liveStatus === "loading" && "animate-spin")}
+                  strokeWidth={1.8}
+                />
+              </button>
+            </div>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -611,6 +599,19 @@ export default function PortfolioPage() {
                       <SelectItem value="RUB">RUB</SelectItem>
                     </SelectContent>
                   </Select>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="purchaseDate" className="text-right">
+                    {t("portfolio.purchase_date", "Дата покупки")}
+                  </Label>
+                  <Input
+                    id="purchaseDate"
+                    type="date"
+                    value={formData.purchaseDate}
+                    onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
                 </div>
               </div>
               <DialogFooter>
@@ -692,7 +693,7 @@ export default function PortfolioPage() {
 
           {/* Allocation */}
           <section className="min-w-0 flex-[1_1_440px] rounded-[20px] border border-[#232721] bg-[#151714] p-7">
-            <h2 className="mb-5 text-base font-semibold">
+            <h2 className="mb-5 text-xl font-semibold">
               {t("portfolio.allocation_title")}
             </h2>
             <div className="flex flex-wrap items-center gap-x-9 gap-y-6">
@@ -759,7 +760,7 @@ export default function PortfolioPage() {
         <section className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714]">
           <div className="flex flex-wrap items-center justify-between gap-4 px-7 py-6">
             <div>
-              <h2 className="text-base font-semibold">
+              <h2 className="text-xl font-semibold">
                 {t("portfolio.positions_title", "Позиции")}
               </h2>
               <p className="mt-1 text-[13.5px] text-[#8D9388]">
@@ -804,7 +805,7 @@ export default function PortfolioPage() {
                 <div key={g.cls}>
                   <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[#1E211C] bg-[#121411] px-7 py-3">
                     <span className="flex items-baseline gap-2.5">
-                      <span className="text-sm font-bold">{t(`portfolio.groups.${g.cls}`)}</span>
+                      <span className="text-base font-bold">{t(`portfolio.groups.${g.cls}`)}</span>
                       <span className="text-[12.5px] text-[#8D9388]">
                         {posCountLabel(g.items.length)}
                       </span>
@@ -865,7 +866,16 @@ export default function PortfolioPage() {
                     const valueUsd = convertCurrency(valueNative, p.currency, defaultCurrency);
                     const hasSub = p.currency !== defaultCurrency;
                     const lc = logoColor(p.symbol);
-                    const yieldPct = YIELD[(p.assetClass || "stock") as string];
+                    const hist = payData[p.symbol.toUpperCase()];
+                    const yearAgo = new Date();
+                    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                    const ttm = hist
+                      ? hist
+                          .filter((x) => !x.isFuture && new Date(x.date) >= yearAgo)
+                          .reduce((acc, x) => acc + x.value, 0)
+                      : 0;
+                    const realYield = p.currentPrice > 0 && ttm > 0 ? ttm / p.currentPrice : 0;
+                    const yieldPct = realYield || YIELD[(p.assetClass || "stock") as string];
                     const tag =
                       yieldPct && (p.assetClass === "bond"
                         ? `${t("portfolio.coupon", "Купон")} ≈ ${(yieldPct * 100).toFixed(0)}% ${t("portfolio.per_year", "в год")}`
@@ -953,185 +963,36 @@ export default function PortfolioPage() {
         </section>
 
         {/* INCOME FORECAST */}
-        <section className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714]">
-          <div className="flex items-start gap-3.5 border-b border-[#232721] px-7 py-6">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]">
-              <Calendar className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            </span>
-            <div>
-              <h2 className="text-base font-semibold">
-                {t("portfolio.income_title", "Дивиденды и купоны")}
-              </h2>
-              <p className="mt-1 text-[13.5px] text-[#8D9388]">
-                {t(
-                  "portfolio.income_desc",
-                  "Ожидаемые выплаты на 12 месяцев вперёд. Это оценка, а не гарантия: даты и суммы могут измениться."
-                )}
-              </p>
-            </div>
-          </div>
+        <PayoutForecastCard
+          months={payoutForecast.months}
+          byMonth={payoutForecast.byMonth}
+          events={payoutForecast.events}
+          totalValue={metrics.totalValue}
+          currency={defaultCurrency}
+          taxPct={tax.taxPct}
+          loading={payLoading}
+        />
 
-          <div className="flex flex-wrap items-start gap-8 p-7">
-            <div className="min-w-0 flex-[999_1_520px]">
-              <div className="mb-7 flex flex-wrap items-end gap-x-12 gap-y-5">
-                <div>
-                  <div className="text-[13px] font-medium text-[#8D9388]">
-                    {t("portfolio.income_expected", "Ожидается за 12 месяцев")}
-                  </div>
-                  <div className="mt-1 text-4xl font-bold leading-[1.15] tracking-[-0.02em]">
-                    {fmtMoney(income.total, defaultCurrency)}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#8D9388]">
-                    <span className="h-2.5 w-2.5 rounded-[3px] bg-[#C6F24E]" />
-                    {t("portfolio.dividends", "Дивиденды")}
-                  </div>
-                  <div className="mt-1 text-xl font-semibold">
-                    {income.divSum > 0 ? fmtMoney(income.divSum, defaultCurrency) : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#8D9388]">
-                    <span className="h-2.5 w-2.5 rounded-[3px] bg-[#7DD3FC]" />
-                    {t("portfolio.coupons", "Купоны")}
-                  </div>
-                  <div className="mt-1 text-xl font-semibold">
-                    {income.cpnSum > 0 ? fmtMoney(income.cpnSum, defaultCurrency) : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[13px] text-[#8D9388]">
-                    {t("portfolio.to_value", "К стоимости позиций")}
-                  </div>
-                  <div className="mt-1 text-xl font-semibold">
-                    {metrics.totalValue > 0
-                      ? `≈ ${((income.total / metrics.totalValue) * 100)
-                          .toFixed(1)
-                          .replace(".", ",")}% ${t("portfolio.per_year", "в год")}`
-                      : "—"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative ml-12 mt-7 h-[220px]">
-                {income.yTicks.map((yk, i) => (
-                  <div key={i}>
-                    <div
-                      className="absolute left-0 right-0 border-t border-dashed border-[#232721]"
-                      style={{ top: `${yk.top}%` }}
-                    />
-                    <div
-                      className="absolute -left-12 w-10 -translate-y-1/2 text-right text-xs text-[#8D9388]"
-                      style={{ top: `${yk.top}%` }}
-                    >
-                      {yk.label}
-                    </div>
-                  </div>
-                ))}
-                {income.months.map((m, i) => (
-                  <div
-                    key={i}
-                    className="absolute bottom-0 top-0 flex flex-col items-center justify-end"
-                    style={{ left: `${(i / 12) * 100}%`, width: `${100 / 12}%` }}
-                  >
-                    {m.has && (
-                      <span className="pb-1 text-[11.5px] font-semibold text-[#C9CEC3]">
-                        {m.amount}
-                      </span>
-                    )}
-                    <div
-                      className="flex w-[56%] flex-col justify-end"
-                      style={{ height: `${m.barH}%` }}
-                    >
-                      <div
-                        className="rounded-t bg-[#7DD3FC]"
-                        style={{ flex: `${m.cp} 1 0%` }}
-                      />
-                      <div
-                        className="rounded-t bg-[#C6F24E]"
-                        style={{ flex: `${m.dv} 1 0%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="relative ml-12 mt-2 h-[22px]">
-                {income.months.map((m, i) => (
-                  <span
-                    key={i}
-                    className="absolute top-0 text-center text-xs text-[#8D9388]"
-                    style={{ left: `${(i / 12) * 100}%`, width: `${100 / 12}%` }}
-                  >
-                    {m.label}
-                  </span>
-                ))}
-              </div>
-              <p className="ml-12 mt-2.5 text-[12.5px] text-[#8D9388]">
-                {t(
-                  "portfolio.income_note",
-                  "Суммы в долларах по текущему курсу. Даты выплат ориентировочные."
-                )}
-              </p>
-            </div>
-
-            <div className="min-w-0 max-w-[400px] flex-[1_1_320px]">
-              <h3 className="mb-2 text-sm font-semibold">
-                {t("portfolio.upcoming", "Ближайшие выплаты")}
-              </h3>
-              <div className="flex flex-col">
-                {income.upcoming.map((u, i) => {
-                  const lc = logoColor(u.symbol);
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 border-b border-[#1E211C] py-3"
-                    >
-                      <span
-                        className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] text-[15px] font-bold"
-                        style={{ background: `${lc}24`, color: lc }}
-                      >
-                        {u.symbol.charAt(0)}
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="text-sm font-semibold">{u.symbol}</span>
-                        <span className="text-[12.5px] text-[#8D9388]">
-                          {u.kind === "div"
-                            ? t("portfolio.dividend", "Дивиденд")
-                            : t("portfolio.coupon", "Купон")}{" "}
-                          · {u.when}
-                        </span>
-                      </span>
-                      <span className="flex flex-col items-end gap-0.5">
-                        <span className="font-semibold text-[#6EE7A0]">
-                          +{fmtMoney(u.usd, defaultCurrency)}
-                        </span>
-                        <span className="text-xs text-[#8D9388]">{u.note}</span>
-                      </span>
-                    </div>
-                  );
-                })}
-                {income.upcoming.length === 0 && (
-                  <div className="py-3 text-[13px] text-[#8D9388]">
-                    {t("portfolio.no_payouts", "Выплат пока не ожидается")}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* MOEX PAYOUTS */}
-        <MoexPayoutsCard positions={positions} />
+        {/* RECEIVED PAYOUTS */}
+        <ReceivedPayoutsCard
+          positions={positions}
+          data={payData}
+          loading={payLoading}
+          currency={defaultCurrency}
+          tax={tax}
+          onTaxChange={setTax}
+          totalValue={metrics.totalValue}
+          totalCost={metrics.totalCost}
+        />
 
         {/* GROWTH FORECAST */}
         <section className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714]">
           <div className="flex items-start gap-3.5 border-b border-[#232721] px-7 py-6">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]">
               <TrendingUp className="h-[18px] w-[18px]" strokeWidth={1.8} />
             </span>
             <div>
-              <h2 className="text-base font-semibold">
+              <h2 className="text-xl font-semibold">
                 {t("portfolio.forecast_title", "Прогноз инвестиций")}
               </h2>
               <p className="mt-1 text-[13.5px] text-[#8D9388]">
@@ -1244,7 +1105,15 @@ export default function PortfolioPage() {
                 <div className="mb-3.5 text-[13px] text-[#8D9388]">
                   {t("portfolio.growth_over", "Рост портфеля за")} {yearsLabel}
                 </div>
-                <div className="relative ml-[60px] h-[300px]">
+                <div
+                  className="relative ml-[60px] h-[300px]"
+                  onMouseMove={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    const f = (e.clientX - r.left) / r.width;
+                    setFcHover(Math.round(Math.min(1, Math.max(0, f)) * forecast.n));
+                  }}
+                  onMouseLeave={() => setFcHover(null)}
+                >
                   {forecast.yTicks.map((tk, i) => (
                     <div key={i}>
                       <div
@@ -1290,6 +1159,88 @@ export default function PortfolioPage() {
                       strokeLinejoin="round"
                     />
                   </svg>
+                  {fcHover !== null &&
+                    (() => {
+                      const v = forecast.at(fcHover);
+                      const x = (fcHover / forecast.n) * 100;
+                      const yearWord = plural(
+                        fcHover,
+                        t("portfolio.year_one", "год"),
+                        t("portfolio.year_few", "года"),
+                        t("portfolio.year_many", "лет")
+                      );
+                      return (
+                        <>
+                          <div
+                            className="pointer-events-none absolute bottom-0 top-0 w-px bg-[#F1F3EE]/25"
+                            style={{ left: `${x}%` }}
+                          />
+                          {[
+                            { val: v.nom, c: "#C6F24E" },
+                            { val: v.real, c: "#FBBF24" },
+                            { val: v.inv, c: "#8D9388" },
+                          ].map((d) => (
+                            <span
+                              key={d.c}
+                              className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_0_3px_#151714]"
+                              style={{ left: `${x}%`, top: `${forecast.py(d.val)}%`, background: d.c }}
+                            />
+                          ))}
+                          <div
+                            className="pointer-events-none absolute top-1 z-10 w-64 -translate-x-1/2 rounded-xl border border-[#2A2E27] bg-[#0E0F0E] p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+                            style={{ left: `${Math.min(80, Math.max(20, x))}%` }}
+                          >
+                            <div className="text-[13px] font-semibold">
+                              {fcHover === 0
+                                ? t("portfolio.now", "Сейчас")
+                                : `${t("portfolio.through", "Через")} ${fcHover} ${yearWord}`}
+                            </div>
+                            <div className="mt-2 flex flex-col gap-1.5 text-[13px]">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-2 text-[#8D9388]">
+                                  <span className="h-[3px] w-2.5 rounded-sm bg-[#C6F24E]" />
+                                  {t("portfolio.nominal", "Номинальная стоимость")}
+                                </span>
+                                <b className="font-semibold">{fmtMoney(v.nom, defaultCurrency)}</b>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-2 text-[#8D9388]">
+                                  <span className="h-[3px] w-2.5 rounded-sm bg-[#FBBF24]" />
+                                  {t("portfolio.real", "С учётом инфляции")}
+                                </span>
+                                <b className="font-semibold">{fmtMoney(v.real, defaultCurrency)}</b>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-2 text-[#8D9388]">
+                                  <span className="h-[3px] w-2.5 rounded-sm bg-[#8D9388]" />
+                                  {t("portfolio.total_invested", "Всего вложено")}
+                                </span>
+                                <b className="font-semibold">{fmtMoney(v.inv, defaultCurrency)}</b>
+                              </div>
+                            </div>
+                            <div className="mt-2.5 flex flex-col gap-1 border-t border-[#232721] pt-2 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-[#8D9388]">
+                                  {t("portfolio.growth_income", "Доход от роста")}
+                                </span>
+                                <span className="font-semibold text-[#6EE7A0]">
+                                  +{fmtMoney(Math.max(0, v.nom - v.inv), defaultCurrency)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[#8D9388]">
+                                  {t("portfolio.inflation_impact", "Влияние инфляции")}
+                                </span>
+                                <span className="font-semibold text-[#F87171]">
+                                  {MINUS}
+                                  {fmtMoney(Math.max(0, v.nom - v.real), defaultCurrency)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   <span
                     className="absolute left-full h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C6F24E] shadow-[0_0_0_3px_#151714]"
                     style={{ top: `${forecast.chart.nTop}%` }}

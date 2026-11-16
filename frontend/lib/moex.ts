@@ -119,3 +119,56 @@ export async function fetchMoexPayouts(
 
   return { secid, source: null, payouts: [] };
 }
+
+export interface LiveQuote {
+  symbol: string;
+  price: number;
+  currency: string;
+  source: string;
+}
+
+export type PriceHint = "moex" | "global" | "crypto";
+
+/** Текущие котировки через наш бэкенд (MOEX / Binance / Yahoo). */
+export async function fetchLivePrices(
+  items: { symbol: string; hint: PriceHint }[]
+): Promise<Record<string, LiveQuote>> {
+  if (!items.length) return {};
+  const q = items
+    .map((i) => `${i.symbol.trim().toUpperCase()}:${i.hint}`)
+    .join(",");
+  try {
+    const r = await fetch(`${API_URL}/moex/prices?q=${encodeURIComponent(q)}`);
+    if (!r.ok) return {};
+    const j = (await r.json()) as { prices?: Record<string, LiveQuote> };
+    return j.prices || {};
+  } catch {
+    return {};
+  }
+}
+
+/** История дивидендов бумаг США (Yahoo через наш бэкенд), на одну бумагу. */
+export async function fetchUsDividends(symbol: string): Promise<MoexPayout[]> {
+  try {
+    const r = await fetch(
+      `${API_URL}/moex/us-dividends/${encodeURIComponent(symbol.trim().toUpperCase())}`
+    );
+    if (!r.ok) return [];
+    const j = (await r.json()) as {
+      dividends?: { date: string; value: number; currency: string }[];
+    };
+    const t = today();
+    return (j.dividends || [])
+      .map((x) => ({
+        date: x.date,
+        value: Number(x.value) || 0,
+        currency: x.currency || "USD",
+        kind: "dividend" as const,
+        isFuture: x.date > t,
+      }))
+      .filter((p) => p.date && p.value > 0)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch {
+    return [];
+  }
+}

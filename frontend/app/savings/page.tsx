@@ -552,7 +552,7 @@ export default function SavingsPage() {
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-[17px] font-semibold">{x.g.name}</h2>
+                  <h2 className="text-xl font-semibold">{x.g.name}</h2>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[#8D9388]">
                     {x.g.deadline && (
                       <span className="flex items-center gap-1.5">
@@ -665,7 +665,7 @@ export default function SavingsPage() {
                 <Plus className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
-                <h2 className="text-[17px] font-semibold">
+                <h2 className="text-xl font-semibold">
                   {t("savings.create_title", "Создать новую цель")}
                 </h2>
                 <p className="mt-[3px] text-[13px] text-[#8D9388]">
@@ -699,11 +699,11 @@ export default function SavingsPage() {
           className="overflow-hidden rounded-[20px] border border-[#232721] bg-[#151714]"
         >
           <div className="flex items-start gap-3.5 border-b border-[#232721] px-7 py-6">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-[#1E211C] text-[#C6F24E]">
               <Calculator className="h-[18px] w-[18px]" strokeWidth={1.8} />
             </span>
             <div>
-              <h2 className="text-base font-semibold">
+              <h2 className="text-xl font-semibold">
                 {t("savings.calc_title", "Калькулятор накоплений")}
               </h2>
               <p className="mt-1 text-[13.5px] text-[#8D9388]">
