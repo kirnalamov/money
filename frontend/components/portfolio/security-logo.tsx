@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { logoUrl, PriceHint } from "@/lib/moex";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,16 @@ interface Props {
 export function SecurityLogo({ symbol, hint, size, radius, color }: Props) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // картинка могла загрузиться до гидратации — событие onLoad тогда уже не придёт
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete) {
+      if (el.naturalWidth > 0) setLoaded(true);
+      else setFailed(true);
+    }
+  }, []);
 
   return (
     <span
@@ -34,6 +44,7 @@ export function SecurityLogo({ symbol, hint, size, radius, color }: Props) {
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
           src={logoUrl(symbol, hint)}
           alt=""
           loading="lazy"
