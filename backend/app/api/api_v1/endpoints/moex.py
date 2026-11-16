@@ -1,8 +1,9 @@
 from typing import Dict, List, Tuple
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel
 
+from app.services.logos import get_logo
 from app.services.market_prices import get_quotes, get_us_dividends
 from app.services.moex_dividends import get_dividends
 
@@ -40,6 +41,23 @@ async def read_us_dividends(symbol: str) -> DividendsResponse:
         secid=symbol.strip().upper(),
         source="yahoo",
         dividends=[DividendOut(**d) for d in dividends],
+    )
+
+
+@router.get("/logo/{symbol}")
+async def read_logo(
+    symbol: str,
+    hint: str = Query("global", pattern="^(moex|global|crypto)$"),
+) -> Response:
+    """Логотип бумаги (проксируется и кэшируется); 404, если логотипа нет."""
+    logo = await get_logo(symbol, hint)
+    if logo is None:
+        raise HTTPException(status_code=404, detail="Logo not found")
+    body, content_type = logo
+    return Response(
+        content=body,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=604800"},
     )
 
 

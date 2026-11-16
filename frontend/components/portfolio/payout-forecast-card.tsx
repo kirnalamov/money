@@ -7,6 +7,7 @@ import { ru, enUS } from "date-fns/locale";
 import { Calendar, Loader2 } from "lucide-react";
 import { Currency } from "@/types";
 import { PayoutEvent } from "@/lib/payouts";
+import { SecurityLogo } from "@/components/portfolio/security-logo";
 import { fmtMoney, fmtNum } from "@/lib/plutus-format";
 import { cn } from "@/lib/utils";
 
@@ -274,12 +275,14 @@ export function PayoutForecastCard({
               const lc = logoColor(u.symbol);
               return (
                 <div key={u.key} className="flex items-center gap-3 border-b border-[#1E211C] py-3">
-                  <span
-                    className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] text-[15px] font-bold"
-                    style={{ background: `${lc}24`, color: lc }}
-                  >
-                    {u.symbol.charAt(0)}
-                  </span>
+                  <SecurityLogo
+                    key={u.symbol}
+                    symbol={u.symbol}
+                    hint={u.unitCurrency === "RUB" ? "moex" : "global"}
+                    size={36}
+                    radius={10}
+                    color={lc}
+                  />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="text-sm font-semibold">{u.symbol}</span>
                     <span className="text-[12.5px] text-[#8D9388]">

@@ -129,6 +129,11 @@ export interface LiveQuote {
 
 export type PriceHint = "moex" | "global" | "crypto";
 
+/** URL логотипа бумаги (проксируется нашим бэкендом, 404 если логотипа нет) */
+export function logoUrl(symbol: string, hint: PriceHint): string {
+  return `${API_URL}/moex/logo/${encodeURIComponent(symbol.trim().toUpperCase())}?hint=${hint}`;
+}
+
 /** Текущие котировки через наш бэкенд (MOEX / Binance / Yahoo). */
 export async function fetchLivePrices(
   items: { symbol: string; hint: PriceHint }[]

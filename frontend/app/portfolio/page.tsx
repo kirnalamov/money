@@ -47,6 +47,7 @@ import { Position, Currency } from "@/types";
 import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
+import { SecurityLogo } from "@/components/portfolio/security-logo";
 import { PayoutForecastCard } from "@/components/portfolio/payout-forecast-card";
 import { ReceivedPayoutsCard } from "@/components/portfolio/received-payouts-card";
 import {
@@ -886,12 +887,20 @@ export default function PortfolioPage() {
                         className="grid grid-cols-[minmax(220px,2.2fr)_70px_110px_110px_130px_150px_72px] items-center gap-4 border-t border-[#1E211C] px-7 py-3.5 transition-colors hover:bg-[#1A1D19]"
                       >
                         <div className="flex min-w-0 items-center gap-3.5">
-                          <span
-                            className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-xl text-[17px] font-bold"
-                            style={{ background: `${lc}24`, color: lc }}
-                          >
-                            {p.symbol.charAt(0)}
-                          </span>
+                          <SecurityLogo
+                            key={p.symbol}
+                            symbol={p.symbol}
+                            hint={
+                              p.assetClass === "crypto"
+                                ? "crypto"
+                                : p.currency === "RUB"
+                                  ? "moex"
+                                  : "global"
+                            }
+                            size={42}
+                            radius={12}
+                            color={lc}
+                          />
                           <span className="flex min-w-0 flex-col items-start gap-0.5">
                             <span className="text-[14.5px] font-semibold">{p.symbol}</span>
                             <span className="max-w-full truncate text-[12.5px] text-[#8D9388]">
