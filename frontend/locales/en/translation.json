@@ -522,7 +522,7 @@
     "moex_input": "Security code…",
     "moex_loading": "Querying MOEX…",
     "moex_empty_title": "No public data for",
-    "moex_empty_desc": "MOEX removed stock dividend history from the free ISS API. Bond coupons remain public — enter a bond code (e.g. SU26238RMFS4) to see real payouts.",
+    "moex_empty_desc": "No payouts found in MOEX ISS or on Smart-Lab. Check the security code — e.g. SBER (dividends) or SU26238RMFS4 (OFZ coupons).",
     "moex_try_bond": "Show example: OFZ 26238",
     "moex_last_div": "Latest dividend",
     "moex_last_cpn": "Latest coupon",
@@ -533,7 +533,9 @@
     "moex_pcs": "pcs",
     "moex_planned": "planned",
     "moex_future": "Upcoming (planned)",
-    "moex_source": "Source: iss.moex.com, per-security payouts."
+    "moex_source": "Source: iss.moex.com, per-security payouts.",
+    "moex_source_label": "Source",
+    "moex_per_unit_note": "per-security payouts"
   },
   "savings": {
     "title": "Savings & Goals",

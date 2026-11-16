@@ -10,6 +10,7 @@ from app.api.api_v1.endpoints import (
     transactions,
     users,
     user_items,
+    moex,
 )
 
 api_router = APIRouter()
@@ -23,4 +24,5 @@ api_router.include_router(transactions.router, prefix="/transactions", tags=["tr
 api_router.include_router(goals.router, prefix="/goals", tags=["goals"])
 api_router.include_router(savings.router, prefix="/savings", tags=["savings"])
 api_router.include_router(exchange_rates.router, prefix="/exchange-rates", tags=["exchange-rates"])
+api_router.include_router(moex.router, prefix="/moex", tags=["moex"])
 

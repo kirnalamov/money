@@ -16,11 +16,13 @@ export interface MoexPayout {
 
 export interface MoexPayoutsResult {
   secid: string;
-  source: "dividends" | "coupons" | null;
+  source: "dividends" | "smartlab" | "coupons" | null;
   payouts: MoexPayout[];
 }
 
 const ISS = "https://iss.moex.com/iss";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 function parseTable(
   json: unknown,
@@ -66,7 +68,32 @@ export async function fetchMoexPayouts(
     /* сеть/CORS — пробуем следующий источник */
   }
 
-  // 2) Купоны облигаций — публичный блок bondization.
+  // 2) Дивиденды акций через наш бэкенд (источник — smart-lab.ru),
+  //    т.к. бесплатный ISS их больше не отдаёт.
+  try {
+    const r = await fetch(`${API_URL}/moex/dividends/${s}`);
+    if (r.ok) {
+      const j = (await r.json()) as {
+        dividends?: { date: string; value: number; currency: string }[];
+      };
+      const t = today();
+      const payouts = (j.dividends || [])
+        .map((x) => ({
+          date: x.date,
+          value: Number(x.value) || 0,
+          currency: x.currency || "RUB",
+          kind: "dividend" as const,
+          isFuture: x.date > t,
+        }))
+        .filter((p) => p.date && p.value > 0)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      if (payouts.length) return { secid, source: "smartlab", payouts };
+    }
+  } catch {
+    /* бэкенд недоступен — пробуем купоны */
+  }
+
+  // 3) Купоны облигаций — публичный блок bondization.
   try {
     const r = await fetch(
       `${ISS}/securities/${s}/bondization.json?iss.meta=off&iss.only=coupons&limit=100`

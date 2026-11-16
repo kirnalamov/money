@@ -226,7 +226,7 @@ export function MoexPayoutsCard({ positions }: Props) {
               <span className="text-[13px] leading-relaxed text-[#8D9388]">
                 {t(
                   "portfolio.moex_empty_desc",
-                  "МосБиржа убрала историю дивидендов по акциям из бесплатного ISS API. Открытыми остаются купоны облигаций — введите код облигации (например, SU26238RMFS4), чтобы увидеть реальные выплаты."
+                  "Выплаты не нашлись ни в ISS МосБиржи, ни на Smart-Lab. Проверьте код бумаги — например, SBER (дивиденды) или SU26238RMFS4 (купоны ОФЗ)."
                 )}
               </span>
             </span>
@@ -245,7 +245,7 @@ export function MoexPayoutsCard({ positions }: Props) {
             <div className="mb-7 flex flex-wrap items-end gap-x-12 gap-y-5">
               <div>
                 <div className="text-[13px] font-medium text-[#8D9388]">
-                  {data.source === "dividends"
+                  {data.source !== "coupons"
                     ? t("portfolio.moex_last_div", "Последний дивиденд")
                     : t("portfolio.moex_last_cpn", "Последний купон")}
                   {" · "}
@@ -394,10 +394,10 @@ export function MoexPayoutsCard({ positions }: Props) {
                 <span
                   className={cn(
                     "h-2.5 w-2.5 rounded-[3px]",
-                    data.source === "dividends" ? "bg-[#C6F24E]" : "bg-[#7DD3FC]"
+                    data.source !== "coupons" ? "bg-[#C6F24E]" : "bg-[#7DD3FC]"
                   )}
                 />
-                {data.source === "dividends"
+                {data.source !== "coupons"
                   ? t("portfolio.dividends", "Дивиденды")
                   : t("portfolio.coupons", "Купоны")}
               </span>
@@ -405,16 +405,15 @@ export function MoexPayoutsCard({ positions }: Props) {
                 <span
                   className={cn(
                     "h-2.5 w-2.5 rounded-[3px] opacity-35",
-                    data.source === "dividends" ? "bg-[#C6F24E]" : "bg-[#7DD3FC]"
+                    data.source !== "coupons" ? "bg-[#C6F24E]" : "bg-[#7DD3FC]"
                   )}
                 />
                 {t("portfolio.moex_future", "Будущие (план)")}
               </span>
               <span>
-                {t(
-                  "portfolio.moex_source",
-                  "Источник: iss.moex.com, выплаты на одну бумагу."
-                )}
+                {t("portfolio.moex_source_label", "Источник")}:{" "}
+                {data.source === "smartlab" ? "smart-lab.ru" : "iss.moex.com"},{" "}
+                {t("portfolio.moex_per_unit_note", "выплаты на одну бумагу")}.
               </span>
             </div>
           </div>
