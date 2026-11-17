@@ -51,6 +51,7 @@ export function CapitalChart({ points, currency, height, glow = false, gridInset
   }, [points, thousands]);
 
   if (!view.n) return null;
+  const active = hover !== null;
   const hv = Math.min(hover ?? view.n - 1, view.n - 1);
   const cur = view.pts[hv];
   const prev = hv > 0 ? view.pts[hv - 1].value : view.pts[0].value;
@@ -101,31 +102,36 @@ export function CapitalChart({ points, currency, height, glow = false, gridInset
           style={glow ? { filter: "drop-shadow(0 0 6px rgba(110,231,160,0.45))" } : undefined}
         />
       </svg>
-      <div className="pointer-events-none absolute bottom-0 top-0 border-l border-dashed border-[#3F7A5C]" style={{ left: `${hx}%` }} />
-      <div
-        className="pointer-events-none absolute h-3 w-3 rounded-full border-2 border-[#151714] bg-[#6EE7A0]"
-        style={{ left: `${hx}%`, top: `${hy}%`, margin: "-6px 0 0 -6px" }}
-      />
-      <div
-        className="pointer-events-none absolute top-2 min-w-[150px] rounded-xl border border-[#2A2E27] bg-[#0E0F0E] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
-        style={tipSide}
-      >
-        <div className="text-[12.5px] text-[#8D9388]">{format(cur.date, "dd.MM.yyyy")}</div>
-        <div className="mt-0.5 text-base font-bold">{fmtMoney(cur.value, currency)}</div>
-        <div
-          className="mt-0.5 text-[12.5px] font-semibold"
-          style={{ color: delta < 0 ? "#F87171" : delta > 0 ? "#6EE7A0" : "#8D9388" }}
-        >
-          {delta < 0 ? MINUS : "+"}
-          {fmtNum(Math.abs(delta))} {t("overview.per_day", "за день")}
-        </div>
-      </div>
+      {active && (
+        <>
+          <div className="pointer-events-none absolute bottom-0 top-0 border-l border-dashed border-[#3F7A5C]" style={{ left: `${hx}%` }} />
+          <div
+            className="pointer-events-none absolute h-3 w-3 rounded-full border-2 border-[#151714] bg-[#6EE7A0]"
+            style={{ left: `${hx}%`, top: `${hy}%`, margin: "-6px 0 0 -6px" }}
+          />
+          <div
+            className="pointer-events-none absolute top-2 min-w-[150px] rounded-xl border border-[#2A2E27] bg-[#0E0F0E] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+            style={tipSide}
+          >
+            <div className="text-[12.5px] text-[#8D9388]">{format(cur.date, "dd.MM.yyyy")}</div>
+            <div className="mt-0.5 text-base font-bold">{fmtMoney(cur.value, currency)}</div>
+            <div
+              className="mt-0.5 text-[12.5px] font-semibold"
+              style={{ color: delta < 0 ? "#F87171" : delta > 0 ? "#6EE7A0" : "#8D9388" }}
+            >
+              {delta < 0 ? MINUS : "+"}
+              {fmtNum(Math.abs(delta))} {t("overview.per_day", "за день")}
+            </div>
+          </div>
+        </>
+      )}
       <div className="absolute inset-0 flex">
         {view.pts.map((p, i) => (
           <button
             key={i}
             onMouseEnter={() => setHover(i)}
             onFocus={() => setHover(i)}
+            onBlur={() => setHover(null)}
             onClick={() => setHover(i)}
             aria-label={`${format(p.date, "dd.MM")}: ${fmtMoney(p.value, currency)}`}
             className="h-full flex-1 cursor-crosshair border-0 bg-transparent p-0 hover:bg-[#C6F24E]/[0.06]"
