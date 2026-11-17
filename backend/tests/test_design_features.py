@@ -71,3 +71,27 @@ async def check_features():
     finally:
         app.dependency_overrides.clear()
         await engine.dispose()
+
+
+def test_security_search_ranking_and_merge(monkeypatch):
+    from app.services import security_search as ss
+
+    async def fake_moex(client, q):
+        return [
+            {"symbol": "SBERP", "name": "Сбербанк-п", "hint": "moex", "asset_class": "stock", "exchange": "МосБиржа"},
+            {"symbol": "SBER", "name": "Сбербанк", "hint": "moex", "asset_class": "stock", "exchange": "МосБиржа"},
+        ]
+
+    async def fake_yahoo(client, q):
+        return [{"symbol": "SBRCY", "name": "Sberbank ADR", "hint": "global", "asset_class": "stock", "exchange": "OTC"}]
+
+    async def fake_crypto(client, q):
+        return []
+
+    monkeypatch.setattr(ss, "_search_moex", fake_moex)
+    monkeypatch.setattr(ss, "_search_yahoo", fake_yahoo)
+    monkeypatch.setattr(ss, "_search_crypto", fake_crypto)
+    ss._CACHE.clear()
+    result = asyncio.run(ss.search_securities("sber"))
+    assert [item["symbol"] for item in result] == ["SBER", "SBERP", "SBRCY"]
+    assert asyncio.run(ss.search_securities("  ")) == []

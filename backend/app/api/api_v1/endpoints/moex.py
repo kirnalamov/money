@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.services.logos import get_logo
 from app.services.market_prices import get_quotes, get_us_dividends
 from app.services.moex_dividends import get_dividends
+from app.services.security_search import search_securities
 
 router = APIRouter()
 
@@ -92,3 +93,21 @@ async def read_prices(
         items.append((bits[0], hint))
     quotes = await get_quotes(items)
     return PricesResponse(prices={k: QuoteOut(**v) for k, v in quotes.items()})
+
+
+class FoundOut(BaseModel):
+    symbol: str
+    name: str
+    hint: str
+    asset_class: str
+    exchange: str
+
+
+class SearchResponse(BaseModel):
+    results: List[FoundOut]
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search(q: str = Query(..., min_length=1, max_length=40, description="Тикер или название бумаги")) -> SearchResponse:
+    """Подходящие бумаги (МосБиржа, мировые рынки, крипто) для выбора пользователем."""
+    return SearchResponse(results=[FoundOut(**item) for item in await search_securities(q)])
