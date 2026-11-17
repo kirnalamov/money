@@ -426,7 +426,7 @@ export default function SettingsPage() {
                     className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-sm font-semibold text-[#F1F3EE] outline-none [&>option]:bg-[#151714] [&>option]:text-[#F1F3EE]"
                   >
                     {(["USD", "EUR", "GBP", "RUB"] as const).map((currency) => (
-                      <option key={currency} value={currency}>{t(`settings.currencies.${currency}`)}</option>
+                      <option key={currency} value={currency}>{`${curSymbols[currency]}  ${t(`settings.currencies.${currency}`).replace(/\s*\([A-Z]{3}\)\s*$/, "")}`}</option>
                     ))}
                   </select>
                 </span>

@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import {
   LayoutGrid,
+  BarChart3,
   ArrowRightLeft,
   Briefcase,
   DollarSign,
@@ -23,6 +24,7 @@ export function Sidebar() {
 
   const navItems = [
     { name: t("common.overview"), href: "/", icon: LayoutGrid },
+    { name: t("common.analytics", "Аналитика"), href: "/analytics", icon: BarChart3 },
     { name: t("common.transactions"), href: "/transactions", icon: ArrowRightLeft },
     { name: t("common.portfolio"), href: "/portfolio", icon: Briefcase },
     { name: t("common.savings"), href: "/savings", icon: DollarSign },
