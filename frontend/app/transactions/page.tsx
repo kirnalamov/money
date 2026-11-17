@@ -14,8 +14,14 @@ import {
   startOfMonth,
   endOfMonth,
   isSameMonth,
+  isSameDay,
+  startOfDay,
+  endOfDay,
+  subDays,
   subMonths,
 } from "date-fns";
+import type { DateRange } from "react-day-picker";
+import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { ru, enUS } from "date-fns/locale";
 import { convertCurrency } from "@/lib/utils";
 import {
@@ -33,6 +39,7 @@ import {
   Plus,
   Search,
   Calendar,
+  CalendarRange,
   ChevronDown,
   SlidersHorizontal,
   ArrowDownLeft,
@@ -71,6 +78,9 @@ export default function TransactionsPage() {
   const [type, setType] = useState<TransactionType | "all">("all");
   const [accountId, setAccountId] = useState<string>("all");
   const [month, setMonth] = useState<Date>(startOfMonth(new Date()));
+  // произвольный период (если выбран, заменяет месяц)
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
+  const [rangeOpen, setRangeOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -126,8 +136,8 @@ export default function TransactionsPage() {
 
   // Filtering
   const monthFiltered = useMemo(() => {
-    const from = startOfMonth(month);
-    const to = endOfMonth(month);
+    const from = range?.from ? startOfDay(range.from) : startOfMonth(month);
+    const to = range?.from ? endOfDay(range.to ?? range.from) : endOfMonth(month);
     return transactions.filter((tx) => {
       const d = new Date(tx.date);
       if (d < from || d > to) return false;
@@ -139,7 +149,7 @@ export default function TransactionsPage() {
         return false;
       return true;
     });
-  }, [transactions, month, accountId]);
+  }, [transactions, month, range, accountId]);
 
   const filtered = useMemo(() => {
     return monthFiltered.filter((tx) => {
@@ -263,10 +273,26 @@ export default function TransactionsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `transactions-${format(month, "yyyy-MM")}.csv`;
+    a.download = `transactions-${range?.from ? `${format(range.from, "yyyy-MM-dd")}_${format(range.to ?? range.from, "yyyy-MM-dd")}` : format(month, "yyyy-MM")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const periodLabel = () =>
+    range?.from
+      ? range.to && !isSameDay(range.from, range.to)
+        ? `${format(range.from, "d MMM", { locale: dateLocale })} — ${format(range.to, "d MMM yyyy", { locale: dateLocale })}`
+        : format(range.from, "d MMMM yyyy", { locale: dateLocale })
+      : monthLabel(month);
+
+  const presets: { key: string; label: string; get: () => DateRange }[] = [
+    { key: "today", label: t("transactions.range.today", "Сегодня"), get: () => ({ from: new Date(), to: new Date() }) },
+    { key: "7", label: t("transactions.range.last7", "7 дней"), get: () => ({ from: subDays(new Date(), 6), to: new Date() }) },
+    { key: "30", label: t("transactions.range.last30", "30 дней"), get: () => ({ from: subDays(new Date(), 29), to: new Date() }) },
+    { key: "month", label: t("transactions.range.this_month", "Этот месяц"), get: () => ({ from: startOfMonth(new Date()), to: new Date() }) },
+    { key: "prev", label: t("transactions.range.prev_month", "Прошлый месяц"), get: () => ({ from: startOfMonth(subMonths(new Date(), 1)), to: endOfMonth(subMonths(new Date(), 1)) }) },
+    { key: "year", label: t("transactions.range.year", "Год"), get: () => ({ from: subDays(new Date(), 364), to: new Date() }) },
+  ];
 
   const monthLabel = (d: Date) => {
     const s = format(d, "LLLL yyyy", { locale: dateLocale });
@@ -328,7 +354,7 @@ export default function TransactionsPage() {
               {t("transactions.title")}
             </h1>
             <p className="mt-1 text-sm text-[#8D9388]">
-              {monthLabel(month)} · {t("transactions.found", "найдено")} {totalRows}
+              {periodLabel()} · {t("transactions.found", "найдено")} {totalRows}
             </p>
           </div>
           <div className="flex gap-2.5">
@@ -452,7 +478,7 @@ export default function TransactionsPage() {
             <DropdownMenuTrigger asChild>
               <button className="flex h-11 items-center gap-2.5 rounded-xl border border-[#232721] bg-[#151714] px-4 text-sm font-medium text-[#F1F3EE] transition-colors hover:bg-[#1B1E1A]">
                 <Calendar className="h-4 w-4" strokeWidth={1.8} />
-                {monthLabel(month)}
+                {range?.from ? t("transactions.range.month_pick", "Месяц") : monthLabel(month)}
                 <ChevronDown className="h-3.5 w-3.5 text-[#8D9388]" strokeWidth={2} />
               </button>
             </DropdownMenuTrigger>
@@ -462,16 +488,62 @@ export default function TransactionsPage() {
                   key={d.toISOString()}
                   onClick={() => {
                     setMonth(d);
+                    setRange(undefined);
                     setSelectedId(null);
                     setShowAll(false);
                   }}
-                  className={cn(isSameMonth(d, month) && "text-[#C6F24E]")}
+                  className={cn(!range?.from && isSameMonth(d, month) && "text-[#C6F24E]")}
                 >
                   {monthLabel(d)}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Popover open={rangeOpen} onOpenChange={setRangeOpen}>
+            <PopoverTrigger asChild>
+              <button
+                aria-label={t("transactions.range.title", "Период")}
+                className={cn(
+                  "flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors hover:bg-[#1B1E1A]",
+                  range?.from ? "border-[#C6F24E] bg-[#C6F24E]/10 text-[#F1F3EE]" : "border-[#232721] bg-[#151714] text-[#F1F3EE]"
+                )}
+              >
+                <CalendarRange className="h-4 w-4" strokeWidth={1.8} />
+                {range?.from ? periodLabel() : t("transactions.range.title", "Период")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto max-w-[calc(100vw-24px)] rounded-[18px] border-[#2A2E27] bg-[#151714] p-3">
+              <div className="flex flex-wrap gap-1.5 pb-2.5">
+                {presets.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => { setRange(p.get()); setSelectedId(null); setShowAll(false); setRangeOpen(false); }}
+                    className="h-8 rounded-full border border-[#2A2E27] bg-[#1B1E1A] px-3 text-[12.5px] font-medium text-[#C9CEC3] hover:border-[#4A5043]"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <DayCalendar
+                mode="range"
+                selected={range}
+                defaultMonth={range?.from ?? month}
+                disabled={{ after: new Date() }}
+                onSelect={(value) => { setRange(value); setSelectedId(null); setShowAll(false); }}
+              />
+              <div className="flex items-center justify-between gap-2 pt-2.5">
+                <span className="text-[12.5px] text-[#8D9388]">
+                  {range?.from ? periodLabel() : t("transactions.range.hint", "Выберите первую и последнюю дату")}
+                </span>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setRange(undefined)} disabled={!range?.from} className="h-8 rounded-lg px-3 text-[12.5px] font-semibold text-[#8D9388] hover:text-[#F1F3EE] disabled:opacity-40">{t("transactions.range.reset", "Сбросить")}</button>
+                  <button type="button" onClick={() => setRangeOpen(false)} className="h-8 rounded-lg bg-[#C6F24E] px-3 text-[12.5px] font-bold text-[#10170A]">{t("transactions.range.apply", "Готово")}</button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Popover>
             <PopoverTrigger asChild>

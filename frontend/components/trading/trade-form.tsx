@@ -5,6 +5,7 @@ import { useBrokerSettings } from "@/lib/broker-settings";
 import { useTranslation } from "react-i18next";
 import { format, isSameDay, subDays } from "date-fns";
 import { useStore } from "@/lib/store";
+import { convertCurrency } from "@/lib/utils";
 import { fmtMoney, fmtNum, hashColor } from "@/lib/plutus-format";
 import { evalAmount, Card, Chip, CURRENCY_SYMBOL, Dot, DoneScreen, Fld, fldInput, GhostBtn, Hint, Lbl, LinkBtn, ModalActions, parseRuDate, Pick, PrimaryBtn, Seg, Suffix, Warn, TONE } from "@/components/ui/modal-kit";
 import { TickerField } from "@/components/trading/ticker-field";
@@ -55,7 +56,13 @@ export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: T
     return () => { alive = false; };
   }, []);
 
-  const brokerages = ticker ? accounts.filter((a) => a.type === "brokerage" && a.currency === ticker.currency) : [];
+  // все брокерские счета; счёт с бумагой и в той же валюте — первыми. Если валюта счёта другая, пересчёт идёт по курсу.
+  const holderId = ticker ? positions.find((p) => p.symbol === ticker.symbol)?.accountId : undefined;
+  const brokerages = ticker
+    ? accounts
+        .filter((a) => a.type === "brokerage")
+        .sort((a, b) => Number(b.id === holderId) - Number(a.id === holderId) || Number(b.currency === ticker.currency) - Number(a.currency === ticker.currency))
+    : [];
   const account = brokerages.find((a) => a.id === brokerageId) ?? brokerages[0];
   const existing: Position | undefined = ticker && account ? positions.find((p) => p.symbol === ticker.symbol && p.accountId === account.id) : undefined;
   const held = existing?.quantity ?? 0;
@@ -74,12 +81,13 @@ export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: T
   const commission = ((deal + nkd) * broker.commissionPct) / 100;
   const cash = account?.balance ?? 0;
   const delta = side === "buy" ? -(deal + nkd + commission) : deal + nkd - commission;
-  const cashAfter = cash + delta;
+  const cashDelta = ticker && account ? convertCurrency(delta, ticker.currency, account.currency) : 0;
+  const cashAfter = cash + cashDelta;
   const qtyAfter = side === "buy" ? held + qty : held - qty;
 
   const warn = !ticker ? "" :
     brokerages.length === 0 ? t("dialogs.trade_no_brokerage", "Нет брокерского счёта в валюте бумаги.") :
-    side === "buy" && qty > 0 && cashAfter < 0 ? t("dialogs.trade_short", "На брокерском счёте не хватает {{amount}}.", { amount: fmtMoney(-cashAfter, ticker.currency) }) :
+    side === "buy" && qty > 0 && cashAfter < 0 ? t("dialogs.trade_short", "На брокерском счёте не хватает {{amount}}.", { amount: fmtMoney(-cashAfter, account?.currency) }) :
     side === "sell" && qty > held + 1e-9 ? t("dialogs.trade_sell_over", "В портфеле только {{qty}} шт.", { qty: fmtNum(held, 4) }) :
     "";
   const invalid = !ticker || !account || qty <= 0 || !!warn;
@@ -154,10 +162,13 @@ export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: T
     ...(nkd > 0 ? [{ k: t("portfolio.nkd", "НКД"), v: fmtMoney(nkd, ticker.currency) }] : []),
     { k: t("dialogs.trade_commission_rate", "Комиссия {{pct}}%", { pct: String(broker.commissionPct).replace(".", ",") }), v: fmtMoney(commission, ticker.currency) },
     { k: side === "buy" ? t("dialogs.trade_total_buy", "Спишется") : t("dialogs.trade_total_sell", "Зачислится"), v: fmtMoney(Math.abs(delta), ticker.currency), strong: true },
+    ...(account && account.currency !== ticker.currency
+      ? [{ k: side === "buy" ? t("dialogs.trade_from_account", "Спишется со счёта (по курсу)") : t("dialogs.trade_to_account", "Зачислится на счёт (по курсу)"), v: fmtMoney(Math.abs(cashDelta), account.currency) }]
+      : []),
     ...(side === "sell" && existing && broker.taxPct > 0
       ? [{ k: t("dialogs.trade_tax_est", "Налог с прибыли (оценка)"), v: fmtMoney(Math.max(0, (price - existing.avgPrice) * qty - commission) * broker.taxPct / 100, ticker.currency) }]
       : []),
-    { k: t("dialogs.trade_cash_after", "Свободно после"), v: fmtMoney(cashAfter, ticker.currency), tone: cashAfter < 0 ? TONE.expense : undefined },
+    { k: t("dialogs.trade_cash_after", "Свободно после"), v: fmtMoney(cashAfter, account?.currency), tone: cashAfter < 0 ? TONE.expense : undefined },
     { k: t("dialogs.trade_pos_after", "В портфеле после"), v: `${fmtNum(Math.max(qtyAfter, 0), 4)} ${t("dialogs.pcs", "шт")}` },
   ] : [];
 
