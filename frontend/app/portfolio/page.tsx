@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
 import { SecurityLogo } from "@/components/portfolio/security-logo";
+import { PositionDialog } from "@/components/portfolio/position-dialog";
 import { PayoutForecastCard } from "@/components/portfolio/payout-forecast-card";
 import { ReceivedPayoutsCard } from "@/components/portfolio/received-payouts-card";
 import {
@@ -112,20 +113,9 @@ export default function PortfolioPage() {
   const [tax, setTax] = useTaxSettings();
   const [fcHover, setFcHover] = useState<number | null>(null);
 
-  const [editingPosition, setEditingPosition] = useState<{ symbol: string; accountId: number } | null>(null);
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [ptab, setPtab] = useState<"all" | AssetClass>("all");
-  const [formData, setFormData] = useState({
-    symbol: "",
-    name: "",
-    quantity: "",
-    avgPrice: "",
-    currentPrice: "",
-    currency: defaultCurrency as Currency,
-    accountId: "",
-    assetClass: "stock" as AssetClass,
-    purchaseDate: "",
-  });
 
   // Forecast calculator state
   const [contrib, setContrib] = useState("500");
@@ -135,68 +125,13 @@ export default function PortfolioPage() {
 
   const brokerageAccounts = accounts.filter((acc) => acc.type === "brokerage");
 
-  const resetForm = () => {
-    setFormData({
-      symbol: "",
-      name: "",
-      quantity: "",
-      avgPrice: "",
-      currentPrice: "",
-      currency: defaultCurrency,
-      accountId: brokerageAccounts[0]?.id.toString() || "",
-      assetClass: "stock",
-      purchaseDate: new Date().toISOString().slice(0, 10),
-    });
-    setEditingPosition(null);
-  };
-
   const handleOpenDialog = (position?: Position) => {
-    if (position) {
-      const src =
-        storePositions.find(
-          (x) => x.symbol === position.symbol && x.accountId === position.accountId
-        ) || position;
-      setEditingPosition({ symbol: src.symbol, accountId: src.accountId });
-      setFormData({
-        symbol: src.symbol,
-        name: src.name,
-        quantity: src.quantity.toString(),
-        avgPrice: src.avgPrice.toString(),
-        currentPrice: src.currentPrice.toString(),
-        currency: src.currency,
-        accountId: src.accountId.toString(),
-        assetClass: (src.assetClass || "stock") as AssetClass,
-        purchaseDate: src.purchaseDate ? src.purchaseDate.slice(0, 10) : "",
-      });
-    } else {
-      resetForm();
-    }
+    setEditingPosition(
+      position
+        ? storePositions.find((x) => x.symbol === position.symbol && x.accountId === position.accountId) || position
+        : null
+    );
     setIsDialogOpen(true);
-  };
-
-  const handleSave = () => {
-    if (!formData.symbol || !formData.name || !formData.quantity || !formData.avgPrice || !formData.currentPrice || !formData.accountId) return;
-
-    const positionData: Position = {
-      symbol: formData.symbol.toUpperCase(),
-      name: formData.name,
-      quantity: parseFloat(formData.quantity),
-      avgPrice: parseFloat(formData.avgPrice),
-      currentPrice: parseFloat(formData.currentPrice),
-      currency: formData.currency,
-      accountId: parseInt(formData.accountId),
-      assetClass: formData.assetClass,
-      purchaseDate: formData.purchaseDate || undefined,
-    };
-
-    if (editingPosition) {
-      updatePosition(editingPosition.symbol, editingPosition.accountId, positionData);
-    } else {
-      addPosition(positionData);
-    }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
   const handleDelete = (symbol: string, accountId: string | number) => {
@@ -447,184 +382,15 @@ export default function PortfolioPage() {
               </button>
             </div>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button
-                onClick={() => handleOpenDialog()}
-                disabled={brokerageAccounts.length === 0}
-                className="flex h-[42px] items-center gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-[18px] text-sm font-semibold text-[#10170A] disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" strokeWidth={2.2} />
-                {t("portfolio.add_position")}
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingPosition ? t("portfolio.edit_position") : t("portfolio.add_position")}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingPosition ? t("portfolio.edit_position_desc") : t("portfolio.add_position_desc")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="accountId" className="text-right">
-                    {t("portfolio.account")}
-                  </Label>
-                  <Select
-                    value={formData.accountId}
-                    onValueChange={(value) => setFormData({ ...formData, accountId: value })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder={t("portfolio.select_account")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {brokerageAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id.toString()}>
-                          {account.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="symbol" className="text-right">
-                    {t("portfolio.symbol")}
-                  </Label>
-                  <Input
-                    id="symbol"
-                    value={formData.symbol}
-                    onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                    className="col-span-3"
-                    placeholder="AAPL"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    {t("portfolio.name")}
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="col-span-3"
-                    placeholder="Apple Inc."
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="assetClass" className="text-right">
-                    {t("portfolio.asset_class")}
-                  </Label>
-                  <Select
-                    value={formData.assetClass}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, assetClass: value as AssetClass })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="stock">{t("portfolio.asset_classes.stock")}</SelectItem>
-                      <SelectItem value="crypto">{t("portfolio.asset_classes.crypto")}</SelectItem>
-                      <SelectItem value="etf">{t("portfolio.asset_classes.etf")}</SelectItem>
-                      <SelectItem value="bond">{t("portfolio.asset_classes.bond")}</SelectItem>
-                      <SelectItem value="cash">{t("portfolio.asset_classes.cash")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quantity" className="text-right">
-                    {t("portfolio.quantity")}
-                  </Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    step="0.00000001"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="avgPrice" className="text-right">
-                    {t("portfolio.avg_price")}
-                  </Label>
-                  <Input
-                    id="avgPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.avgPrice}
-                    onChange={(e) => setFormData({ ...formData, avgPrice: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="currentPrice" className="text-right">
-                    {t("portfolio.current_price")}
-                  </Label>
-                  <Input
-                    id="currentPrice"
-                    type="number"
-                    step="0.01"
-                    value={formData.currentPrice}
-                    onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="currency" className="text-right">
-                    {t("portfolio.currency")}
-                  </Label>
-                  <Select
-                    value={formData.currency}
-                    onValueChange={(value: Currency) =>
-                      setFormData({ ...formData, currency: value })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="RUB">RUB</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="purchaseDate" className="text-right">
-                    {t("portfolio.purchase_date", "Дата покупки")}
-                  </Label>
-                  <Input
-                    id="purchaseDate"
-                    type="date"
-                    value={formData.purchaseDate}
-                    onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  {t("common.cancel")}
-                </Button>
-                <Button onClick={handleSave} disabled={brokerageAccounts.length === 0}>
-                  {t("common.save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <button
+            onClick={() => handleOpenDialog()}
+            disabled={brokerageAccounts.length === 0}
+            className="flex h-[42px] items-center gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-[18px] text-sm font-semibold text-[#10170A] disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
+            {t("portfolio.add_position")}
+          </button>
+          <PositionDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} editing={editingPosition} />
         </header>
 
         {/* TOP ROW */}
@@ -847,10 +613,7 @@ export default function PortfolioPage() {
                         </span>
                       </span>
                       <button
-                        onClick={() => {
-                          handleOpenDialog();
-                          setFormData((f) => ({ ...f, assetClass: "bond" }));
-                        }}
+                        onClick={() => handleOpenDialog()}
                         disabled={brokerageAccounts.length === 0}
                         className="h-10 rounded-xl border border-[#2A2E27] bg-transparent px-4 text-[13.5px] font-semibold text-[#C9CEC3] transition-colors hover:border-[#C6F24E] hover:text-[#C6F24E] disabled:opacity-50"
                       >

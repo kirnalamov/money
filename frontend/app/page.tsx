@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
@@ -37,7 +38,7 @@ export default function OverviewPage() {
   const now = useMemo(() => new Date(), []);
   const [per, setPer] = useState<Period>("30D");
   const [dismissed, setDismissed] = useState<Record<string, boolean>>({});
-  const [activeType, setActiveType] = useState<"expense" | "income" | "transfer" | null>(null);
+  const [activeType, setActiveType] = useState<"expense" | "income" | "transfer" | "trade" | null>(null);
 
   const conv = (v: number, cur: string) => convertCurrency(v, cur, defaultCurrency);
   const catColor = (name: string) => {
@@ -94,7 +95,7 @@ export default function OverviewPage() {
   const month = useMemo(() => {
     const list = transactions.filter((tx) => {
       const d = new Date(tx.date);
-      return !Number.isNaN(d.getTime()) && d >= monthStart && d <= now;
+      return !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= monthStart && d <= now;
     });
     let income = 0;
     let expense = 0;
@@ -225,7 +226,7 @@ export default function OverviewPage() {
     { label: t("overview.q_expense", "Расход"), sub: t("overview.q_expense_sub", "записать трату"), icon: "↗", color: RED, bg: "bg-[#F87171]/[0.12]", onClick: () => setActiveType("expense") },
     { label: t("overview.q_income", "Доход"), sub: t("overview.q_income_sub", "зарплата, подработка"), icon: "↙", color: MINT, bg: "bg-[#6EE7A0]/[0.12]", onClick: () => setActiveType("income") },
     { label: t("overview.q_transfer", "Перевод"), sub: t("overview.q_transfer_sub", "между счетами"), icon: "⇄", color: "#7DD3FC", bg: "bg-[#7DD3FC]/[0.12]", onClick: () => setActiveType("transfer") },
-    { label: t("overview.q_trade", "Сделка"), sub: t("overview.q_trade_sub", "купить или продать"), icon: "$", color: "#C6F24E", bg: "bg-[#C6F24E]/[0.12]", href: "/portfolio" },
+    { label: t("overview.q_trade", "Сделка"), sub: t("overview.q_trade_sub", "купить или продать"), icon: "$", color: "#C6F24E", bg: "bg-[#C6F24E]/[0.12]", onClick: () => setActiveType("trade") },
     { label: t("overview.q_save", "Отложить"), sub: t("overview.q_save_sub", "на цель"), icon: "+", color: "#C4B5FD", bg: "bg-[#C4B5FD]/[0.12]", href: "/savings" },
   ];
 

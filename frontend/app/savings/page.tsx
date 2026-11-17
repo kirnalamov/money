@@ -16,19 +16,10 @@ import {
   Calculator,
   ChevronDown,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Goal } from "@/types";
+import { GoalDialog } from "@/components/savings/goal-dialog";
+import { TopUpDialog } from "@/components/savings/topup-dialog";
 import { format } from "date-fns";
 
 const NBSP = " ";
@@ -41,17 +32,10 @@ export default function SavingsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    targetAmount: "",
-    currentAmount: "",
-    deadline: "",
-  });
+  const [presetName, setPresetName] = useState<string | undefined>(undefined);
 
   // ---- top-up dialog
   const [topUpGoal, setTopUpGoal] = useState<Goal | null>(null);
-  const [topUpAmount, setTopUpAmount] = useState("");
 
   // ---- calculator
   const [sel, setSel] = useState<string>("custom");
@@ -115,70 +99,12 @@ export default function SavingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gv, defaultCurrency]);
 
-  // ---- dialog handlers (preserved)
-  const handleOpenDialog = (goal?: Goal, presetName?: string) => {
+  // ---- dialog handlers
+  const handleOpenDialog = (goal?: Goal, preset?: string) => {
     setError(null);
-    if (goal) {
-      setEditingGoal(goal);
-      setFormData({
-        name: goal.name,
-        targetAmount: goal.targetAmount.toString(),
-        currentAmount: goal.currentAmount.toString(),
-        deadline: goal.deadline
-          ? new Date(goal.deadline).toISOString().slice(0, 10)
-          : "",
-      });
-    } else {
-      setEditingGoal(null);
-      setFormData({
-        name: presetName || "",
-        targetAmount: "",
-        currentAmount: "0",
-        deadline: "",
-      });
-    }
+    setEditingGoal(goal ?? null);
+    setPresetName(preset);
     setIsDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    const targetAmount = Number(formData.targetAmount);
-    const currentAmount = Number(formData.currentAmount || "0");
-    if (!formData.name.trim()) {
-      setError(t("savings.validation.name", "Укажите название цели"));
-      return;
-    }
-    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setError(t("savings.validation.target", "Укажите целевую сумму больше нуля"));
-      return;
-    }
-    if (!Number.isFinite(currentAmount) || currentAmount < 0) {
-      setError(t("savings.validation.current", "Накопленная сумма не может быть отрицательной"));
-      return;
-    }
-
-    const goalData = {
-      name: formData.name.trim(),
-      targetAmount,
-      currentAmount,
-      deadline: formData.deadline
-        ? new Date(`${formData.deadline}T00:00:00`).toISOString()
-        : undefined,
-      currency: defaultCurrency,
-    };
-
-    setIsSaving(true);
-    try {
-      if (editingGoal) {
-        await updateGoal(editingGoal.id, goalData);
-      } else {
-        await addGoal(goalData as Goal);
-      }
-      setIsDialogOpen(false);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t("common.error", "Ошибка"));
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const handleDelete = async (goal: Goal) => {
@@ -189,17 +115,6 @@ export default function SavingsPage() {
         setError(deleteError instanceof Error ? deleteError.message : t("common.error", "Ошибка"));
       }
     }
-  };
-
-  const handleTopUp = async () => {
-    if (!topUpGoal) return;
-    const v = parseFloat(topUpAmount.replace(",", "."));
-    if (!Number.isFinite(v) || v <= 0) return;
-    await updateGoal(topUpGoal.id, {
-      currentAmount: topUpGoal.currentAmount + v,
-    });
-    setTopUpGoal(null);
-    setTopUpAmount("");
   };
 
   // ---- calculator math (ported from the design)
@@ -642,7 +557,6 @@ export default function SavingsPage() {
                 <button
                   onClick={() => {
                     setTopUpGoal(x.g);
-                    setTopUpAmount("");
                   }}
                   className="h-[42px] flex-1 rounded-xl bg-[#C6F24E] text-sm font-semibold text-[#10170A]"
                 >
@@ -1096,120 +1010,10 @@ export default function SavingsPage() {
         </section>
 
         {/* CREATE / EDIT DIALOG */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingGoal
-                  ? t("savings.dialog.edit_title", "Изменить цель")
-                  : t("savings.dialog.create_title", "Новая цель")}
-              </DialogTitle>
-              <DialogDescription>
-                {t("savings.dialog.description", "Название, целевая сумма и срок")}
-              </DialogDescription>
-            </DialogHeader>
-            {error && isDialogOpen && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">{t("savings.dialog.name_label", "Название")}</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={t("savings.dialog.name_placeholder", "Отпуск")}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="target">
-                    {t("savings.dialog.target_label", "Целевая сумма")}
-                  </Label>
-                  <Input
-                    id="target"
-                    type="number"
-                    value={formData.targetAmount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, targetAmount: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="current">
-                    {t("savings.dialog.current_label", "Уже накоплено")}
-                  </Label>
-                  <Input
-                    id="current"
-                    type="number"
-                    value={formData.currentAmount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, currentAmount: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="deadline">{t("savings.dialog.date_label", "Срок")}</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                {t("common.cancel", "Отмена")}
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? t("common.loading", "Сохраняем…") : t("savings.dialog.save", "Сохранить")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <GoalDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} goal={editingGoal} presetName={presetName} />
 
         {/* TOP-UP DIALOG */}
-        <Dialog
-          open={!!topUpGoal}
-          onOpenChange={(open) => !open && setTopUpGoal(null)}
-        >
-          <DialogContent className="sm:max-w-[380px]">
-            <DialogHeader>
-              <DialogTitle>
-                {t("savings.top_up", "Пополнить")} · {topUpGoal?.name}
-              </DialogTitle>
-              <DialogDescription>
-                {topUpGoal &&
-                  `${fmtMoney(topUpGoal.currentAmount, topUpGoal.currency)} ${t("savings.of", "из")} ${fmtMoney(topUpGoal.targetAmount, topUpGoal.currency)}`}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-2 py-2">
-              <Label htmlFor="topup">
-                {t("savings.top_up_amount", "Сумма пополнения")} (
-                {topUpGoal && getCurrencySymbol(topUpGoal.currency)})
-              </Label>
-              <Input
-                id="topup"
-                type="number"
-                min="0"
-                value={topUpAmount}
-                onChange={(e) => setTopUpAmount(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleTopUp()}
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setTopUpGoal(null)}>
-                {t("common.cancel", "Отмена")}
-              </Button>
-              <Button onClick={handleTopUp}>{t("savings.top_up", "Пополнить")}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <TopUpDialog goal={topUpGoal} onClose={() => setTopUpGoal(null)} />
       </div>
     </ProtectedRoute>
   );

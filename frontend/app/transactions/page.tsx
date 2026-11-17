@@ -1,6 +1,7 @@
 "use client";
 
 import ProtectedRoute from "@/components/auth/protected-route";
+import { isBalanceAdjustment } from "@/lib/capital";
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { TransactionDetailsDialog } from "@/components/transactions/transaction-details-dialog";
 import { useStore } from "@/lib/store";
@@ -165,6 +166,7 @@ export default function TransactionsPage() {
     let income = 0;
     let expense = 0;
     monthFiltered.forEach((tx) => {
+      if (isBalanceAdjustment(tx)) return;
       const v = txUsd(tx);
       if (tx.type === "income") income += v;
       else if (tx.type === "expense") expense += v;

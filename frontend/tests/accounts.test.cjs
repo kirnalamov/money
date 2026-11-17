@@ -27,9 +27,12 @@ assert.ok(!page.includes('toLocaleDateString'));
 assert.ok(!/formatMoney\([^)]*true\)/.test(page), 'баланс без знака +');
 assert.ok(page.includes('tabular-nums'));
 assert.ok(page.includes('<h1') && !page.includes('<h2'));
-for (const id of ['account-type', 'account-currency']) {
-    assert.ok(page.includes(`htmlFor="${id}"`) && page.includes(`id="${id}"`), id);
+// диалог счёта вынесен в компонент: тип и валюта — группы кнопок с aria-label
+const accountDialog = fs.readFileSync(path.join(__dirname, '../components/accounts/account-dialog.tsx'), 'utf8');
+for (const key of ['accounts.account_type', 'accounts.currency']) {
+    assert.ok(accountDialog.includes(`aria-label={t("${key}")}`), key);
 }
+assert.ok(page.includes('<AccountDialog'), 'страница использует AccountDialog');
 for (const key of page.matchAll(/\bt\("(accounts\.[a-z_.]+|common\.[a-z_]+)"/g)) {
     for (const [name, dict] of [['ru', ru], ['en', en]]) {
         assert.ok(key[1].split('.').reduce((o, k) => o?.[k], dict), `${name}: ${key[1]}`);

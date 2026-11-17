@@ -26,7 +26,7 @@ test('shared ui keys exist in both locales and dialog has no literal Close', () 
 });
 
 test('selects share height and chevron', () => {
-  assert.match(read('components/ui/select.tsx'), /h-11/);
+  assert.match(read('components/ui/select.tsx'), /h-(11|\[46px\])/);
   for (const file of ['creatable-combobox', 'multi-select-creatable']) {
     assert.doesNotMatch(read(`components/ui/${file}.tsx`), /ChevronsUpDown/);
   }

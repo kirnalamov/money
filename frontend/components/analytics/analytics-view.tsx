@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -109,7 +110,7 @@ export function AnalyticsView() {
       transactions
         .filter((tx) => {
           const d = new Date(tx.date);
-          return tx.type === "expense" && !Number.isNaN(d.getTime()) && d >= rangeStart && d <= now;
+          return tx.type === "expense" && !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= rangeStart && d <= now;
         })
         .map((tx) => ({ tx, v: convertCurrency(tx.amount, tx.currency, defaultCurrency) })),
     [transactions, rangeStart, now, defaultCurrency]
@@ -131,7 +132,7 @@ export function AnalyticsView() {
   const thirty = useMemo(() => {
     const from = subDays(today, 29);
     return transactions
-      .filter((tx) => tx.type === "expense" && new Date(tx.date) >= from && new Date(tx.date) <= now)
+      .filter((tx) => tx.type === "expense" && !isBalanceAdjustment(tx) && new Date(tx.date) >= from && new Date(tx.date) <= now)
       .reduce((s, tx) => s + convertCurrency(tx.amount, tx.currency, defaultCurrency), 0);
   }, [transactions, today, now, defaultCurrency]);
   const dailySpend = thirty / 30;
@@ -189,9 +190,9 @@ export function AnalyticsView() {
   const monthStart = startOfMonth(now);
   const dim = endOfMonth(now).getDate();
   const dom = now.getDate();
-  const curMonthTx = transactions.filter((tx) => tx.type === "expense" && !excl[tx.category] && new Date(tx.date) >= monthStart && new Date(tx.date) <= now);
+  const curMonthTx = transactions.filter((tx) => tx.type === "expense" && !isBalanceAdjustment(tx) && !excl[tx.category] && new Date(tx.date) >= monthStart && new Date(tx.date) <= now);
   const prevStart = startOfMonth(subMonths(now, 1));
-  const prevMonthTx = transactions.filter((tx) => tx.type === "expense" && !excl[tx.category] && new Date(tx.date) >= prevStart && new Date(tx.date) < monthStart);
+  const prevMonthTx = transactions.filter((tx) => tx.type === "expense" && !isBalanceAdjustment(tx) && !excl[tx.category] && new Date(tx.date) >= prevStart && new Date(tx.date) < monthStart);
   const monthSpent = curMonthTx.reduce((s, tx) => s + conv(tx.amount, tx.currency), 0);
   const prevTotal = prevMonthTx.reduce((s, tx) => s + conv(tx.amount, tx.currency), 0);
   const monthPace = monthSpent / Math.max(1, dom);

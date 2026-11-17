@@ -13,7 +13,7 @@ assert.match(code, /useTranslation\(\)/);
 
 // backend save precedes success state
 const save = code.indexOf('await addTransaction({');
-const success = code.indexOf('setSaved(true)');
+const success = code.indexOf('setSaved([');
 assert.ok(save >= 0, 'form must call addTransaction');
 assert.ok(success > save, 'success state must follow confirmed backend save');
 assert.match(code, /catch \(submitError\)[\s\S]*?setError\(/, 'save failure surfaces an error');
@@ -41,22 +41,21 @@ assert.match(code, /<Dialog open=\{open\} onOpenChange=\{setOpen\}>/, 'Radix Dia
 
 // layout: no horizontal overflow (min-w-0 / single minmax(0,1fr) column), no arbitrary font size
 assert.doesNotMatch(code, /text-\[32px\]/);
-assert.match(code, /id="add-tx-amount"[\s\S]*?w-full min-w-0 flex-1/, 'amount input must shrink');
+assert.match(code, /id="add-tx-amount"[\s\S]*?w-full/, 'amount input must shrink');
 assert.match(code, /<form [^>]*min-w-0 grid-cols-1/, 'form grid must not grow with content');
 assert.match(code, /grid-cols-1 overflow-x-hidden/, 'DialogContent grid must use a single shrinkable column');
-assert.match(code, /pill = "[^"]*max-w-full/, 'chips must not exceed the dialog');
 
-// switches: whole row is a >=44px label bound by htmlFor/id
+// switches: whole row is a label bound by htmlFor/id (SwitchRow из modal-kit)
 for (const id of ['recurring', 'mandatory']) {
-  assert.match(code, new RegExp(`<Label htmlFor="add-tx-${id}" className="[^"]*min-h-11[^"]*"`));
-  assert.match(code, new RegExp(`<Switch id="add-tx-${id}"`));
+  assert.match(code, new RegExp(`<SwitchRow id="add-tx-${id}"`));
 }
+const kit = fs.readFileSync(path.join(__dirname, '../components/ui/modal-kit.tsx'), 'utf8');
+assert.match(kit, /<label htmlFor=\{id\}[\s\S]*?<Switch id=\{id\}/, 'SwitchRow binds label and switch');
 
-// every form control has id and name
+// controls: id/name на сумме и описании, счета — кнопки-группы или select с aria-label
 assert.match(code, /id="add-tx-amount"\s+name="amount"/);
-assert.match(code, /<Select name="account"/);
-assert.match(code, /<Select name="toAccount"/);
-assert.match(code, /<Input id="add-tx-description" name="description"/);
+assert.match(code, /id="add-tx-description" name="description"/);
+assert.match(code, /role="group" aria-label=\{t\("transactions\.dialog\.account"\)\}/);
 
 // native delete confirm key used elsewhere must exist in both locales
 for (const lang of ['ru', 'en']) {

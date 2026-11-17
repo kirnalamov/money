@@ -8,23 +8,6 @@ import { useStore } from "@/lib/store";
 import { cn, convertCurrency, getCurrencySymbol, getExchangeRate } from "@/lib/utils";
 import { fmtMoney, fmtNum, plural, MINUS } from "@/lib/plutus-format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Plus,
   Pencil,
@@ -38,8 +21,8 @@ import {
 } from "lucide-react";
 import { Account, AccountType, Currency } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AccountDialog } from "@/components/accounts/account-dialog";
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
-import axios from "axios";
 import { format } from "date-fns";
 import { enUS, ru } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,83 +56,11 @@ export default function AccountsPage() {
   const [hide, setHide] = useState(false);
   const [txOpen, setTxOpen] = useState(false);
   const [txType, setTxType] = useState<"income" | "transfer">("income");
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "bank" as AccountType,
-    balance: "",
-    currency: defaultCurrency as Currency,
-    provider: "",
-  });
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      type: "bank",
-      balance: "",
-      currency: defaultCurrency,
-      provider: "",
-    });
-    setEditingAccount(null);
-  };
-
   const handleOpenDialog = (account?: Account, trigger?: HTMLElement) => {
     opener.current = trigger ?? null;
     setError(null);
-    if (account) {
-      setEditingAccount(account);
-      setFormData({
-        name: account.name,
-        type: account.type,
-        balance: account.balance.toString(),
-        currency: account.currency,
-        provider: account.provider || "",
-      });
-    } else {
-      resetForm();
-    }
+    setEditingAccount(account ?? null);
     setIsDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    const balance = Number(formData.balance);
-    if (!formData.name.trim()) {
-      setError(t("accounts.validation.name"));
-      return;
-    }
-    if (!Number.isFinite(balance) || (balance < 0 && balance !== editingAccount?.balance)) {
-      setError(t("accounts.validation.balance"));
-      return;
-    }
-    if (editingAccount && balance !== editingAccount.balance && !window.confirm(t("accounts.balance_change_warning"))) {
-      return;
-    }
-
-    const accountData = {
-      name: formData.name.trim(),
-      type: formData.type,
-      balance,
-      currency: formData.currency,
-      provider: formData.provider || undefined,
-    };
-
-    try {
-      if (editingAccount) {
-        const { name, type, currency, provider } = accountData;
-        const details = { name, type, currency, provider };
-        await updateAccount(editingAccount.id, balance === editingAccount.balance
-          ? details
-          : { ...details, balance, expected_balance: editingAccount.balance });
-      } else {
-        await addAccount(accountData);
-      }
-
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (saveError) {
-      setError(axios.isAxiosError(saveError) && saveError.response?.status === 409
-        ? t("accounts.edit_conflict")
-        : saveError instanceof Error ? saveError.message : t("common.error"));
-    }
   };
 
   const handleDelete = async (id: number) => {
@@ -504,126 +415,7 @@ export default function AccountsPage() {
 
         <AddTransactionDialog open={txOpen} onOpenChange={setTxOpen} defaultType={txType} trigger={null} />
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent
-            className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]"
-            onCloseAutoFocus={(e) => {
-              if (opener.current?.isConnected) {
-                e.preventDefault();
-                opener.current.focus();
-              }
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>
-                {editingAccount ? t("accounts.edit_account") : t("accounts.add_account")}
-              </DialogTitle>
-              <DialogDescription>
-                {editingAccount ? t("accounts.edit_description") : t("accounts.add_description")}
-              </DialogDescription>
-            </DialogHeader>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                <Label htmlFor="name" className="sm:text-right">
-                  {t("accounts.account_name")}
-                </Label>
-                <Input
-                  id="name"
-                  autoComplete="off"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="sm:col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                <Label htmlFor="account-type" className="sm:text-right">
-                  {t("accounts.account_type")}
-                </Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value: AccountType) =>
-                    setFormData({ ...formData, type: value })
-                  }
-                >
-                  <SelectTrigger id="account-type" className="sm:col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank">{t("accounts.types.bank")}</SelectItem>
-                    <SelectItem value="savings">{t("accounts.types.savings")}</SelectItem>
-                    <SelectItem value="cash">{t("accounts.types.cash")}</SelectItem>
-                    <SelectItem value="brokerage">{t("accounts.types.brokerage")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                <Label htmlFor="balance" className="sm:text-right">
-                  {t("accounts.balance")}
-                </Label>
-                <Input
-                  id="balance"
-                  autoComplete="off"
-                  inputMode="decimal"
-                  type="number"
-                  step="0.01"
-                  value={formData.balance}
-                  onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                  className="sm:col-span-3"
-                  min="0"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                <Label htmlFor="account-currency" className="sm:text-right">
-                  {t("accounts.currency")}
-                </Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value: Currency) =>
-                    setFormData({ ...formData, currency: value })
-                  }
-                >
-                  <SelectTrigger id="account-currency" className="sm:col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="RUB">RUB</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                <Label htmlFor="provider" className="sm:text-right">
-                  {t("accounts.provider")}
-                </Label>
-                <Input
-                  id="provider"
-                  autoComplete="organization"
-                  value={formData.provider}
-                  onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                  className="sm:col-span-3"
-                  placeholder={t("accounts.provider_placeholder")}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button onClick={handleSave}>{t("common.save")}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AccountDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} account={editingAccount} openerRef={opener} onError={setError} />
       </div>
     </ProtectedRoute>
   );

@@ -99,3 +99,6 @@ export function capitalBreakdown(accounts: Account[], currency: Currency): Capit
   const investments = sum(["brokerage"]);
   return { total: bank + cash + savings + investments, bank, cash, savings, investments, liquid: bank + cash + savings };
 }
+
+/** Служебная операция бэкенда при ручной правке баланса счёта — не доход и не расход. */
+export const isBalanceAdjustment = (tx: { description?: string | null }) => tx.description === "Корректировка баланса";
