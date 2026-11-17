@@ -13,7 +13,6 @@ import { convertCurrency } from "@/lib/utils";
 /** Через сколько дней после даты отсечки выплата считается дошедшей до счёта */
 export const PAY_LAG_DAYS = 14;
 
-/** Запасная оценка доходности, если по бумаге нет данных о выплатах */
 export interface TaxSettings {
   /** Налог с дивидендов/купонов и с прибыли при продаже, % */
   taxPct: number;
