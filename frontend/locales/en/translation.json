@@ -1531,7 +1531,8 @@
     "trade_commission_rate": "Commission {{pct}}%",
     "trade_tax_est": "Tax on profit (estimate)",
     "trade_from_account": "Charged to account (at rate)",
-    "trade_to_account": "Credited to account (at rate)"
+    "trade_to_account": "Credited to account (at rate)",
+    "pos_charge_on": "The purchase cost will be taken from the account's free cash"
   },
   "notifications": {
     "limit_over": "Limit «{{category}}» exceeded",

@@ -1531,7 +1531,8 @@
     "trade_commission_rate": "Комиссия {{pct}}%",
     "trade_tax_est": "Налог с прибыли (оценка)",
     "trade_from_account": "Спишется со счёта (по курсу)",
-    "trade_to_account": "Зачислится на счёт (по курсу)"
+    "trade_to_account": "Зачислится на счёт (по курсу)",
+    "pos_charge_on": "Стоимость покупки спишется со свободных денег счёта"
   },
   "notifications": {
     "limit_over": "Лимит «{{category}}» превышен",

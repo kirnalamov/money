@@ -196,7 +196,7 @@ export function PositionDialog({
                     <SwitchRow
                       id="pos-charge"
                       title={t("dialogs.pos_charge", "Списать с брокерского счёта")}
-                      sub={!canCharge ? t("dialogs.pos_charge_cur", "Нет подходящего счёта") : charge && cost > 0 ? t("dialogs.pos_charge_after", "Свободно: {{a}} → {{b}}", { a: fmtMoney(account?.balance ?? 0, account?.currency), b: fmtMoney(cashAfter, account?.currency) }) : t("dialogs.pos_charge_off", "Деньги со счёта не списываются: бумага уже была в портфеле")}
+                      sub={!canCharge ? t("dialogs.pos_charge_cur", "Нет подходящего счёта") : charge && cost > 0 ? t("dialogs.pos_charge_after", "Свободно: {{a}} → {{b}}", { a: fmtMoney(account?.balance ?? 0, account?.currency), b: fmtMoney(cashAfter, account?.currency) }) : charge ? t("dialogs.pos_charge_on", "Стоимость покупки спишется со свободных денег счёта") : t("dialogs.pos_charge_off", "Деньги со счёта не списываются: бумага уже была в портфеле")}
                       checked={charge && canCharge}
                       onChange={(v) => canCharge && setCharge(v)}
                     />
