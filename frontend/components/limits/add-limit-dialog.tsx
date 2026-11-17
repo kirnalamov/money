@@ -27,14 +27,16 @@ interface AddLimitDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     editingLimit?: LimitRule | null;
+    /** категория, подставляемая при создании нового лимита */
+    presetCategory?: string;
 }
 
-export function AddLimitDialog({ open, onOpenChange, editingLimit }: AddLimitDialogProps) {
+export function AddLimitDialog({ open, onOpenChange, editingLimit, presetCategory }: AddLimitDialogProps) {
     const { t } = useTranslation();
     const { defaultCurrency, addLimit, updateLimit, categories } = useStore();
 
     const [formData, setFormData] = useState({
-        category: editingLimit?.category || "",
+        category: editingLimit?.category || presetCategory || "",
         period: editingLimit?.period || "monthly" as "daily" | "weekly" | "monthly",
         amount: editingLimit?.amount.toString() || "",
         currency: editingLimit?.currency || defaultCurrency as Currency,

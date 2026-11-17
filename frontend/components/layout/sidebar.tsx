@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   LayoutGrid,
@@ -14,15 +13,13 @@ import {
   SlidersHorizontal,
   Wallet,
   CreditCard,
-  LogOut,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
-  const { reset } = useStore();
+  const { user, isAuthenticated } = useAuth();
 
   const navItems = [
     { name: t("common.overview"), href: "/", icon: LayoutGrid },
@@ -34,10 +31,6 @@ export function Sidebar() {
     { name: t("common.settings"), href: "/settings", icon: SlidersHorizontal },
   ];
 
-  const handleLogout = () => {
-    reset();
-    logout();
-  };
 
   const initial = (user?.full_name || user?.username || "U").charAt(0).toUpperCase();
 
@@ -84,32 +77,31 @@ export function Sidebar() {
           </div>
         </nav>
 
-        {/* User card */}
+        {/* User card → profile */}
         {isAuthenticated && user && (
-          <div className="mt-auto flex items-center gap-3 rounded-xl border border-[#232721] bg-[#151714] p-3">
-            <Link
-              href="/profile"
-              className="flex min-w-0 flex-1 items-center gap-3"
-            >
-              <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-bold text-[#10170A]">
-                {initial}
+          <Link
+            href="/profile"
+            aria-current={pathname === "/profile" ? "page" : undefined}
+            className={cn(
+              "mt-auto flex items-center gap-3 rounded-xl border border-[#232721] p-3 text-inherit no-underline transition-colors",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C6F24E] focus-visible:outline-offset-2",
+              pathname === "/profile"
+                ? "bg-[#1B1E1A] shadow-[inset_3px_0_0_#C6F24E]"
+                : "bg-[#151714] hover:bg-[#1B1E1A]"
+            )}
+          >
+            <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-bold text-[#10170A]">
+              {initial}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-[13.5px] font-semibold text-[#F1F3EE]">
+                {user.full_name || user.username}
               </span>
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate text-[13.5px] font-semibold text-[#F1F3EE]">
-                  {user.full_name || user.username}
-                </span>
-                <span className="truncate text-xs text-[#8D9388]">{user.email}</span>
+              <span className="truncate text-xs text-[#8D9388]">
+                {t("profile.my_profile", "Мой профиль")}
               </span>
-            </Link>
-            <button
-              onClick={handleLogout}
-              disabled={isLoading}
-              aria-label="Logout"
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[#8D9388] transition-colors hover:bg-[#232721] hover:text-[#F1F3EE]"
-            >
-              <LogOut className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-          </div>
+            </span>
+          </Link>
         )}
       </div>
     </div>
