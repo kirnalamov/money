@@ -81,6 +81,7 @@ export const CATEGORY_PALETTE = [
 
 export function hashColor(key: string, palette: string[] = CATEGORY_PALETTE): string {
   let h = 0;
+  key = key || "";
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
 }
@@ -116,7 +117,7 @@ export function categoryEmoji(name: string, icon?: string | null): string | null
     // поле icon может хранить эмодзи — используем его как есть
     if (trimmed && /\p{Extended_Pictographic}/u.test(trimmed)) return trimmed;
   }
-  for (const [re, e] of EMOJI_RULES) if (re.test(name)) return e;
+  for (const [re, e] of EMOJI_RULES) if (re.test(name || "")) return e;
   return null;
 }
 

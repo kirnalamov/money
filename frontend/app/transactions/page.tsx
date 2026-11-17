@@ -224,7 +224,7 @@ export default function TransactionsPage() {
   const byCategory = useMemo(() => {
     const m = new Map<string, number>();
     filtered.forEach((tx) => {
-      if (tx.type !== "expense") return;
+      if (tx.type !== "expense" || isBalanceAdjustment(tx)) return;
       m.set(tx.category, (m.get(tx.category) || 0) + txUsd(tx));
     });
     const items = Array.from(m.entries())

@@ -7,7 +7,8 @@ export const getTransactions = async (): Promise<Transaction[]> => {
     do {
         const response = await apiClient.get<Transaction[]>('/transactions/', { params: { skip: transactions.length, limit: 100 } });
         page = response.data;
-        transactions.push(...page);
+        // служебные операции (корректировка баланса) приходят без категории
+        transactions.push(...page.map((item) => ({ ...item, category: item.category ?? '' })));
     } while (page.length === 100);
     return transactions;
 };
