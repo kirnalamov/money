@@ -12,3 +12,7 @@ export const deleteUserItem = async (kind: keyof UserItems, key: string) => {
 export const payUserExpense = async (key: string, accountId: number) => {
   await apiClient.post(`/user-items/recurringExpenses/${encodeURIComponent(key)}/pay`, { account_id: accountId });
 };
+
+export type Preferences = Record<string, Record<string, unknown>>;
+export const getPreferences = async () => (await apiClient.get<Preferences>('/user-items/preferences')).data;
+export const savePreferences = async (value: Preferences) => (await apiClient.put<Preferences>('/user-items/preferences', value)).data;

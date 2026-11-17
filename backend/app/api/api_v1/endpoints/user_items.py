@@ -1,3 +1,4 @@
+import json
 from typing import Literal
 from datetime import datetime, timezone
 
@@ -64,8 +65,32 @@ async def list_items(db: AsyncSession = Depends(get_db), user: User = Depends(ge
     rows = (await db.execute(select(UserItem).where(UserItem.user_id == user.id))).scalars().all()
     result = {"limits": [], "positions": [], "recurringExpenses": []}
     for row in rows:
-        result[row.kind].append(row.value)
+        if row.kind in result:
+            result[row.kind].append(row.value)
     return result
+
+
+PREFERENCE_KEYS = {"plutus-tax-settings", "plutus-category-kinds", "plutus-mandatory-categories", "plutus-limit-toggles"}
+
+
+@router.get("/preferences")
+async def read_preferences(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_active_user)):
+    """Настройки интерфейса пользователя (налог, виды категорий, обязательные категории, уведомления лимитов)."""
+    row = await db.get(UserItem, (user.id, "preferences", "main"))
+    return row.value if row else {}
+
+
+@router.put("/preferences")
+async def write_preferences(value: dict, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_active_user)):
+    if not set(value) <= PREFERENCE_KEYS:
+        raise HTTPException(status_code=422, detail="Unknown preference key")
+    if any(not isinstance(item, dict) for item in value.values()) or len(json.dumps(value)) > 20000:
+        raise HTTPException(status_code=422, detail="Invalid preferences")
+    insert = sqlite_insert if db.bind.dialect.name == "sqlite" else pg_insert
+    statement = insert(UserItem).values(user_id=user.id, kind="preferences", key="main", value=value)
+    await db.execute(statement.on_conflict_do_update(index_elements=["user_id", "kind", "key"], set_={"value": value}))
+    await db.commit()
+    return value
 
 
 @router.post("/recurringExpenses/{key}/pay")

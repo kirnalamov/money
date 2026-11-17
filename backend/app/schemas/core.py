@@ -79,6 +79,7 @@ class TransactionBase(BaseModel):
     account_id: int = Field(alias="accountId")
     
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
+    is_recurring: bool = Field(False, alias="isRecurring")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -98,6 +99,7 @@ class TransactionUpdate(BaseModel):
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category_name: Optional[str] = Field(None, alias="category")
     tags: Optional[list[str]] = None
+    is_recurring: Optional[bool] = Field(None, alias="isRecurring")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -140,6 +142,7 @@ class TransactionOut(BaseModel):
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category: Optional[str] = None
     tags: Optional[list[str]] = None
+    is_recurring: bool = Field(False, alias="isRecurring")
     created_at: datetime
     updated_at: datetime
     
