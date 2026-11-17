@@ -98,6 +98,8 @@ export function usePref<T extends Record<string, unknown>>(key: PrefKey, initial
       const next = updater(prev);
       writeLocal(key, next);
       schedulePush();
+      // другие места, использующие эту настройку, перечитывают её (например, колокольчик и блок на «Обзоре»)
+      queueMicrotask(() => listeners.forEach((fn) => fn()));
       return next;
     });
   }, [key]);
