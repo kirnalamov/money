@@ -13,6 +13,7 @@ import type { Account, AccountType, Currency } from "@/types";
 
 const TYPES: AccountType[] = ["bank", "cash", "savings", "brokerage"];
 const CURRENCIES: Currency[] = ["USD", "EUR", "GBP", "RUB"];
+const TYPE_COLOR: Record<AccountType, string> = { bank: "#C4B5FD", savings: "#7DD3FC", brokerage: "#C6F24E", cash: "#FBBF24" };
 const BANKS: Record<string, string[]> = {
   RUB: ["Тинькофф", "Сбер", "Альфа-Банк", "ВТБ"],
   default: ["Chase", "Revolut", "Wise", "N26"],
@@ -151,7 +152,7 @@ export function AccountDialog({
               <div role="group" aria-label={t("accounts.account_type")} className="grid grid-cols-2 gap-2">
                 {TYPES.map((item) => (
                   <Pick key={item} active={type === item} className="min-h-11" onClick={() => setType(item)}>
-                    <Dot color={hashColor(item)} />
+                    <Dot color={TYPE_COLOR[item]} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13.5px] font-semibold">{t(`accounts.types.${item}`)}</span>
                       <span className="block truncate text-xs text-[#8D9388]">{subs[item]}</span>

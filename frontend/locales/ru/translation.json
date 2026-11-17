@@ -692,7 +692,7 @@
       "name_label": "Название цели",
       "name_placeholder": "напр. Новая машина",
       "target_label": "Целевая сумма",
-      "current_label": "Текущие накопления",
+      "current_label": "Уже накоплено",
       "date_label": "Целевая дата",
       "save": "Сохранить цель"
     },
