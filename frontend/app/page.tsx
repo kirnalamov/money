@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
+import { PeriodBar, RangePicker, rangeLabel } from "@/components/ui/period-bar";
 import { useLivePortfolioValue } from "@/lib/live-portfolio";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { useNotifications } from "@/lib/notifications";
 import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
+import { differenceInCalendarDays, endOfDay, format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
 import { ArrowDownLeft, ArrowUpRight, Bell, Calendar, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import ProtectedRoute from "@/components/auth/protected-route";
@@ -40,6 +42,9 @@ export default function OverviewPage() {
 
   const now = useMemo(() => new Date(), []);
   const [per, setPer] = useState<Period>("30D");
+  // период графика капитала и период статистики месяца (результат, расходы, операции) выбираются календарём
+  const [chartRange, setChartRange] = useState<DateRange | undefined>(undefined);
+  const [statsRange, setStatsRange] = useState<DateRange | undefined>(undefined);
   const [activeType, setActiveType] = useState<"expense" | "income" | "transfer" | "trade" | null>(null);
 
   const conv = (v: number, cur: string) => convertCurrency(v, cur, defaultCurrency);
@@ -65,6 +70,7 @@ export default function OverviewPage() {
 
   const wanted = useMemo(() => {
     const today = startOfDay(now);
+    if (chartRange?.from) return startOfDay(chartRange.from);
     switch (per) {
       case "7D": return subDays(today, 6);
       case "30D": return subDays(today, 30);
@@ -73,12 +79,17 @@ export default function OverviewPage() {
       case "1Y": return subMonths(today, 12);
       default: return histStart;
     }
-  }, [per, now, histStart]);
+  }, [per, chartRange, now, histStart]);
+  const chartEnd = useMemo(() => {
+    if (!chartRange?.from) return now;
+    const end = endOfDay(chartRange.to ?? chartRange.from);
+    return end.getTime() > now.getTime() ? now : end;
+  }, [chartRange, now]);
   const effStart = wanted.getTime() < histStart.getTime() ? histStart : wanted;
-  const truncated = per !== "7D" && per !== "30D" && wanted.getTime() < histStart.getTime();
+  const truncated = (!!chartRange?.from || (per !== "7D" && per !== "30D")) && wanted.getTime() < histStart.getTime();
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now, positionsValue),
-    [accounts, transactions, defaultCurrency, effStart, now]
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, chartEnd, positionsValue),
+    [accounts, transactions, defaultCurrency, effStart, chartEnd, positionsValue]
   );
 
   const accountsOf = (type: string) => accounts.filter((a) => a.type === type);
@@ -94,11 +105,16 @@ export default function OverviewPage() {
   const partsTotal = comp.filter((c) => c.v > 0).reduce((s, c) => s + c.v, 0);
 
   // ---------- month ----------
-  const monthStart = startOfMonth(now);
+  const monthStart = statsRange?.from ? startOfDay(statsRange.from) : startOfMonth(now);
+  const statsEnd = useMemo(() => {
+    if (!statsRange?.from) return now;
+    const end = endOfDay(statsRange.to ?? statsRange.from);
+    return end.getTime() > now.getTime() ? now : end;
+  }, [statsRange, now]);
   const month = useMemo(() => {
     const list = transactions.filter((tx) => {
       const d = new Date(tx.date);
-      return !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= monthStart && d <= now;
+      return !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= monthStart && d <= statsEnd;
     });
     let income = 0;
     let expense = 0;
@@ -114,10 +130,10 @@ export default function OverviewPage() {
     const cats = Array.from(byCat.entries()).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v);
     return { list, income, expense, net: income - expense, cats };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, defaultCurrency, monthStart, now]);
+  }, [transactions, defaultCurrency, monthStart, statsEnd]);
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dayOfMonth = now.getDate();
+  const dayOfMonth = statsRange?.from ? Math.max(1, differenceInCalendarDays(startOfDay(statsEnd), monthStart) + 1) : now.getDate();
   const perDay = month.expense / Math.max(1, dayOfMonth);
   const forecast = perDay * daysInMonth;
 
@@ -183,8 +199,8 @@ export default function OverviewPage() {
   })();
 
   const todayTxt = cap(format(now, "EEEE, d MMMM", { locale: dateLocale }));
-  const monthTitle = cap(format(now, "LLLL yyyy", { locale: dateLocale }));
-  const monthName = format(now, "LLLL", { locale: dateLocale });
+  const monthTitle = statsRange?.from ? rangeLabel(statsRange, i18n.language) : cap(format(now, "LLLL yyyy", { locale: dateLocale }));
+  const monthName = statsRange?.from ? rangeLabel(statsRange, i18n.language) : format(now, "LLLL", { locale: dateLocale });
   const savedPct = month.income > 0 ? Math.round((month.net / month.income) * 100) : 0;
   const expensePct = month.income > 0 ? Math.min(100, (month.expense / month.income) * 100) : 100;
   const rangeFrom = points[0]?.date;
@@ -209,10 +225,16 @@ export default function OverviewPage() {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-11 items-center gap-2.5 rounded-xl border border-[#232721] bg-[#151714] px-4 text-[13.5px] font-semibold">
-              <Calendar className="h-4 w-4" strokeWidth={1.8} />
-              {monthTitle}
-            </span>
+            <RangePicker range={statsRange} onRange={setStatsRange} align="end">
+              <button
+                type="button"
+                aria-label={t("overview.period", "Период")}
+                className={cn("flex h-11 items-center gap-2.5 rounded-xl border bg-[#151714] px-4 text-[13.5px] font-semibold transition-colors hover:bg-[#1B1E1A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]", statsRange?.from ? "border-[#C6F24E] bg-[#C6F24E]/10" : "border-[#232721]")}
+              >
+                <Calendar className="h-4 w-4" strokeWidth={1.8} />
+                {monthTitle}
+              </button>
+            </RangePicker>
             <NotificationBell />
           </div>
         </header>
@@ -334,23 +356,18 @@ export default function OverviewPage() {
               <div>
                 <h2 className={h2Cls}>{t("overview.capital_dynamics", "Динамика капитала")}</h2>
                 <div className="mt-0.5 text-[12.5px] text-[#8D9388]">
-                  {rangeFrom ? `${format(rangeFrom, "dd.MM.yyyy")} - ${format(now, "dd.MM.yyyy")}` : ""} · {t("overview.hover_chart", "наведите на график")}
+                  {rangeFrom ? `${format(rangeFrom, "dd.MM.yyyy")} - ${format(chartEnd, "dd.MM.yyyy")}` : ""} · {t("overview.hover_chart", "наведите на график")}
                 </div>
               </div>
-              <div role="group" aria-label={t("overview.period", "Период")} className="flex gap-0.5 rounded-xl border border-[#232721] bg-[#0E0F0E] p-1">
-                {PERIODS.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPer(p)}
-                    aria-pressed={per === p}
-                    className={cn("h-[30px] rounded-lg px-3 text-[12.5px] font-semibold transition-colors", per === p ? "bg-[#2A2F27] text-[#F1F3EE]" : "text-[#A2A89C] hover:text-[#F1F3EE]")}
-                  >
-                    {p === "7D" ? t("overview.p7d", "7Д") : p === "30D" ? t("overview.p30d", "30Д") : p === "3M" ? t("overview.p3m", "3М") : p === "6M" ? t("overview.p6m", "6М") : p === "1Y" ? t("overview.p1y", "1Г") : t("overview.pall", "Все")}
-                  </button>
-                ))}
-              </div>
+              <PeriodBar
+                presets={PERIODS.map((p) => ({ key: p, label: p === "7D" ? t("overview.p7d", "7Д") : p === "30D" ? t("overview.p30d", "30Д") : p === "3M" ? t("overview.p3m", "3М") : p === "6M" ? t("overview.p6m", "6М") : p === "1Y" ? t("overview.p1y", "1Г") : t("overview.pall", "Все") }))}
+                value={per}
+                onPreset={setPer}
+                range={chartRange}
+                onRange={setChartRange}
+              />
             </div>
-            <CapitalChart key={per} points={points} currency={defaultCurrency} height={260} glow />
+            <CapitalChart key={`${per}-${chartRange?.from?.getTime() ?? 0}-${chartRange?.to?.getTime() ?? 0}`} points={points} currency={defaultCurrency} height={260} glow />
             {truncated && (
               <div className="text-[12.5px] text-[#FBBF24]">
                 {t("overview.no_history_before", "Истории до")} {format(histStart, "d MMMM", { locale: dateLocale })} {t("overview.no_history_after", "в приложении нет: график показывает всё, что есть.")}
@@ -385,7 +402,11 @@ export default function OverviewPage() {
               </div>
             )}
             <div className="mt-auto rounded-xl border border-[#232721] bg-[#121411] px-3.5 py-3 text-[13px] text-[#C9CEC3]">
-              {t("overview.forecast_end", "Прогноз расходов на конец месяца")}: <b className="text-[#F1F3EE]">{fmtMoney(forecast, defaultCurrency)}</b> {t("overview.at_pace", "при темпе")} {fmtMoney(perDay, defaultCurrency)} {t("overview.per_day_word", "в день")}.
+              {statsRange?.from ? (
+                <>{t("overview.avg_per_day", "Средние расходы за период")}: <b className="text-[#F1F3EE]">{fmtMoney(perDay, defaultCurrency)}</b> {t("overview.per_day_word", "в день")}.</>
+              ) : (
+                <>{t("overview.forecast_end", "Прогноз расходов на конец месяца")}: <b className="text-[#F1F3EE]">{fmtMoney(forecast, defaultCurrency)}</b> {t("overview.at_pace", "при темпе")} {fmtMoney(perDay, defaultCurrency)} {t("overview.per_day_word", "в день")}.</>
+              )}
             </div>
           </section>
         </div>

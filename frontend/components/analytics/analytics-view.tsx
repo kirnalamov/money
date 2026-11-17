@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
+import { PeriodBar } from "@/components/ui/period-bar";
 import { useLivePortfolioValue } from "@/lib/live-portfolio";
 import { usePref } from "@/lib/prefs";
 import { isBalanceAdjustment } from "@/lib/capital";
@@ -14,8 +16,7 @@ import {
   startOfDay,
   startOfMonth,
   subDays,
-  subMonths,
-} from "date-fns";
+  subMonths, endOfDay } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
 import { Calendar } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -60,6 +61,7 @@ export function AnalyticsView() {
   })();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [per, setPer] = useState<Period>("1M");
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
   const [view, setView] = useState<"pie" | "bar">("pie");
   const [excl, setExcl] = useState<Record<string, boolean>>({});
   const [mand, updateMand] = usePref<Record<string, boolean>>(MAND_KEY, {});
@@ -80,6 +82,7 @@ export function AnalyticsView() {
 
   // ---------- range ----------
   const rangeStart = useMemo(() => {
+    if (range?.from) return startOfDay(range.from);
     switch (per) {
       case "7D": return subDays(today, 6);
       case "1M": return startOfMonth(now);
@@ -87,18 +90,24 @@ export function AnalyticsView() {
       case "6M": return startOfMonth(subMonths(now, 5));
       default: return startOfMonth(subMonths(now, 11));
     }
-  }, [per, now, today]);
-  const rangeTxt = `${format(rangeStart, "dd.MM.yyyy")} - ${format(now, "dd.MM.yyyy")}`;
+  }, [per, range, now, today]);
+  // конец периода: выбранная дата календаря (не позже сегодняшнего дня) или сейчас
+  const rangeEnd = useMemo(() => {
+    if (!range?.from) return now;
+    const end = endOfDay(range.to ?? range.from);
+    return end.getTime() > now.getTime() ? now : end;
+  }, [range, now]);
+  const rangeTxt = `${format(rangeStart, "dd.MM.yyyy")} - ${format(rangeEnd, "dd.MM.yyyy")}`;
 
   const expenses = useMemo(
     () =>
       transactions
         .filter((tx) => {
           const d = new Date(tx.date);
-          return tx.type === "expense" && !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= rangeStart && d <= now;
+          return tx.type === "expense" && !isBalanceAdjustment(tx) && !Number.isNaN(d.getTime()) && d >= rangeStart && d <= rangeEnd;
         })
         .map((tx) => ({ tx, v: convertCurrency(tx.amount, tx.currency, defaultCurrency) })),
-    [transactions, rangeStart, now, defaultCurrency]
+    [transactions, rangeStart, rangeEnd, defaultCurrency]
   );
 
   // ---------- capital tab ----------
@@ -106,10 +115,10 @@ export function AnalyticsView() {
   const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency, positionsValue), [accounts, defaultCurrency, positionsValue]);
   const histStart = useMemo(() => earliestTransactionDate(transactions) || subDays(today, 30), [transactions, today]);
   const effStart = rangeStart.getTime() < histStart.getTime() ? histStart : rangeStart;
-  const truncated = rangeStart.getTime() < histStart.getTime() && per !== "7D" && per !== "1M";
+  const truncated = rangeStart.getTime() < histStart.getTime() && (!!range?.from || (per !== "7D" && per !== "1M"));
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now, positionsValue),
-    [accounts, transactions, defaultCurrency, effStart, now, positionsValue]
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, rangeEnd, positionsValue),
+    [accounts, transactions, defaultCurrency, effStart, rangeEnd, positionsValue]
   );
   const firstV = points[0]?.value ?? breakdown.total;
   const chg = breakdown.total - firstV;
@@ -164,7 +173,7 @@ export function AnalyticsView() {
   }, [expenses]);
   const included = byCatAll.filter((c) => !excl[c.name]);
   const total = included.reduce((s, c) => s + c.amt, 0);
-  const daysInRange = Math.max(1, differenceInCalendarDays(today, rangeStart) + 1);
+  const daysInRange = Math.max(1, differenceInCalendarDays(startOfDay(rangeEnd), rangeStart) + 1);
   const perDay = total / daysInRange;
   const topCat = included[0];
   const isFixed = (tx: { category: string; isRecurring?: boolean }) => Boolean(tx.isRecurring) || Boolean(mand[tx.category]);
@@ -292,22 +301,13 @@ export function AnalyticsView() {
           <p className="mt-1 text-sm text-[#8D9388]">{t("analytics.subtitle", "Куда уходят деньги и как меняется капитал")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <div role="group" aria-label={t("overview.period", "Период")} className="flex gap-0.5 rounded-xl border border-[#232721] bg-[#151714] p-1">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPer(p)}
-                aria-pressed={per === p}
-                className={cn("h-[34px] rounded-[9px] px-3.5 text-[13px] font-semibold transition-colors", per === p ? "bg-[#2A2F27] text-[#F1F3EE]" : "text-[#A2A89C] hover:text-[#F1F3EE]")}
-              >
-                {perLabel(p)}
-              </button>
-            ))}
-          </div>
-          <span className="flex h-11 items-center gap-2.5 rounded-xl border border-[#232721] bg-[#151714] px-4 text-[13.5px] font-semibold">
-            <Calendar className="h-4 w-4" strokeWidth={1.8} />
-            {rangeTxt}
-          </span>
+          <PeriodBar
+            presets={PERIODS.map((p) => ({ key: p, label: perLabel(p) }))}
+            value={per}
+            onPreset={setPer}
+            range={range}
+            onRange={setRange}
+          />
         </div>
       </header>
 
@@ -361,7 +361,7 @@ export function AnalyticsView() {
               </div>
               {truncated && <div className="text-[12.5px] text-[#FBBF24]">{t("analytics.history_from", "Истории до")} {format(histStart, "d MMMM", { locale: dateLocale })} {t("analytics.history_from2", "нет, график начинается с первого дня")}</div>}
             </div>
-            <CapitalChart key={per} points={points} currency={defaultCurrency} height={300} gridInset={56} glow />
+            <CapitalChart key={`${per}-${range?.from?.getTime() ?? 0}-${range?.to?.getTime() ?? 0}`} points={points} currency={defaultCurrency} height={300} gridInset={56} glow />
           </section>
 
           <div className="flex flex-wrap items-stretch gap-5">
@@ -441,7 +441,7 @@ export function AnalyticsView() {
               <div className={card}>
                 <div className={cn(cap, "font-semibold")}>{t("analytics.total_expenses", "Всего расходов")}</div>
                 <div className="mt-1.5 text-[28px] font-bold tracking-[-0.02em]">{money(total)}</div>
-                <div className={cn(cap, "mt-1")}>{t("analytics.from_to", "с")} {format(rangeStart, "d MMMM", { locale: dateLocale })} {t("analytics.to_word", "по")} {format(now, "d MMMM", { locale: dateLocale })}</div>
+                <div className={cn(cap, "mt-1")}>{t("analytics.from_to", "с")} {format(rangeStart, "d MMMM", { locale: dateLocale })} {t("analytics.to_word", "по")} {format(rangeEnd, "d MMMM", { locale: dateLocale })}</div>
               </div>
               <div className={card}>
                 <div className={cn(cap, "font-semibold")}>{t("analytics.per_day_avg", "В среднем в день")}</div>
