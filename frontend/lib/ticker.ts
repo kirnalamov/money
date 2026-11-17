@@ -1,4 +1,4 @@
-import { fetchLivePrices, type PriceHint } from "@/lib/moex";
+import { API_URL, fetchLivePrices, type PriceHint } from "@/lib/moex";
 import type { Currency, Position } from "@/types";
 
 export type AssetClass = NonNullable<Position["assetClass"]>;
@@ -13,7 +13,14 @@ export interface TickerInfo {
 
 const ETFS = new Set(["VOO", "VTI", "SPY", "QQQ", "IVV", "VEA", "VWO", "BND", "AGG", "GLD", "SLV", "VNQ", "SCHD", "ARKK", "FXRL", "FXUS", "TMOS", "SBMX", "VTBB", "TGLD"]);
 
-export const POPULAR_TICKERS = ["SBER", "GAZP", "LKOH", "AAPL", "VOO", "BTC"];
+export const POPULAR_TICKERS: { symbol: string; hint: PriceHint; asset_class: SecurityHit["asset_class"] }[] = [
+  { symbol: "SBER", hint: "moex", asset_class: "stock" },
+  { symbol: "GAZP", hint: "moex", asset_class: "stock" },
+  { symbol: "LKOH", hint: "moex", asset_class: "stock" },
+  { symbol: "AAPL", hint: "global", asset_class: "stock" },
+  { symbol: "VOO", hint: "global", asset_class: "etf" },
+  { symbol: "BTC", hint: "crypto", asset_class: "crypto" },
+];
 
 export function classFor(symbol: string, hint: PriceHint): AssetClass {
   if (hint === "crypto") return "crypto";
@@ -29,27 +36,61 @@ export function hintFor(position: Pick<Position, "assetClass" | "currency" | "sy
 
 const KNOWN: Currency[] = ["USD", "EUR", "GBP", "RUB"];
 
-/** Ищет тикер: MOEX (при отсутствии бэкенд сам идёт в Yahoo) и крипто-биржа. */
-export async function lookupTicker(raw: string): Promise<TickerInfo | null> {
-  const symbol = raw.trim().toUpperCase();
-  if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return null;
-  const [general, crypto] = await Promise.all([
-    fetchLivePrices([{ symbol, hint: "moex" }]).then((r) => r[symbol]),
-    fetchLivePrices([{ symbol, hint: "crypto" }]).then((r) => r[symbol]),
-  ]);
-  let hint: PriceHint;
-  let q = general;
-  if (general && general.price > 0 && general.source === "moex") hint = "moex";
-  else if (crypto && crypto.price > 0) { hint = "crypto"; q = crypto; }
-  else if (general && general.price > 0) hint = "global";
-  else return null;
-  if (!q) return null;
+export interface SecurityHit {
+  symbol: string;
+  name: string;
+  hint: PriceHint;
+  asset_class: AssetClass | "bond";
+  exchange: string;
+}
+
+/** Подходящие бумаги по тикеру или названию (МосБиржа, мировые рынки, крипто). */
+export async function searchSecurities(query: string, signal?: AbortSignal): Promise<SecurityHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+  try {
+    const r = await fetch(`${API_URL}/moex/search?q=${encodeURIComponent(q)}`, { signal });
+    if (!r.ok) return [];
+    const j = (await r.json()) as { results?: SecurityHit[] };
+    return j.results || [];
+  } catch {
+    return [];
+  }
+}
+
+
+const toInfo = (hit: Pick<SecurityHit, "symbol" | "hint" | "asset_class">, q: { price: number; currency: string }): TickerInfo => {
   const cur = (q.currency || "").toUpperCase() as Currency;
   return {
-    symbol,
-    hint,
+    symbol: hit.symbol,
+    hint: hit.hint,
     price: q.price,
-    currency: KNOWN.includes(cur) ? cur : hint === "moex" ? "RUB" : "USD",
-    assetClass: classFor(symbol, hint),
+    currency: KNOWN.includes(cur) ? cur : hit.hint === "moex" ? "RUB" : "USD",
+    assetClass: hit.asset_class === "bond" ? "bond" : hit.asset_class === "crypto" ? "crypto" : classFor(hit.symbol, hit.hint),
   };
+};
+
+/** Цена выбранной бумаги из её источника. */
+export async function resolveHit(hit: Pick<SecurityHit, "symbol" | "hint" | "asset_class">): Promise<TickerInfo | null> {
+  const quotes = await fetchLivePrices([{ symbol: hit.symbol, hint: hit.hint }]);
+  const q = quotes[hit.symbol.toUpperCase()];
+  return q && q.price > 0 ? toInfo(hit, q) : null;
+}
+
+/** Цены для подсказок: по одному запросу на источник (тикеры из разных источников могут совпадать). */
+export async function pricesForHits(hits: SecurityHit[]): Promise<Record<string, { price: number; currency: Currency }>> {
+  const out: Record<string, { price: number; currency: Currency }> = {};
+  const hints: PriceHint[] = ["moex", "global", "crypto"];
+  await Promise.all(
+    hints.map(async (hint) => {
+      const group = hits.filter((h) => h.hint === hint);
+      if (!group.length) return;
+      const quotes = await fetchLivePrices(group.map((h) => ({ symbol: h.symbol, hint })));
+      for (const h of group) {
+        const q = quotes[h.symbol.toUpperCase()];
+        if (q && q.price > 0) out[`${h.symbol}:${hint}`] = { price: q.price, currency: toInfo(h, q).currency };
+      }
+    })
+  );
+  return out;
 }

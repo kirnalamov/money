@@ -124,7 +124,12 @@ async def _crypto_symbols(client: httpx.AsyncClient) -> List[str]:
         pairs = [item["symbol"] for item in r.json() if item["symbol"].endswith("USDT")]
     except Exception:
         return symbols
-    symbols = sorted({p[: -len("USDT")] for p in pairs if len(p) > 4})
+    bases = {p[: -len("USDT")] for p in pairs if len(p) > 4}
+    # плечевые токены (BTCUP, BTCDOWN…) — шум в подсказках
+    symbols = sorted(
+        b for b in bases
+        if not any(b.endswith(suffix) and b[: -len(suffix)] in bases for suffix in ("UP", "DOWN", "BULL", "BEAR"))
+    )
     _crypto = (time.monotonic(), symbols)
     return symbols
 

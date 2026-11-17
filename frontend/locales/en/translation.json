@@ -1375,9 +1375,9 @@
     "trade_sell_btn": "Sell",
     "ticker_hint": "the price is fetched automatically",
     "security": "Security",
-    "ticker_placeholder": "Enter a ticker: AAPL, SBER, VOO",
-    "ticker_searching": "Looking up the quote…",
-    "ticker_none": "Security not found. Check the ticker.",
+    "ticker_placeholder": "Enter a ticker or name: AAPL, SBER, Apple",
+    "ticker_searching": "Looking for matching securities…",
+    "ticker_none": "Nothing found. Check the ticker or name.",
     "src_moex": "Moscow Exchange",
     "src_crypto": "Crypto exchange",
     "src_global": "Global market",
@@ -1461,6 +1461,9 @@
     "pos_charge_after": "Free cash: {{a}} → {{b}}",
     "pos_charge_off": "Already bought: cash is not moved",
     "pos_trade_note": "Want to buy or sell right now? Use New transaction → Trade: the account balance and position update automatically.",
-    "pos_add_btn": "Add position"
+    "pos_add_btn": "Add position",
+    "ticker_no_price": "Could not get this security's price. Pick another one.",
+    "ticker_results": "Matching securities",
+    "ticker_pick": "Pick the security you need"
   }
 }
