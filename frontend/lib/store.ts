@@ -30,7 +30,7 @@ interface AppState {
   dataReady: boolean;
   dataError: string | null;
   dataErrors: Partial<Record<DataSource, string>>;
-  fetchAllData: () => Promise<void>;
+  fetchAllData: (silent?: boolean) => Promise<void>;
   exchangeRatesUpdatedAt: string | null;
   refreshExchangeRates: () => Promise<void>;
 
@@ -106,8 +106,9 @@ export const useStore = create<AppState>()(
         }
       },
 
-      fetchAllData: async () => {
-        set({ isLoading: true, dataReady: false, dataError: null, dataErrors: {} });
+      fetchAllData: async (silent = false) => {
+        // silent — фоновое обновление без сброса экрана в «загрузку»
+        if (!silent) set({ isLoading: true, dataReady: false, dataError: null, dataErrors: {} });
         try {
           const userItems = await getUserItems();
           const exchangeRatesPromise = get().refreshExchangeRates();
@@ -155,7 +156,7 @@ export const useStore = create<AppState>()(
           });
         } catch (error) {
           console.error("Failed to fetch data:", error);
-          set({ isLoading: false, dataReady: true, dataError: "common.data_load_failed", dataErrors: {} });
+          if (!silent) set({ isLoading: false, dataReady: true, dataError: "common.data_load_failed", dataErrors: {} });
         }
       },
 
@@ -475,7 +476,6 @@ export const useStore = create<AppState>()(
         positions: initialPositions,
         goals: initialGoals,
         recurringExpenses: initialRecurringExpenses,
-        defaultCurrency: 'USD',
         exchangeRatesUpdatedAt: null,
         dataError: null,
         dataErrors: {},

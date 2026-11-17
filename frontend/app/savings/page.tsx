@@ -5,7 +5,7 @@ import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { cn, convertCurrency, getCurrencySymbol, getExchangeRate } from "@/lib/utils";
-import { fmtMoney, fmtNum, shortMoney, plural } from "@/lib/plutus-format";
+import { fmtMoney, fmtNum, shortMoney, plural, goalColor, withAlpha } from "@/lib/plutus-format";
 import {
   Plus,
   Pencil,
@@ -453,13 +453,13 @@ export default function SavingsPage() {
 
         {/* GOALS */}
         <div className="flex flex-wrap items-stretch gap-5">
-          {gv.map((x) => (
+          {gv.map((x, gi) => (
             <article
               key={x.g.id}
               className="flex min-w-0 flex-[1_1_340px] flex-col gap-5 rounded-[20px] border border-[#232721] bg-[#151714] p-6"
             >
               <div className="flex items-start gap-3.5">
-                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-[#C6F24E]/10 text-[#C6F24E]">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl" style={{ background: withAlpha(goalColor(gi), 0.12), color: goalColor(gi) }}>
                   {x.isShield ? (
                     <Shield className="h-[22px] w-[22px]" strokeWidth={1.8} />
                   ) : (
@@ -510,8 +510,8 @@ export default function SavingsPage() {
                 </div>
                 <div className="relative mt-3.5 h-2.5 rounded-[5px] bg-[#232721]">
                   <div
-                    className="h-2.5 rounded-[5px] bg-[#C6F24E]"
-                    style={{ width: `${x.pct}%` }}
+                    className="h-2.5 rounded-[5px]"
+                    style={{ width: `${x.pct}%`, background: goalColor(gi) }}
                   />
                   <span className="absolute left-1/4 top-0 h-2.5 w-0.5 bg-[#151714]" />
                   <span className="absolute left-1/2 top-0 h-2.5 w-0.5 bg-[#151714]" />
@@ -519,7 +519,7 @@ export default function SavingsPage() {
                 </div>
                 <div className="mt-2 flex justify-between text-xs text-[#8D9388]">
                   <span>0%</span>
-                  <span className="font-bold text-[#C6F24E]">{x.pct}%</span>
+                  <span className="font-bold" style={{ color: goalColor(gi) }}>{x.pct}%</span>
                   <span>100%</span>
                 </div>
               </div>

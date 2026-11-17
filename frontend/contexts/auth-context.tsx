@@ -125,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Logout error:', error);
         } finally {
             resetStore();
+            useStore.getState().setDefaultCurrency('USD');
             resetPrefsCache();
             setUser(null);
             router.push('/login');

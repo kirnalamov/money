@@ -17,7 +17,8 @@ export function capitalSeries(
   transactions: Transaction[],
   currency: Currency,
   from: Date,
-  to: Date = new Date()
+  to: Date = new Date(),
+  offset = 0
 ): CapitalPoint[] {
   const first = startOfDay(from);
   const last = startOfDay(to);
@@ -61,7 +62,7 @@ export function capitalSeries(
       undo(sorted[ptr]);
       ptr++;
     }
-    out.push({ date: day, value: total() });
+    out.push({ date: day, value: total() + offset });
   }
   return out.reverse();
 }
@@ -88,7 +89,7 @@ export interface CapitalBreakdown {
   liquid: number;
 }
 
-export function capitalBreakdown(accounts: Account[], currency: Currency): CapitalBreakdown {
+export function capitalBreakdown(accounts: Account[], currency: Currency, positionsValue = 0): CapitalBreakdown {
   const sum = (types: Account["type"][]) =>
     accounts
       .filter((a) => types.includes(a.type))
@@ -96,7 +97,8 @@ export function capitalBreakdown(accounts: Account[], currency: Currency): Capit
   const bank = sum(["bank"]);
   const cash = sum(["cash"]);
   const savings = sum(["savings"]);
-  const investments = sum(["brokerage"]);
+  // инвестиции = свободные деньги на брокерских счетах + рыночная стоимость бумаг
+  const investments = sum(["brokerage"]) + positionsValue;
   return { total: bank + cash + savings + investments, bank, cash, savings, investments, liquid: bank + cash + savings };
 }
 

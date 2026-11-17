@@ -3,6 +3,9 @@
     "short_name": "Plutus",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#00C853"
+    "background_color": "#0E0F0E",
+    "theme_color": "#C6F24E",
+    "icons": [
+        { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    ]
 }

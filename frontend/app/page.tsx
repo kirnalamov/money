@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLivePortfolioValue } from "@/lib/live-portfolio";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { useNotifications } from "@/lib/notifications";
 import { isBalanceAdjustment } from "@/lib/capital";
@@ -18,7 +19,7 @@ import { useStore } from "@/lib/store";
 import { cn, convertCurrency } from "@/lib/utils";
 import { capitalBreakdown, capitalSeries, earliestTransactionDate } from "@/lib/capital";
 import { limitDetail, limitTransactions, periodWindow } from "@/lib/limit-detail";
-import { categoryEmoji, fmtMoney, hashColor, MINUS, signedMoney, withAlpha } from "@/lib/plutus-format";
+import { categoryEmoji, fmtMoney, goalColor, hashColor, MINUS, signedMoney, withAlpha } from "@/lib/plutus-format";
 import type { Transaction } from "@/types";
 
 const MINT = "#6EE7A0";
@@ -50,12 +51,13 @@ export default function OverviewPage() {
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   // ---------- capital ----------
-  const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency), [accounts, defaultCurrency]);
+  const { value: positionsValue } = useLivePortfolioValue();
+  const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency, positionsValue), [accounts, defaultCurrency, positionsValue]);
   const histStart = useMemo(() => earliestTransactionDate(transactions) || subDays(startOfDay(now), 30), [transactions, now]);
 
   const monthSeries = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, subDays(startOfDay(now), 30), now),
-    [accounts, transactions, defaultCurrency, now]
+    () => capitalSeries(accounts, transactions, defaultCurrency, subDays(startOfDay(now), 30), now, positionsValue),
+    [accounts, transactions, defaultCurrency, now, positionsValue]
   );
   const monthBase = monthSeries[0]?.value ?? breakdown.total;
   const monthChange = breakdown.total - monthBase;
@@ -75,7 +77,7 @@ export default function OverviewPage() {
   const effStart = wanted.getTime() < histStart.getTime() ? histStart : wanted;
   const truncated = per !== "7D" && per !== "30D" && wanted.getTime() < histStart.getTime();
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now),
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now, positionsValue),
     [accounts, transactions, defaultCurrency, effStart, now]
   );
 
@@ -516,7 +518,7 @@ export default function OverviewPage() {
                 {goals.length === 0 && <div className="text-[13px] text-[#8D9388]">{t("dashboard.empty.goals_title")}</div>}
                 {goals.slice(0, 3).map((g, i) => {
                   const pct = g.targetAmount > 0 ? Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100)) : 0;
-                  const color = ["#C6F24E", "#38BDF8", "#C4B5FD"][i % 3];
+                  const color = goalColor(i);
                   return (
                     <div key={g.id}>
                       <div className="flex justify-between text-[13.5px]">

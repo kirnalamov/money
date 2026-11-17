@@ -129,3 +129,7 @@ export function withAlpha(hex: string, alpha: number): string {
     .padStart(2, "0");
   return hex + a;
 }
+
+/** Цвета целей: одинаковые на «Обзоре» и в «Накоплениях» (по порядку цели). */
+export const GOAL_COLORS = ["#C6F24E", "#38BDF8", "#C4B5FD", "#FBBF24", "#F9A8D4", "#5EEAD4"];
+export const goalColor = (index: number) => GOAL_COLORS[index % GOAL_COLORS.length];

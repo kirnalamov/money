@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLivePortfolioValue } from "@/lib/live-portfolio";
 import { usePref } from "@/lib/prefs";
 import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
@@ -101,13 +102,14 @@ export function AnalyticsView() {
   );
 
   // ---------- capital tab ----------
-  const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency), [accounts, defaultCurrency]);
+  const { value: positionsValue } = useLivePortfolioValue();
+  const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency, positionsValue), [accounts, defaultCurrency, positionsValue]);
   const histStart = useMemo(() => earliestTransactionDate(transactions) || subDays(today, 30), [transactions, today]);
   const effStart = rangeStart.getTime() < histStart.getTime() ? histStart : rangeStart;
   const truncated = rangeStart.getTime() < histStart.getTime() && per !== "7D" && per !== "1M";
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now),
-    [accounts, transactions, defaultCurrency, effStart, now]
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, now, positionsValue),
+    [accounts, transactions, defaultCurrency, effStart, now, positionsValue]
   );
   const firstV = points[0]?.value ?? breakdown.total;
   const chg = breakdown.total - firstV;
@@ -359,7 +361,7 @@ export function AnalyticsView() {
               </div>
               {truncated && <div className="text-[12.5px] text-[#FBBF24]">{t("analytics.history_from", "Истории до")} {format(histStart, "d MMMM", { locale: dateLocale })} {t("analytics.history_from2", "нет, график начинается с первого дня")}</div>}
             </div>
-            <CapitalChart key={per} points={points} currency={defaultCurrency} height={300} gridInset={56} />
+            <CapitalChart key={per} points={points} currency={defaultCurrency} height={300} gridInset={56} glow />
           </section>
 
           <div className="flex flex-wrap items-stretch gap-5">

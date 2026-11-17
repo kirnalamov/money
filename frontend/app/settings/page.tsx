@@ -36,6 +36,7 @@ const ghostBtn = "flex h-[42px] items-center gap-2 rounded-xl border border-[#2A
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const [, updateUi] = usePref<{ currency?: string }>("plutus-ui", {});
   const { categories, tags, transactions, accounts, addTransaction, addCategory, updateCategory, deleteCategory, addTag, updateTag, deleteTag, defaultCurrency, setDefaultCurrency } = useStore();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] = useState<Exclude<Kind, "other">>("out");
@@ -78,6 +79,10 @@ export default function SettingsPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges, t]);
 
+  const changeCurrency = (currency: Currency) => {
+    setDefaultCurrency(currency);
+    updateUi((prev) => ({ ...prev, currency }));
+  };
   const rememberKind = (name: string, kind: Kind) => updateKinds((prev) => ({ ...prev, [name.toLowerCase()]: kind }));
 
   const handleAddCategory = async () => {
@@ -404,7 +409,7 @@ export default function SettingsPage() {
                   <select
                     id="cur"
                     value={defaultCurrency}
-                    onChange={(e) => setDefaultCurrency(e.target.value as Currency)}
+                    onChange={(e) => changeCurrency(e.target.value as Currency)}
                     className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-sm font-semibold text-[#F1F3EE] outline-none [&>option]:bg-[#151714] [&>option]:text-[#F1F3EE]"
                   >
                     {(["USD", "EUR", "GBP", "RUB"] as const).map((currency) => (

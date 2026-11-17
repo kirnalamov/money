@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
+import { PrefsSync } from "@/components/prefs-sync";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 
@@ -19,10 +20,6 @@ export const metadata: Metadata = {
   title: "Plutus",
   description: "Multi-account personal finance & investment dashboard",
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -51,6 +48,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
+          <PrefsSync />
           <I18nProvider>
             <ThemeProvider
               attribute="class"
