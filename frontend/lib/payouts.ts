@@ -14,12 +14,6 @@ import { convertCurrency } from "@/lib/utils";
 export const PAY_LAG_DAYS = 14;
 
 /** Запасная оценка доходности, если по бумаге нет данных о выплатах */
-export const YIELD_FALLBACK: Record<string, number> = {
-  stock: 0.04,
-  etf: 0.015,
-  bond: 0.1,
-};
-
 export interface TaxSettings {
   /** Налог с дивидендов/купонов и с прибыли при продаже, % */
   taxPct: number;
@@ -134,7 +128,7 @@ export function buildReceived(
 /**
  * Прогноз выплат на 12 календарных месяцев вперёд, начиная с текущего.
  * Объявленные выплаты берём как есть; прошлогодние переносим на год вперёд;
- * если данных по бумаге нет — запасная оценка по классу актива.
+ * если данных нет: акции и фонды не оцениваем, облигации — по купону и периодичности с биржи.
  */
 export function buildForecast(
   positions: Position[],
@@ -142,6 +136,7 @@ export function buildForecast(
   tax: TaxSource,
   dc: Currency,
   loading: boolean,
+  bonds?: Record<string, { coupon_value: number | null; coupon_period: number | null; next_coupon: string | null; maturity: string | null; currency: string }>,
   now: Date = new Date()
 ) {
   const today = startOfDay(now);
@@ -178,31 +173,38 @@ export function buildForecast(
       return;
     }
 
-    const y = YIELD_FALLBACK[cls];
-    if (!y || loading) return;
-    const valueDc = convertCurrency(p.quantity * p.currentPrice, p.currency, dc);
-    if (valueDc <= 0) return;
-    const idx = cls === "etf" ? [0, 3, 6, 9] : cls === "stock" ? [7] : [2, 8];
-    const kind: "dividend" | "coupon" = cls === "bond" ? "coupon" : "dividend";
-    const per = (valueDc * y) / idx.length;
-    idx.forEach((i) => {
-      const date = iso(addMonths(monthStart, i));
-      const t = (per * resolveTax(tax, p.accountId).taxPct) / 100;
-      events.push({
-        key: `${p.accountId}:${p.symbol}:est:${i}`,
-        symbol: p.symbol.toUpperCase(),
-        name: p.name,
-        date,
-        kind,
-        perUnit: 0,
-        unitCurrency: p.currency,
-        qty: p.quantity,
-        gross: per,
-        tax: t,
-        net: per - t,
-        estimated: true,
-      });
-    });
+    // Данных о выплатах нет. Для акций и фондов ничего не придумываем.
+    // Для облигаций строим график ближайших купонов по данным биржи (размер и периодичность купона).
+    if (cls !== "bond" || loading) return;
+    const info = bonds?.[p.symbol.toUpperCase()];
+    if (!info || !info.coupon_value || !info.coupon_period || !info.next_coupon) return;
+    const gross = convertCurrency(info.coupon_value * p.quantity, normCur(info.currency), dc);
+    if (gross <= 0) return;
+    let when = new Date(info.next_coupon);
+    let n = 0;
+    while (iso(when) < endIso && n < 24) {
+      const date = iso(when);
+      if (info.maturity && date > info.maturity) break;
+      if (date >= todayIso) {
+        const t = (gross * resolveTax(tax, p.accountId).taxPct) / 100;
+        events.push({
+          key: `${p.accountId}:${p.symbol}:est:${date}`,
+          symbol: p.symbol.toUpperCase(),
+          name: p.name,
+          date,
+          kind: "coupon",
+          perUnit: info.coupon_value,
+          unitCurrency: normCur(info.currency),
+          qty: p.quantity,
+          gross,
+          tax: t,
+          net: gross - t,
+          estimated: true,
+        });
+      }
+      when = addDays(when, info.coupon_period);
+      n++;
+    }
   });
 
   const byMonth: PayoutEvent[][] = Array.from({ length: 12 }, () => []);

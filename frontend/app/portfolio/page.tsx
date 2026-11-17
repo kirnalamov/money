@@ -90,8 +90,6 @@ const LOGO_PALETTE = [
   "#A3E635",
 ];
 
-// Rough annual payout-yield assumptions per asset class (estimate, not a promise)
-const YIELD: Record<string, number> = { stock: 0.04, etf: 0.015, bond: 0.1 };
 
 function logoColor(symbol: string): string {
   let h = 0;
@@ -266,7 +264,7 @@ export default function PortfolioPage() {
 
   // ---------- Dividend / coupon forecast (real payout history) ----------
   const payoutForecast = useMemo(() => {
-    const fc = buildForecast(positions, payData, settingsFor, defaultCurrency, payLoading);
+    const fc = buildForecast(positions, payData, settingsFor, defaultCurrency, payLoading, bonds);
     const months = Array.from({ length: 12 }, (_, i) => {
       const d = addMonths(fc.monthStart, i);
       const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
@@ -277,7 +275,7 @@ export default function PortfolioPage() {
     });
     return { ...fc, months };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, payData, tax, settingsFor, defaultCurrency, payLoading, i18n.language]);
+  }, [positions, payData, tax, settingsFor, bonds, defaultCurrency, payLoading, i18n.language]);
 
   // ---------- Growth forecast ----------
   const forecast = useMemo(() => {
@@ -745,12 +743,21 @@ export default function PortfolioPage() {
                           .filter((x) => !x.isFuture && new Date(x.date) >= yearAgo)
                           .reduce((acc, x) => acc + x.value, 0)
                       : 0;
-                    const realYield = p.currentPrice > 0 && ttm > 0 ? ttm / p.currentPrice : 0;
-                    const yieldPct = realYield || YIELD[(p.assetClass || "stock") as string];
-                    const tag =
-                      yieldPct && (p.assetClass === "bond"
-                        ? `${t("portfolio.coupon", "Купон")} ≈ ${(yieldPct * 100).toFixed(0)}% ${t("portfolio.per_year", "в год")}`
-                        : `${t("portfolio.div", "Див.")} ≈ ${(yieldPct * 100).toFixed(yieldPct * 100 % 1 ? 1 : 0).replace(".", ",")}% ${t("portfolio.per_year", "в год")}`);
+                    // только фактические данные: выплаты за 12 месяцев или купон облигации с биржи
+                    const bondInfo = p.assetClass === "bond" ? bonds[p.symbol.toUpperCase()] : undefined;
+                    const couponYield =
+                      bondInfo?.coupon_value && bondInfo.coupon_period && p.currentPrice > 0
+                        ? (bondInfo.coupon_value * (365 / bondInfo.coupon_period)) / p.currentPrice
+                        : 0;
+                    const realYield = p.assetClass === "bond" ? couponYield : p.currentPrice > 0 && ttm > 0 ? ttm / p.currentPrice : 0;
+                    const noDividends = p.assetClass !== "bond" && p.assetClass !== "crypto" && !!hist && hist.length > 0 && ttm === 0;
+                    const tag = realYield
+                      ? p.assetClass === "bond"
+                        ? `${t("portfolio.coupon", "Купон")} ≈ ${(realYield * 100).toFixed(1).replace(".", ",")}% ${t("portfolio.per_year", "в год")}`
+                        : `${t("portfolio.div", "Див.")} ${(realYield * 100).toFixed(1).replace(".", ",")}% ${t("portfolio.per_year", "в год")}`
+                      : noDividends
+                        ? t("portfolio.no_div_year", "Без дивидендов за год")
+                        : "";
                     return (
                       <div
                         key={`${p.symbol}-${p.accountId}`}
@@ -777,7 +784,7 @@ export default function PortfolioPage() {
                               {p.name} · {accountName(p.accountId)}
                             </span>
                             {tag && (
-                              <span className="mt-1 rounded-full bg-[#C6F24E]/10 px-2 py-0.5 text-[11.5px] font-semibold text-[#C6F24E]">
+                              <span className={cn("mt-1 rounded-full px-2 py-0.5 text-[11.5px] font-semibold", realYield ? "bg-[#C6F24E]/10 text-[#C6F24E]" : "bg-[#1E211C] text-[#8D9388]")}>
                                 {tag}
                               </span>
                             )}

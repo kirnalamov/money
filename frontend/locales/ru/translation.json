@@ -635,7 +635,8 @@
     "period_day": "День",
     "period_week": "Неделя",
     "period_month": "Месяц",
-    "period_all": "Всё время"
+    "period_all": "Всё время",
+    "no_div_year": "Без дивидендов за год"
   },
   "savings": {
     "title": "Цели и Накопления",

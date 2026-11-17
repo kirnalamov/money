@@ -635,7 +635,8 @@
     "period_day": "Day",
     "period_week": "Week",
     "period_month": "Month",
-    "period_all": "All time"
+    "period_all": "All time",
+    "no_div_year": "No dividends in a year"
   },
   "savings": {
     "title": "Savings & Goals",
