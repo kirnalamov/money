@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { usePref } from "@/lib/prefs";
 import { Position } from "@/types";
 import {
   fetchMoexPayouts,
@@ -127,32 +128,15 @@ export function useLivePrices(positions: Position[]) {
   return { livePositions, updatedAt, status, refresh };
 }
 
-const TAX_KEY = "plutus-tax-settings";
+const TAX_KEY = "plutus-tax-settings" as const;
 
 /** Налог и комиссия брокера: хранятся в браузере */
 export function useTaxSettings() {
-  const [settings, setSettings] = useState<TaxSettings>(DEFAULT_TAX);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(TAX_KEY);
-      if (raw) setSettings({ ...DEFAULT_TAX, ...JSON.parse(raw) });
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [settings, updateSettings] = usePref<TaxSettings & Record<string, unknown>>(TAX_KEY, DEFAULT_TAX as TaxSettings & Record<string, unknown>);
 
   const update = useCallback((patch: Partial<TaxSettings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...patch };
-      try {
-        localStorage.setItem(TAX_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
+    updateSettings((prev) => ({ ...prev, ...patch }));
+  }, [updateSettings]);
 
   return [settings, update] as const;
 }

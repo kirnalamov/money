@@ -1,6 +1,7 @@
 "use client"
 
 import { categoryEmoji, hashColor } from "@/lib/plutus-format";
+import { usePref } from "@/lib/prefs";
 import ProtectedRoute from "@/components/auth/protected-route";
 
 import { useTheme } from "next-themes";
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { parseTransactionsCsv, transactionsToCsv } from "@/lib/csv";
 
 type Kind = "out" | "in" | "save" | "other";
-const KINDS_KEY = "plutus-category-kinds";
+const KINDS_KEY = "plutus-category-kinds" as const;
 const SAVE_RE = /savings|investment|накоплен|инвестиц/i;
 const PAIRS = [["salary", "зарплата"], ["food", "еда"], ["housing", "жильё"], ["transport", "транспорт"], ["shopping", "покупки"], ["leisure", "досуг"], ["savings", "накопления"], ["investments", "инвестиции"]];
 
@@ -43,7 +44,7 @@ export default function SettingsPage() {
   const [tagError, setTagError] = useState("");
   const [dataMessage, setDataMessage] = useState("");
   const [importing, setImporting] = useState(false);
-  const [kinds, setKinds] = useState<Record<string, Kind>>({});
+  const [kinds, updateKinds] = usePref<Record<string, Kind>>(KINDS_KEY, {});
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [editingCategory, setEditingCategory] = useState<{ id: number; name: string; color: string; icon: string } | null>(null);
   const [editingTag, setEditingTag] = useState<{ id: number; name: string; color: string } | null>(null);
@@ -51,15 +52,6 @@ export default function SettingsPage() {
     (editingCategory && categories.some((category) => category.id === editingCategory.id && (category.name !== editingCategory.name || (category.color || "#cccccc") !== editingCategory.color || (categoryEmoji(category.name, category.icon) || "") !== editingCategory.icon))) ||
     (editingTag && tags.some((tag) => tag.id === editingTag.id && (tag.name !== editingTag.name || (tag.color || "#cccccc") !== editingTag.color)))
   );
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KINDS_KEY);
-      if (raw) setKinds(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   const getOperationError = (error: unknown) => {
     const response = typeof error === "object" && error !== null && "response" in error
@@ -86,17 +78,7 @@ export default function SettingsPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges, t]);
 
-  const rememberKind = (name: string, kind: Kind) => {
-    setKinds((prev) => {
-      const next = { ...prev, [name.toLowerCase()]: kind };
-      try {
-        localStorage.setItem(KINDS_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  };
+  const rememberKind = (name: string, kind: Kind) => updateKinds((prev) => ({ ...prev, [name.toLowerCase()]: kind }));
 
   const handleAddCategory = async () => {
     setCatError("");

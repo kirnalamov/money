@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePref } from "@/lib/prefs";
 import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -40,7 +41,7 @@ type Tab = "cap" | "cat" | "tag";
 const card = "box-border rounded-[20px] border border-[#232721] bg-[#151714] px-6 py-[22px]";
 const cap = "text-[12.5px] text-[#8D9388]";
 const h2 = "text-xl font-semibold";
-const MAND_KEY = "plutus-mandatory-categories";
+const MAND_KEY = "plutus-mandatory-categories" as const;
 const HOUSING_RE = /жиль|аренд|ипотек|housing|rent|mortgage/i;
 
 const TYPE_COLOR: Record<string, string> = { brokerage: "#C6F24E", savings: "#38BDF8", bank: "#C4B5FD", cash: "#FBBF24" };
@@ -60,26 +61,9 @@ export function AnalyticsView() {
   const [per, setPer] = useState<Period>("1M");
   const [view, setView] = useState<"pie" | "bar">("pie");
   const [excl, setExcl] = useState<Record<string, boolean>>({});
-  const [mand, setMand] = useState<Record<string, boolean>>({});
+  const [mand, updateMand] = usePref<Record<string, boolean>>(MAND_KEY, {});
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(MAND_KEY);
-      if (raw) setMand(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  const markMandatory = (name: string) =>
-    setMand((prev) => {
-      const next = { ...prev, [name]: true };
-      try {
-        localStorage.setItem(MAND_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
+  const markMandatory = (name: string) => updateMand((prev) => ({ ...prev, [name]: true }));
 
   const now = useMemo(() => new Date(), []);
   const today = startOfDay(now);

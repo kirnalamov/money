@@ -23,6 +23,7 @@ export const createTransaction = async (transaction: Omit<Transaction, 'id'>): P
         category: transaction.category,
         to_account_id: transaction.toAccountId,
         tags: transaction.tags,
+        isRecurring: transaction.isRecurring,
     };
 
     const response = await apiClient.post<Transaction>('/transactions/', payload);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "@/components/auth/protected-route";
+import { usePref } from "@/lib/prefs";
 import { useTranslation } from "react-i18next";
 import { format, type Locale } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
@@ -40,7 +41,7 @@ const STATUS_STYLE: Record<
   ok: { color: MINT, bg: "rgba(110,231,160,0.12)", border: "#232721", mark: "✓" },
 };
 
-const TOGGLES_KEY = "plutus-limit-toggles";
+const TOGGLES_KEY = "plutus-limit-toggles" as const;
 const STRIPES = "repeating-linear-gradient(135deg,#F87171 0,#F87171 4px,#B94A4A 4px,#B94A4A 8px)";
 const STRIPES_BIG = "repeating-linear-gradient(135deg,#F87171 0,#F87171 6px,#B94A4A 6px,#B94A4A 12px)";
 
@@ -69,30 +70,11 @@ export default function LimitsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
-  const [toggles, setToggles] = useState<Record<string, boolean>>({});
+  const [toggles, updateToggles] = usePref<Record<string, boolean>>(TOGGLES_KEY, {});
   const editRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(TOGGLES_KEY);
-      if (raw) setToggles(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const setToggle = (key: string, on: boolean) => {
-    setToggles((prev) => {
-      const next = { ...prev, [key]: on };
-      try {
-        localStorage.setItem(TOGGLES_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  };
+  const setToggle = (key: string, on: boolean) => updateToggles((prev) => ({ ...prev, [key]: on }));
 
   const now = useMemo(() => new Date(), []);
   const monthWin = periodWindow("monthly", now);

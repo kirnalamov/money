@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { resetPrefsCache } from '@/lib/prefs';
 import axios from 'axios';
 import { User, AuthContextType, RegisterRequest, UserUpdateRequest } from '@/types/auth';
 import type { ApiError } from '@/types/auth';
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Failed to load user:', error);
             clearTokens();
             setUser(null);
-            resetStore();
+            resetStore(); resetPrefsCache();
         } finally {
             setIsLoading(false);
         }
@@ -124,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Logout error:', error);
         } finally {
             resetStore();
+            resetPrefsCache();
             setUser(null);
             router.push('/login');
             setIsLoading(false);
