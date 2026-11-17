@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
-import { Bell, Calendar, Wallet } from "lucide-react";
+import { Bell, Calendar, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { DashboardDataSourceStatus } from "@/components/dashboard/data-source-status";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -310,10 +310,13 @@ export default function OverviewPage() {
               <span className="text-sm font-semibold text-[#C9CEC3]">{t("dashboard.net_worth_total")}</span>
               {Math.abs(monthPct) > 0.005 && (
                 <span
-                  className={cn("rounded-full px-2.5 py-[3px] text-[12.5px] font-bold", monthChange >= 0 ? "bg-[#6EE7A0]/[0.14] text-[#6EE7A0]" : "bg-[#F87171]/[0.14] text-[#F87171]")}
+                  className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[12.5px] font-bold", monthChange >= 0 ? "bg-[#6EE7A0]/[0.14] text-[#6EE7A0]" : "bg-[#F87171]/[0.14] text-[#F87171]")}
                 >
-                  {monthChange >= 0 ? "↗ +" : `↘ ${MINUS}`}
-                  {Math.abs(monthPct).toFixed(1).replace(".", ",")}% {t("overview.per_month", "за месяц")}
+                  {monthChange >= 0 ? <TrendingUp className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" /> : <TrendingDown className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />}
+                  <span>
+                    {monthChange >= 0 ? "+" : MINUS}
+                    {Math.abs(monthPct).toFixed(1).replace(".", ",")}% {t("overview.per_month", "за месяц")}
+                  </span>
                 </span>
               )}
             </div>
