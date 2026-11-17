@@ -1152,7 +1152,10 @@
     "your_tags": "Your tags in Settings",
     "used_only": "Used so far",
     "none_used": "No tag is used in expenses yet.",
-    "assign_tags": "Assign tags in transactions"
+    "assign_tags": "Assign tags in transactions",
+    "in_op_one": "transaction",
+    "in_op_few": "transactions",
+    "in_op_many": "transactions"
   },
   "profile": {
     "change_password": "Change password",

@@ -497,7 +497,7 @@ export function AnalyticsView() {
                   <div className={cn(cap, "mt-0.5")}>{t("analytics.speed_hint", "Накопительно: этот месяц и прошлый")}</div>
                 </div>
                 <div className="flex gap-4 text-[12.5px] text-[#A2A89C]">
-                  <span className="flex items-center gap-1.5"><span className="h-[3px] w-3.5 bg-[#C6F24E]" />{cap1(monthGen)}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-[3px] w-3.5 bg-[#C6F24E]" />{cap1(format(now, "LLLL", { locale: dateLocale }))}</span>
                   <span className="flex items-center gap-1.5"><span className="h-[3px] w-3.5 bg-[#8D9388]" />{cap1(format(prevStart, "LLLL", { locale: dateLocale }))}</span>
                   <span className="flex items-center gap-1.5"><span className="w-3.5 border-t-2 border-dashed border-[#C6F24E]" />{t("limits.forecast", "Прогноз")}</span>
                 </div>
@@ -663,7 +663,7 @@ export function AnalyticsView() {
             <div className={card}>
               <div className={cn(cap, "font-semibold")}>{t("analytics.most_frequent", "Самый частый")}</div>
               <div className="mt-1.5 truncate text-[28px] font-bold">{tagStats.frequent ? `#${tagStats.frequent.name}` : "—"}</div>
-              <div className={cn(cap, "mt-1")}>{tagStats.frequent ? `${t("analytics.used_in", "использован в")} ${opsWord(tagStats.frequent.count)}` : "—"}</div>
+              <div className={cn(cap, "mt-1")}>{tagStats.frequent ? `${t("analytics.used_in", "использован в")} ${tagStats.frequent.count} ${plural(tagStats.frequent.count, t("analytics.in_op_one", "операции"), t("analytics.in_op_few", "операциях"), t("analytics.in_op_many", "операциях"))}` : "—"}</div>
             </div>
             <div className={card}>
               <div className={cn(cap, "font-semibold")}>{t("analytics.untagged_share", "Расходов без тега")}</div>
