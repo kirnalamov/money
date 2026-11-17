@@ -77,7 +77,7 @@ function PreviewCard() {
           </div>
         ))}
       </div>
-      <div className="absolute -bottom-5 -left-4 hidden items-center gap-3 rounded-2xl border border-[#F87171]/30 bg-[#151714] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.5)] sm:flex">
+      <div className="absolute -bottom-10 -left-4 hidden items-center gap-3 rounded-2xl border border-[#F87171]/30 bg-[#151714] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.5)] sm:flex">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F87171] text-[#10170A]"><Bell className="h-4 w-4" strokeWidth={2.4} /></span>
         <div>
           <div className="text-[13px] font-semibold">Лимит «Еда» почти исчерпан</div>
