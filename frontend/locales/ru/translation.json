@@ -1465,5 +1465,26 @@
     "ticker_no_price": "Не удалось получить цену этой бумаги. Выберите другую.",
     "ticker_results": "Подходящие бумаги",
     "ticker_pick": "Выберите нужную бумагу"
+  },
+  "notifications": {
+    "limit_over": "Лимит «{{category}}» превышен",
+    "limit_over_text": "На {{amount}} ({{pct}}% от лимита)",
+    "limit_warn": "Лимит «{{category}}» почти исчерпан",
+    "limit_warn_text": "Потрачено {{pct}}%, осталось {{left}}",
+    "negative": "{{name}} в минусе",
+    "negative_text": "пополните счёт или проверьте операции",
+    "payment": "Платёж «{{name}}»: {{amount}}",
+    "payment_overdue": "Срок оплаты был {{day}} числа — отметьте платёж оплаченным",
+    "payment_today": "Нужно оплатить сегодня",
+    "payment_soon": "Нужно оплатить до {{day}} числа",
+    "goal_done": "Цель «{{name}}» достигнута",
+    "goal_done_text": "Накоплено {{amount}}",
+    "goal_due": "Цель «{{name}}»: срок через {{n}} дн.",
+    "goal_due_text": "Осталось накопить {{amount}}",
+    "unread": "новых: {{n}}",
+    "read_all": "Прочитать все",
+    "clear": "Очистить",
+    "empty": "Всё спокойно",
+    "empty_text": "Здесь появятся превышения лимитов, платежи и сроки целей."
   }
 }

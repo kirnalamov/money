@@ -70,7 +70,7 @@ async def list_items(db: AsyncSession = Depends(get_db), user: User = Depends(ge
     return result
 
 
-PREFERENCE_KEYS = {"plutus-tax-settings", "plutus-category-kinds", "plutus-mandatory-categories", "plutus-limit-toggles"}
+PREFERENCE_KEYS = {"plutus-tax-settings", "plutus-category-kinds", "plutus-mandatory-categories", "plutus-limit-toggles", "plutus-notifications"}
 
 
 @router.get("/preferences")

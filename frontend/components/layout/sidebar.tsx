@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,7 @@ export function Sidebar() {
           <span className="text-[19px] font-bold tracking-[-0.01em] text-[#F1F3EE]">
             Plutus
           </span>
+          {isAuthenticated && pathname !== "/" && <NotificationBell className="ml-auto h-9 w-9 rounded-[11px]" align="start" />}
         </div>
 
         {/* Nav */}

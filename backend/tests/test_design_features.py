@@ -60,7 +60,7 @@ async def check_features():
 
             # настройки интерфейса
             assert (await client.get("/api/v1/user-items/preferences", headers=headers)).json() == {}
-            prefs = {"plutus-tax-settings": {"tax": 15, "commission": 0.1}, "plutus-category-kinds": {"food": "out"}}
+            prefs = {"plutus-tax-settings": {"tax": 15, "commission": 0.1}, "plutus-category-kinds": {"food": "out"}, "plutus-notifications": {"lim-over-1": "read"}}
             saved = await client.put("/api/v1/user-items/preferences", headers=headers, json=prefs)
             assert saved.status_code == 200, saved.text
             assert (await client.get("/api/v1/user-items/preferences", headers=headers)).json() == prefs

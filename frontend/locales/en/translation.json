@@ -1465,5 +1465,26 @@
     "ticker_no_price": "Could not get this security's price. Pick another one.",
     "ticker_results": "Matching securities",
     "ticker_pick": "Pick the security you need"
+  },
+  "notifications": {
+    "limit_over": "Limit «{{category}}» exceeded",
+    "limit_over_text": "By {{amount}} ({{pct}}% of the limit)",
+    "limit_warn": "Limit «{{category}}» almost used up",
+    "limit_warn_text": "{{pct}}% spent, {{left}} left",
+    "negative": "{{name}} is overdrawn",
+    "negative_text": "top up the account or check transactions",
+    "payment": "Payment «{{name}}»: {{amount}}",
+    "payment_overdue": "Due on day {{day}} — mark the payment as paid",
+    "payment_today": "Due today",
+    "payment_soon": "Due by day {{day}}",
+    "goal_done": "Goal «{{name}}» reached",
+    "goal_done_text": "{{amount}} saved",
+    "goal_due": "Goal «{{name}}»: {{n}} days left",
+    "goal_due_text": "{{amount}} left to save",
+    "unread": "new: {{n}}",
+    "read_all": "Mark all read",
+    "clear": "Clear",
+    "empty": "All quiet",
+    "empty_text": "Limit overruns, payments and goal deadlines will show up here."
   }
 }

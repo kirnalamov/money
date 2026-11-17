@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { NotificationBell } from "@/components/layout/notification-bell";
+import { useNotifications } from "@/lib/notifications";
 import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -37,7 +39,6 @@ export default function OverviewPage() {
 
   const now = useMemo(() => new Date(), []);
   const [per, setPer] = useState<Period>("30D");
-  const [dismissed, setDismissed] = useState<Record<string, boolean>>({});
   const [activeType, setActiveType] = useState<"expense" | "income" | "transfer" | "trade" | null>(null);
 
   const conv = (v: number, cur: string) => convertCurrency(v, cur, defaultCurrency);
@@ -135,44 +136,9 @@ export default function OverviewPage() {
     return d.getUTCFullYear() === now.getUTCFullYear() && d.getUTCMonth() === now.getUTCMonth();
   };
 
-  const alerts = useMemo(() => {
-    const out: { id: string; title: string; text: string; href: string; red: boolean }[] = [];
-    limitViews
-      .filter((x) => x.d.status === "over")
-      .forEach((x) =>
-        out.push({
-          id: `lim-${x.l.id}`,
-          title: `${t("overview.limit_word", "Лимит")} «${x.l.category}» ${t("overview.exceeded", "превышен")}`,
-          text: `${t("overview.by", "на")} ${fmtMoney(x.d.spent - x.l.amount, x.l.currency)} (${Math.round(x.d.pct)}%)`,
-          href: "/limits",
-          red: true,
-        })
-      );
-    accounts
-      .filter((a) => a.balance < 0)
-      .forEach((a) =>
-        out.push({
-          id: `neg-${a.id}`,
-          title: `${a.name} ${t("overview.in_minus", "в минусе")}`,
-          text: `${MINUS}${fmtMoney(Math.abs(a.balance), a.currency)}${a.currency !== defaultCurrency ? ` (≈ ${signedMoney(conv(a.balance, a.currency), defaultCurrency)})` : ""}: ${t("overview.top_up_or_check", "пополните или проверьте операции")}`,
-          href: "/accounts",
-          red: true,
-        })
-      );
-    recurringExpenses
-      .filter((e) => !isPaidThisMonth(e.lastPaidDate))
-      .forEach((e) =>
-        out.push({
-          id: `pay-${e.id}`,
-          title: `${t("overview.payment_word", "Платёж")} «${e.name}»: ${fmtMoney(e.amount, e.currency)}`,
-          text: `${t("overview.pay_until", "нужно оплатить до")} ${e.dueDay} ${t("overview.day_suffix", "числа")}`,
-          href: "#payments",
-          red: false,
-        })
-      );
-    return out.filter((a) => !dismissed[a.id]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limitViews, accounts, recurringExpenses, dismissed, defaultCurrency, t]);
+  // уведомления: общий центр (колокольчик) и блок «Требует внимания» показывают одни и те же данные
+  const { items: notifications, hide: hideNotification, markRead: readNotification } = useNotifications();
+  const alerts = notifications.filter((n) => !n.read);
 
   // ---------- recent operations ----------
   const recent = useMemo(() => {
@@ -245,18 +211,7 @@ export default function OverviewPage() {
               <Calendar className="h-4 w-4" strokeWidth={1.8} />
               {monthTitle}
             </span>
-            <a
-              href="#alerts"
-              aria-label={`${t("overview.notifications", "Уведомления")}: ${alerts.length}`}
-              className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#232721] bg-[#151714] text-[#C9CEC3] transition-colors hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"
-            >
-              <Bell className="h-[18px] w-[18px]" strokeWidth={1.8} />
-              {alerts.length > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#F87171] px-1 text-[11px] font-bold text-[#10170A]">
-                  {alerts.length}
-                </span>
-              )}
-            </a>
+            <NotificationBell />
           </div>
         </header>
 
@@ -280,16 +235,16 @@ export default function OverviewPage() {
                 key={al.id}
                 className={cn(
                   "flex min-w-[260px] flex-[1_1_300px] items-center gap-3 rounded-[14px] border px-3.5 py-3",
-                  al.red ? "border-[#F87171]/30 bg-[#F87171]/[0.08]" : "border-[#FBBF24]/30 bg-[#FBBF24]/[0.08]"
+                  al.tone === "red" ? "border-[#F87171]/30 bg-[#F87171]/[0.08]" : al.tone === "green" ? "border-[#6EE7A0]/30 bg-[#6EE7A0]/[0.08]" : "border-[#FBBF24]/30 bg-[#FBBF24]/[0.08]"
                 )}
               >
-                <span className={cn("flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full text-[13px] font-bold text-[#10170A]", al.red ? "bg-[#F87171]" : "bg-[#FBBF24]")}>!</span>
-                <Link href={al.href} className="min-w-0 flex-1 text-[#F1F3EE] no-underline">
+                <span className={cn("flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full text-[13px] font-bold text-[#10170A]", al.tone === "red" ? "bg-[#F87171]" : al.tone === "green" ? "bg-[#6EE7A0]" : "bg-[#FBBF24]")}>{al.tone === "green" ? "✓" : "!"}</span>
+                <Link href={al.href} onClick={() => readNotification(al.id)} className="min-w-0 flex-1 text-[#F1F3EE] no-underline">
                   <span className="block text-[13.5px] font-semibold">{al.title}</span>
                   <span className="block text-[12.5px] text-[#A2A89C]">{al.text}</span>
                 </Link>
                 <button
-                  onClick={() => setDismissed((d) => ({ ...d, [al.id]: true }))}
+                  onClick={() => hideNotification(al.id)}
                   aria-label={t("overview.hide", "Скрыть")}
                   className="h-7 w-7 flex-none rounded-lg p-0 text-[#8D9388] transition-colors hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"
                 >
