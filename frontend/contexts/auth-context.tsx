@@ -85,7 +85,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await authApi.login(username, password);
             const userData = await authApi.getCurrentUser();
             setUser(userData);
-            router.push('/');
+            // возвращаем на страницу, с которой попросили войти (только внутренний путь)
+            let target = '/';
+            try {
+                const saved = sessionStorage.getItem('redirectAfterLogin');
+                sessionStorage.removeItem('redirectAfterLogin');
+                if (saved && saved.startsWith('/') && !saved.startsWith('//') && !['/login', '/register', '/welcome'].includes(saved)) target = saved;
+            } catch { /* ignore */ }
+            router.push(target);
         } catch (error: unknown) {
             console.error('Login failed:', error);
             const detail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
@@ -99,7 +106,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         try {
             await authApi.register(data);
-            router.push('/login');
         } catch (error: unknown) {
             console.error('Registration failed:', error);
             const errorDetail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
@@ -128,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             useStore.getState().setDefaultCurrency('USD');
             resetPrefsCache();
             setUser(null);
-            router.push('/login');
+            router.push('/welcome');
             setIsLoading(false);
         }
     };

@@ -15,14 +15,14 @@ const walk = (dir) => {
 };
 walk(app);
 
-const open = new Set(['login', 'register']);
+const open = new Set(['login', 'register', 'welcome']);
 for (const file of pages) {
   const rel = path.relative(app, file).split(path.sep).join('/');
   const route = rel.replace(/\/?page\.tsx$/, '');
   const code = fs.readFileSync(file, 'utf8');
   if (!open.has(route)) assert.match(code, /ProtectedRoute/, `${rel}: страница должна быть под ProtectedRoute`);
 }
-for (const route of ['', 'analytics', 'transactions', 'portfolio', 'savings', 'limits', 'accounts', 'settings', 'profile']) {
+for (const route of ['', 'analytics', 'transactions', 'portfolio', 'savings', 'limits', 'accounts', 'settings', 'profile', 'welcome']) {
   const file = path.join(app, route, 'page.tsx');
   assert.ok(fs.existsSync(file), `страница /${route} существует`);
 }

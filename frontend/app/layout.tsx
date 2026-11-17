@@ -6,8 +6,7 @@ import { I18nProvider } from "@/components/i18n-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { PrefsSync } from "@/components/prefs-sync";
-import { Sidebar } from "@/components/layout/sidebar";
-import { MobileNav } from "@/components/layout/mobile-nav";
+import { AppShell } from "@/components/layout/app-shell";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -56,15 +55,7 @@ export default function RootLayout({
               forcedTheme="dark"
               disableTransitionOnChange
             >
-              <div className="flex min-h-screen flex-col">
-                <Sidebar />
-                <main className="flex-1 md:pl-[232px] pb-16 md:pb-0">
-                  <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-10 md:pt-8 md:pb-12">
-                    {children}
-                  </div>
-                </main>
-                <MobileNav />
-              </div>
+              <AppShell>{children}</AppShell>
             </ThemeProvider>
           </I18nProvider>
         </AuthProvider>

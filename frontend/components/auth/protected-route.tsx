@@ -64,7 +64,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         if (!isLoading && !isAuthenticated) {
             // Store the attempted URL to redirect back after login
             sessionStorage.setItem("redirectAfterLogin", pathname);
-            router.push("/login");
+            router.push("/welcome");
         }
         if (isAuthenticated) {
             void (async () => {
