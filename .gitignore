@@ -35,3 +35,12 @@ htmlcov/
 .pytest_cache/
 playwright-report/
 test-results/
+
+# Local Codex working notes
+CODEX_REPAIR_PLAN.md
+
+# Local data and environment files
+local.env
+*.db
+.env.*
+!.env.example

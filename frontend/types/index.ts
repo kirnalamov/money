@@ -25,10 +25,13 @@ export interface Account {
   balance: number;
   currency: Currency;
   provider?: string; // e.g., 'Chase', 'Binance'
+  interest_rate?: number | null; // ставка накопительного счёта, % годовых
   lastSync?: string; // ISO date
+  created_at?: string;
+  updated_at?: string;
 }
 
-export type TransactionType = 'income' | 'expense' | 'transfer' | 'trade';
+export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
   id: number;
@@ -43,7 +46,7 @@ export interface Transaction {
   merchant?: string;
   tags?: string[];
   isRecurring?: boolean; // For mandatory/fixed expenses
-  status: 'pending' | 'completed';
+  status?: 'pending' | 'completed';
   toAccountId?: number; // For transfers
 }
 
@@ -56,6 +59,7 @@ export interface Position {
   currency: Currency;
   accountId: number;
   assetClass?: 'stock' | 'crypto' | 'etf' | 'bond' | 'cash';
+  purchaseDate?: string; // ISO date — для расчёта полученных выплат
 }
 
 export interface LimitRule {
@@ -68,7 +72,7 @@ export interface LimitRule {
 }
 
 export interface Goal {
-  id: string;
+  id: number;
   name: string;
   targetAmount: number;
   currentAmount: number;

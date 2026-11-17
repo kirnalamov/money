@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Check, Eye, EyeOff, Loader2, Lock, Mail, User, UserRound } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { Fld, fldInput, Lbl, PrimaryBtn } from "@/components/ui/modal-kit";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
     const { register, isLoading } = useAuth();
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         email: "",
         username: "",
@@ -19,6 +19,7 @@ export default function RegisterPage() {
         confirmPassword: "",
         full_name: "",
     });
+    const [show, setShow] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
 
@@ -29,18 +30,25 @@ export default function RegisterPage() {
         }));
     };
 
+    const rules = [
+        { ok: formData.password.length >= 8, label: t("auth.rule_length", "От 8 символов") },
+        { ok: /[A-Z]/.test(formData.password), label: t("auth.rule_upper", "Заглавная буква") },
+        { ok: /[a-z]/.test(formData.password), label: t("auth.rule_lower", "Строчная буква") },
+        { ok: /[0-9]/.test(formData.password), label: t("auth.rule_digit", "Цифра") },
+    ];
+
     const validatePassword = (password: string): string | null => {
         if (password.length < 8) {
-            return "Password must be at least 8 characters long";
+            return t("auth.password_min_length");
         }
         if (!/[A-Z]/.test(password)) {
-            return "Password must contain at least one uppercase letter";
+            return t("auth.password_uppercase");
         }
         if (!/[a-z]/.test(password)) {
-            return "Password must contain at least one lowercase letter";
+            return t("auth.password_lowercase");
         }
         if (!/[0-9]/.test(password)) {
-            return "Password must contain at least one digit";
+            return t("auth.password_digit");
         }
         return null;
     };
@@ -50,14 +58,13 @@ export default function RegisterPage() {
         setError("");
         setSuccess(false);
 
-        // Validation
         if (!formData.email || !formData.username || !formData.password) {
-            setError("Please fill in all required fields");
+            setError(t("auth.required_fields"));
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match");
+            setError(t("auth.passwords_do_not_match"));
             return;
         }
 
@@ -75,149 +82,119 @@ export default function RegisterPage() {
                 full_name: formData.full_name || undefined,
             });
             setSuccess(true);
-        } catch (err: any) {
-            setError(err.message || "Registration failed. Please try again.");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : t("auth.registration_failed"));
         }
     };
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader className="space-y-1">
-                        <div className="flex justify-center mb-4">
-                            <CheckCircle2 className="h-16 w-16 text-green-500" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold text-center">Registration Successful!</CardTitle>
-                        <CardDescription className="text-center">
-                            Your account has been created. You can now log in.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex justify-center">
-                        <Button asChild>
-                            <Link href="/login">Go to Login</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
+            <AuthShell
+                title={t("auth.registration_successful")}
+                subtitle={t("auth.account_created")}
+                footer={null}
+            >
+                <div className="flex flex-col items-center gap-5 rounded-[20px] border border-[#232721] bg-[#151714] px-6 py-8 text-center">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E] text-[#10170A]">
+                        <Check className="h-7 w-7" strokeWidth={2.6} aria-hidden="true" />
+                    </span>
+                    <Link href="/login" className="inline-flex h-[46px] items-center justify-center rounded-xl bg-[#C6F24E] px-6 text-sm font-bold text-[#10170A] no-underline hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0F0E]">
+                        {t("auth.go_to_login")}
+                    </Link>
+                </div>
+            </AuthShell>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
-                    <CardDescription className="text-center">
-                        Enter your details to create your account
-                    </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
+        <AuthShell
+            title={t("auth.register_title")}
+            subtitle={t("auth.register_description")}
+            footer={
+                <>
+                    {t("auth.has_account")}{" "}
+                    <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-[#C6F24E] no-underline hover:text-[#E2FF92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]">
+                        {t("auth.log_in")}
+                    </Link>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+                {error && (
+                    <div role="alert" className="rounded-xl border border-[#F87171]/30 bg-[#F87171]/[0.08] px-4 py-3 text-[13.5px] text-[#FCA5A5]">
+                        {error}
+                    </div>
+                )}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email *</Label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="your.email@example.com"
-                                value={formData.email}
-                                onChange={handleChange}
-                                disabled={isLoading}
-                                required
-                            />
-                        </div>
+                <div>
+                    <Lbl htmlFor="email">{t("auth.email")}</Lbl>
+                    <Fld prefix={<Mail className="h-4 w-4 text-[#8D9388]" aria-hidden="true" />}>
+                        <input id="email" name="email" type="email" className={fldInput} autoComplete="email" placeholder={t("auth.email_placeholder")} value={formData.email} onChange={handleChange} disabled={isLoading} required />
+                    </Fld>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username *</Label>
-                            <Input
-                                id="username"
-                                name="username"
-                                type="text"
-                                placeholder="Choose a username"
-                                value={formData.username}
-                                onChange={handleChange}
-                                disabled={isLoading}
-                                required
-                            />
-                        </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <Lbl htmlFor="username">{t("auth.username")}</Lbl>
+                        <Fld prefix={<User className="h-4 w-4 text-[#8D9388]" aria-hidden="true" />}>
+                            <input id="username" name="username" type="text" className={fldInput} autoComplete="username" placeholder={t("auth.choose_username")} value={formData.username} onChange={handleChange} disabled={isLoading} required />
+                        </Fld>
+                    </div>
+                    <div>
+                        <Lbl htmlFor="full_name" hint={t("dialogs.optional", "необязательно")}>{t("auth.full_name")}</Lbl>
+                        <Fld prefix={<UserRound className="h-4 w-4 text-[#8D9388]" aria-hidden="true" />}>
+                            <input id="full_name" name="full_name" type="text" className={fldInput} autoComplete="name" placeholder={t("auth.full_name_placeholder")} value={formData.full_name} onChange={handleChange} disabled={isLoading} />
+                        </Fld>
+                    </div>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
-                            <Input
-                                id="full_name"
-                                name="full_name"
-                                type="text"
-                                placeholder="John Doe"
-                                value={formData.full_name}
-                                onChange={handleChange}
-                                disabled={isLoading}
-                            />
-                        </div>
+                <div>
+                    <Lbl htmlFor="password">{t("auth.password")}</Lbl>
+                    <Fld
+                        prefix={<Lock className="h-4 w-4 text-[#8D9388]" aria-hidden="true" />}
+                        suffix={
+                            <button
+                                type="button"
+                                onClick={() => setShow((v) => !v)}
+                                aria-label={show ? t("auth.hide_password", "Скрыть пароль") : t("auth.show_password", "Показать пароль")}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8D9388] hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"
+                            >
+                                {show ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                            </button>
+                        }
+                    >
+                        <input id="password" name="password" type={show ? "text" : "password"} className={fldInput} autoComplete="new-password" placeholder={t("auth.create_password")} value={formData.password} onChange={handleChange} disabled={isLoading} required />
+                    </Fld>
+                    <ul className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5" aria-label={t("auth.password_hint")}>
+                        {rules.map((r) => (
+                            <li key={r.label} className={cn("flex items-center gap-2 text-[12.5px]", r.ok ? "text-[#6EE7A0]" : "text-[#8D9388]")}>
+                                <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border", r.ok ? "border-[#6EE7A0] bg-[#6EE7A0]/15" : "border-[#2A2E27]")}>
+                                    {r.ok && <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />}
+                                </span>
+                                {r.label}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password *</Label>
-                            <Input
-                                id="password"
-                                name="password"
-                                type="password"
-                                placeholder="Create a strong password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                disabled={isLoading}
-                                required
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Must be at least 8 characters with uppercase, lowercase, and numbers
-                            </p>
-                        </div>
+                <div>
+                    <Lbl htmlFor="confirmPassword">{t("auth.confirm_password")}</Lbl>
+                    <Fld prefix={<Lock className="h-4 w-4 text-[#8D9388]" aria-hidden="true" />}>
+                        <input id="confirmPassword" name="confirmPassword" type={show ? "text" : "password"} className={fldInput} autoComplete="new-password" placeholder={t("auth.confirm_password_placeholder")} value={formData.confirmPassword} onChange={handleChange} disabled={isLoading} required />
+                    </Fld>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                            <Input
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                type="password"
-                                placeholder="Confirm your password"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                disabled={isLoading}
-                                required
-                            />
-                        </div>
-                    </CardContent>
-
-                    <CardFooter className="flex flex-col space-y-4">
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating account...
-                                </>
-                            ) : (
-                                "Create Account"
-                            )}
-                        </Button>
-
-                        <p className="text-sm text-center text-muted-foreground">
-                            Already have an account?{" "}
-                            <Link href="/login" className="text-primary hover:underline font-medium">
-                                Log in
-                            </Link>
-                        </p>
-                    </CardFooter>
-                </form>
-            </Card>
-        </div>
+                <PrimaryBtn type="submit" className="mt-1 w-full" disabled={isLoading}>
+                    {isLoading ? (
+                        <span className="inline-flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            {t("auth.creating_account")}
+                        </span>
+                    ) : (
+                        t("auth.create_account")
+                    )}
+                </PrimaryBtn>
+            </form>
+        </AuthShell>
     );
 }

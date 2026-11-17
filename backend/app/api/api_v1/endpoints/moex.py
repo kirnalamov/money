@@ -1,0 +1,160 @@
+from typing import Dict, List, Tuple
+
+from fastapi import APIRouter, HTTPException, Query, Response
+from pydantic import BaseModel
+
+from app.services.logos import get_logo
+from app.services.market_prices import get_bond_info, get_history, get_quotes, get_us_dividends
+from app.services.moex_dividends import get_dividends
+from app.services.security_search import search_securities
+
+router = APIRouter()
+
+
+class DividendOut(BaseModel):
+    date: str
+    value: float
+    currency: str
+
+
+class DividendsResponse(BaseModel):
+    secid: str
+    source: str
+    dividends: List[DividendOut]
+
+
+@router.get("/dividends/{secid}", response_model=DividendsResponse)
+async def read_dividends(secid: str) -> DividendsResponse:
+    """Публичная история дивидендов по тикеру МосБиржи (без данных пользователя)."""
+    dividends = await get_dividends(secid)
+    return DividendsResponse(
+        secid=secid.strip().upper(),
+        source="smart-lab.ru",
+        dividends=[DividendOut(**d.__dict__) for d in dividends],
+    )
+
+
+@router.get("/us-dividends/{symbol}", response_model=DividendsResponse)
+async def read_us_dividends(symbol: str) -> DividendsResponse:
+    """История дивидендов по бумагам США (Yahoo Finance), на одну бумагу."""
+    dividends = await get_us_dividends(symbol)
+    return DividendsResponse(
+        secid=symbol.strip().upper(),
+        source="yahoo",
+        dividends=[DividendOut(**d) for d in dividends],
+    )
+
+
+@router.get("/logo/{symbol}")
+async def read_logo(
+    symbol: str,
+    hint: str = Query("global", pattern="^(moex|global|crypto)$"),
+) -> Response:
+    """Логотип бумаги (проксируется и кэшируется); 404, если логотипа нет."""
+    logo = await get_logo(symbol, hint)
+    if logo is None:
+        raise HTTPException(status_code=404, detail="Logo not found")
+    body, content_type = logo
+    return Response(
+        content=body,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
+
+
+class QuoteOut(BaseModel):
+    symbol: str
+    price: float
+    currency: str
+    source: str
+
+
+class PricesResponse(BaseModel):
+    prices: Dict[str, QuoteOut]
+
+
+@router.get("/prices", response_model=PricesResponse)
+async def read_prices(
+    q: str = Query(
+        ...,
+        max_length=600,
+        description="Список вида SBER:moex,VOO:global,BTC:crypto (hint: moex|global|crypto)",
+    ),
+) -> PricesResponse:
+    """Текущие котировки из публичных источников (MOEX / Binance / Yahoo)."""
+    items: List[Tuple[str, str]] = []
+    for part in q.split(",")[:30]:
+        bits = part.strip().split(":")
+        if not bits or not bits[0]:
+            continue
+        hint = bits[1].strip().lower() if len(bits) > 1 else "global"
+        if hint not in ("moex", "global", "crypto"):
+            hint = "global"
+        items.append((bits[0], hint))
+    quotes = await get_quotes(items)
+    return PricesResponse(prices={k: QuoteOut(**v) for k, v in quotes.items()})
+
+
+class FoundOut(BaseModel):
+    symbol: str
+    name: str
+    hint: str
+    asset_class: str
+    exchange: str
+
+
+class SearchResponse(BaseModel):
+    results: List[FoundOut]
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search(q: str = Query(..., min_length=1, max_length=40, description="Тикер или название бумаги")) -> SearchResponse:
+    """Подходящие бумаги (МосБиржа, мировые рынки, крипто) для выбора пользователем."""
+    return SearchResponse(results=[FoundOut(**item) for item in await search_securities(q)])
+
+
+class BondOut(BaseModel):
+    secid: str
+    name: str
+    currency: str
+    face_value: float
+    price_pct: float
+    price: float
+    accrued_interest: float
+    coupon_value: float | None = None
+    coupon_period: int | None = None
+    next_coupon: str | None = None
+    maturity: str | None = None
+
+
+@router.get("/bond/{secid}", response_model=BondOut)
+async def read_bond(secid: str) -> BondOut:
+    """Облигация: цена в валюте, НКД, купон и ближайшая выплата."""
+    info = await get_bond_info(secid)
+    if not info:
+        raise HTTPException(status_code=404, detail="Bond not found")
+    return BondOut(**info)
+
+
+class CloseOut(BaseModel):
+    date: str
+    close: float
+
+
+class HistoryResponse(BaseModel):
+    history: Dict[str, List[CloseOut]]
+
+
+@router.get("/history", response_model=HistoryResponse)
+async def read_history(
+    q: str = Query(..., max_length=600, description="Список вида SBER:moex,VOO:global,BTC:crypto"),
+) -> HistoryResponse:
+    """Дневные цены закрытия за ~3 месяца для расчёта изменения за день/неделю/месяц."""
+    items: List[Tuple[str, str]] = []
+    for part in q.split(",")[:30]:
+        bits = part.strip().split(":")
+        if not bits or not bits[0]:
+            continue
+        hint = bits[1].strip().lower() if len(bits) > 1 else "global"
+        items.append((bits[0], hint if hint in ("moex", "global", "crypto") else "global"))
+    return HistoryResponse(history=await get_history(items))

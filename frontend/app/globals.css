@@ -4,50 +4,84 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 142 76% 36%;
-    /* Plutus Green-ish */
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142 76% 36%;
-    --radius: 0.5rem;
+    /* Plutus design tokens (dark-first design) */
+    --background: 120 3% 5.7%;
+    /* #0E0F0E */
+    --foreground: 84 17% 94%;
+    /* #F1F3EE */
+    --card: 100 7% 8.4%;
+    /* #151714 */
+    --card-foreground: 84 17% 94%;
+    --popover: 100 7% 8.4%;
+    --popover-foreground: 84 17% 94%;
+    --primary: 76 86% 63%;
+    /* #C6F24E */
+    --primary-foreground: 92 39% 6.5%;
+    /* #10170A */
+    --secondary: 96 8% 12%;
+    /* #1E211C */
+    --secondary-foreground: 84 17% 94%;
+    --muted: 105 7% 11%;
+    /* #1B1E1A */
+    --muted-foreground: 93 5% 55%;
+    /* #8D9388 */
+    --accent: 105 7% 11%;
+    --accent-foreground: 84 17% 94%;
+    --destructive: 0 91% 71%;
+    /* #F87171 */
+    --destructive-foreground: 92 39% 6.5%;
+    --border: 100 8% 14%;
+    /* #232721 */
+    --input: 94 8% 17%;
+    /* #2A2E27 */
+    --ring: 76 86% 63%;
+    --income: 145 72% 67%;
+    /* #6EE7A0 */
+    --expense: 0 91% 71%;
+    /* #F87171 */
+    --warning: 43 96% 56%;
+    /* #FBBF24 */
+    --chart-1: 76 86% 63%;
+    /* #C6F24E */
+    --chart-2: 198 93% 60%;
+    /* #38BDF8 */
+    --chart-3: 252 95% 85%;
+    /* #C4B5FD */
+    --chart-4: 43 96% 56%;
+    /* #FBBF24 */
+    --chart-5: 327 87% 82%;
+    /* #F9A8D4 */
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 8% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 142 70% 45%;
-    /* Plutus Green adjusted for dark */
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 70%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 18%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 70% 45%;
+    --background: 120 3% 5.7%;
+    --foreground: 84 17% 94%;
+    --card: 100 7% 8.4%;
+    --card-foreground: 84 17% 94%;
+    --popover: 100 7% 8.4%;
+    --popover-foreground: 84 17% 94%;
+    --primary: 76 86% 63%;
+    --primary-foreground: 92 39% 6.5%;
+    --secondary: 96 8% 12%;
+    --secondary-foreground: 84 17% 94%;
+    --muted: 105 7% 11%;
+    --muted-foreground: 93 5% 55%;
+    --accent: 105 7% 11%;
+    --accent-foreground: 84 17% 94%;
+    --destructive: 0 91% 71%;
+    --destructive-foreground: 92 39% 6.5%;
+    --border: 100 8% 14%;
+    --input: 94 8% 17%;
+    --ring: 76 86% 63%;
+    --income: 145 72% 67%;
+    --expense: 0 91% 71%;
+    --warning: 43 96% 56%;
+    --chart-1: 76 86% 63%;
+    --chart-2: 198 93% 60%;
+    --chart-3: 252 95% 85%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 327 87% 82%;
   }
 }
 
@@ -58,6 +92,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -125,6 +160,6 @@
   }
 
   .text-glow {
-    text-shadow: 0 0 20px rgba(0, 200, 83, 0.3);
+    text-shadow: 0 0 20px rgba(198, 242, 78, 0.3);
   }
 }

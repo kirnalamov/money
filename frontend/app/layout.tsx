@@ -1,20 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "@/components/layout/sidebar";
-import { MobileNav } from "@/components/layout/mobile-nav";
+import { PrefsSync } from "@/components/prefs-sync";
+import { AppShell } from "@/components/layout/app-shell";
+
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Plutus",
   description: "Multi-account personal finance & investment dashboard",
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -23,8 +27,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#00C853" },
-    { media: "(prefers-color-scheme: dark)", color: "#00C853" }
+    { media: "(prefers-color-scheme: light)", color: "#0E0F0E" },
+    { media: "(prefers-color-scheme: dark)", color: "#0E0F0E" }
   ],
 };
 
@@ -34,25 +38,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased")} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          inter.className
+        )}
+        suppressHydrationWarning
+      >
         <AuthProvider>
+          <PrefsSync />
           <I18nProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="dark"
-              enableSystem
+              forcedTheme="dark"
               disableTransitionOnChange
             >
-              <div className="flex min-h-screen flex-col">
-                <Sidebar />
-                <main className="flex-1 md:pl-64 pb-16 md:pb-0">
-                  <div className="container mx-auto p-4 md:p-8 max-w-[95%] xl:max-w-[1600px]">
-                    {children}
-                  </div>
-                </main>
-                <MobileNav />
-              </div>
+              <AppShell>{children}</AppShell>
             </ThemeProvider>
           </I18nProvider>
         </AuthProvider>

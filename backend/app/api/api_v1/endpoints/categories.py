@@ -1,7 +1,9 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
+from app.models.transaction import Transaction
 from app.schemas.core import Category, CategoryCreate, CategoryUpdate
 from app.crud import crud_functions as crud_cat
 from app.db.session import get_db
@@ -14,13 +16,14 @@ router = APIRouter()
 async def read_categories(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> Any:
     from app.models.category import Category as CategoryModel
     result = await db.execute(
         select(CategoryModel)
         .where(CategoryModel.user_id == current_user.id)
+        .order_by(CategoryModel.id)
         .offset(skip)
         .limit(limit)
     )
@@ -36,12 +39,13 @@ async def create_category(
     # Need to manually set user_id since base crud doesn't know it
     from app.models.category import Category as CategoryModel
     obj_in_data = item_in.model_dump()
-    print("DEBUG current_user:", current_user)
-    print("DEBUG current_user.id:", current_user.id)
     db_obj = CategoryModel(**obj_in_data, user_id=current_user.id)
-    print("DEBUG db_obj user_id:", getattr(db_obj, 'user_id', 'MISSING'))
     db.add(db_obj)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A category with this name already exists")
     await db.refresh(db_obj)
     return db_obj
 
@@ -56,7 +60,11 @@ async def update_category(
     item = await crud_cat.category.get(db, id=id)
     if not item or item.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Category not found")
-    return await crud_cat.category.update(db, db_obj=item, obj_in=item_in)
+    try:
+        return await crud_cat.category.update(db, db_obj=item, obj_in=item_in)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A category with this name already exists")
 
 @router.get("/{id}", response_model=Category)
 async def read_category(
@@ -80,4 +88,7 @@ async def delete_category(
     item = await crud_cat.category.get(db, id=id)
     if not item or item.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Category not found")
+    linked = await db.scalar(select(Transaction.id).where(Transaction.category_id == id).limit(1))
+    if linked is not None:
+        raise HTTPException(status_code=409, detail="Cannot delete a category used by transactions")
     return await crud_cat.category.remove(db, id=id)

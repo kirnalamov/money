@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Plus, X } from "lucide-react"
+import { Check, ChevronDown, Plus, X } from "lucide-react"
 
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,7 @@ export interface MultiSelectCreatableProps {
   placeholder?: string
   emptyText?: string
   onCreate?: (value: string) => void
+  'aria-labelledby'?: string
 }
 
 export function MultiSelectCreatable({
@@ -29,6 +30,7 @@ export function MultiSelectCreatable({
   placeholder = "Select options...",
   emptyText = "No results found.",
   onCreate,
+  'aria-labelledby': labelledBy,
 }: MultiSelectCreatableProps) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
@@ -71,7 +73,8 @@ export function MultiSelectCreatable({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal text-left h-auto min-h-10 py-1.5 px-3"
+          aria-labelledby={labelledBy}
+          className="w-full justify-between font-normal text-left h-auto min-h-11 py-1.5 px-3"
         >
           <div className="flex flex-wrap gap-1 items-center">
             {values.length > 0 ? (
@@ -81,7 +84,7 @@ export function MultiSelectCreatable({
                   <Badge variant="secondary" key={val} className="mr-1 mb-1 font-normal flex items-center gap-1">
                     {displayLabel}
                     <button
-                      className="text-muted-foreground hover:text-foreground outline-none focus:outline-none"
+                      type="button" aria-label={t("common.remove_item", { name: displayLabel })} className="-my-3 -mr-2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={(e) => removeValue(val, e)}
                     >
                       <X className="h-3 w-3" />
@@ -93,7 +96,7 @@ export function MultiSelectCreatable({
               <span className="text-muted-foreground pt-1">{placeholder}</span>
             )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 mb-1" />
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">

@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
+import { CalendarIcon, ChevronDown } from "lucide-react"
+import { endOfMonth, format, startOfMonth } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { useTranslation } from "react-i18next"
 import { ru, enUS, type Locale } from "date-fns/locale"
@@ -22,6 +22,10 @@ interface DatePickerWithRangeProps {
   setDate: (date: DateRange | undefined) => void
   disabled?: (date: Date) => boolean
   align?: "start" | "center" | "end"
+  compactLabel?: boolean
+  // Если выбран целый месяц, показывает «Ноябрь 2026».
+  monthLabel?: boolean
+  triggerClassName?: string
 }
 
 const localeMap: Record<string, Locale> = {
@@ -35,9 +39,17 @@ export function DatePickerWithRange({
   setDate,
   disabled,
   align = "start",
+  compactLabel = false,
+  monthLabel = false,
+  triggerClassName,
 }: DatePickerWithRangeProps) {
   const { i18n, t } = useTranslation()
-  const locale = localeMap[i18n.language] || enUS
+  const locale = localeMap[i18n.language?.slice(0, 2)] || enUS
+  const wholeMonth = Boolean(
+    monthLabel && date?.from && date.to &&
+    date.from.getTime() === startOfMonth(date.from).getTime() &&
+    format(date.to, "yyyy-MM-dd") === format(endOfMonth(date.from), "yyyy-MM-dd")
+  )
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -47,26 +59,25 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              "h-11 w-full justify-between rounded-full border-border bg-card px-4 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent",
+              date && "text-foreground",
+              triggerClassName
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
+            <span className="flex min-w-0 items-center"><CalendarIcon className="mr-2 h-[17px] w-[17px]" />{date?.from ? (
               date.to ? (
-                <>
-                  {format(date.from, "dd.MM.yyyy", { locale })} -{" "}
-                  {format(date.to, "dd.MM.yyyy", { locale })}
+                wholeMonth ? format(date.from, "LLLL yyyy", { locale }).replace(/^./, (char) => char.toUpperCase()) : <>
+                  {compactLabel ? `${format(date.from, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())} — ${format(date.to, "LLLL", { locale }).replace(/^./, (char) => char.toUpperCase())}` : `${format(date.from, "P", { locale })} - ${format(date.to, "P", { locale })}`}
                 </>
               ) : (
-                format(date.from, "dd.MM.yyyy", { locale })
+                format(date.from, "P", { locale })
               )
             ) : (
               <span>{t("common.pick_date")}</span>
-            )}
+            )}</span><ChevronDown className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align={align}>
+          <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] rounded-2xl p-0 shadow-xl" align={align}>
           <Calendar
             initialFocus
             mode="range"

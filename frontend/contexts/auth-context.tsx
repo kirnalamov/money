@@ -1,11 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { resetPrefsCache } from '@/lib/prefs';
+import axios from 'axios';
 import { User, AuthContextType, RegisterRequest, UserUpdateRequest } from '@/types/auth';
+import type { ApiError } from '@/types/auth';
 import * as authApi from '@/lib/api/auth';
 import * as usersApi from '@/lib/api/users';
 import { hasTokens, getRefreshToken, clearTokens } from '@/lib/auth/token-manager';
+import { useStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { preserveLegacyData } from '@/lib/legacy-backup';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -25,9 +30,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const resetStore = useStore((state) => state.reset);
+    const refreshExchangeRates = useStore((state) => state.refreshExchangeRates);
 
     // Load user on mount if tokens exist
     const loadUser = useCallback(async () => {
+        try {
+            preserveLegacyData(localStorage);
+        } catch (error) {
+            console.error('Не удалось сохранить резервную копию:', error);
+            setIsLoading(false);
+            return;
+        }
+        // Never render persisted financial data before the current session is known.
+        resetStore();
+
         if (!hasTokens()) {
 
             setIsLoading(false);
@@ -41,14 +58,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Failed to load user:', error);
             clearTokens();
             setUser(null);
+            resetStore(); resetPrefsCache();
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [resetStore]);
 
     useEffect(() => {
         loadUser();
     }, [loadUser]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        void refreshExchangeRates();
+        const interval = window.setInterval(() => {
+            void refreshExchangeRates();
+        }, 60 * 60 * 1000);
+
+        return () => window.clearInterval(interval);
+    }, [user, refreshExchangeRates]);
 
     const login = async (username: string, password: string) => {
         setIsLoading(true);
@@ -56,10 +85,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await authApi.login(username, password);
             const userData = await authApi.getCurrentUser();
             setUser(userData);
-            router.push('/');
-        } catch (error: any) {
+            // возвращаем на страницу, с которой попросили войти (только внутренний путь)
+            let target = '/';
+            try {
+                const saved = sessionStorage.getItem('redirectAfterLogin');
+                sessionStorage.removeItem('redirectAfterLogin');
+                if (saved && saved.startsWith('/') && !saved.startsWith('//') && !['/login', '/register', '/welcome'].includes(saved)) target = saved;
+            } catch { /* ignore */ }
+            router.push(target);
+        } catch (error: unknown) {
             console.error('Login failed:', error);
-            throw new Error(error.response?.data?.detail || 'Login failed');
+            const detail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
+            throw new Error(typeof detail === 'string' ? detail : 'Login failed');
         } finally {
             setIsLoading(false);
         }
@@ -69,10 +106,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         try {
             await authApi.register(data);
-            router.push('/login');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Registration failed:', error);
-            const errorDetail = error.response?.data?.detail;
+            const errorDetail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
             if (typeof errorDetail === 'string') {
                 throw new Error(errorDetail);
             } else if (Array.isArray(errorDetail)) {
@@ -94,8 +130,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
+            resetStore();
+            useStore.getState().setDefaultCurrency('USD');
+            resetPrefsCache();
             setUser(null);
-            router.push('/login');
+            router.push('/welcome');
             setIsLoading(false);
         }
     };
@@ -114,9 +153,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             const updatedUser = await usersApi.updateProfile(data);
             setUser(updatedUser);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Profile update failed:', error);
-            throw new Error(error.response?.data?.detail || 'Profile update failed');
+            const detail = axios.isAxiosError<ApiError>(error) ? error.response?.data?.detail : undefined;
+            throw new Error(typeof detail === 'string' ? detail : 'Profile update failed');
         }
     };
 

@@ -4,7 +4,7 @@ from app.core.config import settings
 
 engine = create_async_engine(
     str(settings.DATABASE_URL),
-    echo=True, # Enable generic logs, structlog will handle structure later
+    echo=settings.DEV_MODE,
     future=True,
 )
 
