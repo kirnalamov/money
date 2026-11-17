@@ -683,7 +683,7 @@ function DetailPanel(p: DetailProps) {
           <div className="mt-2 flex flex-wrap gap-3">
             <div className="min-w-[150px] flex-[1_1_150px] rounded-[14px] border border-[#232721] bg-[#121411] p-4">
               <div className="text-[12.5px] text-[#8D9388]">
-                {d.over ? t("limits.overrun", "Превышение") : t("limits.remainder", "Остаток лимита")}
+                {d.over ? t("limits.overrun_label", "Превышение") : t("limits.remainder", "Остаток лимита")}
               </div>
               <div className="mt-1.5 text-xl font-bold" style={{ color: st.color }}>
                 {money(Math.abs(amount - d.spent))}

@@ -812,7 +812,8 @@
     "edit_section": "Limit settings",
     "edit_hint": "Move the amount and see how the picture changes right away.",
     "limit_for_period": "Limit for the period",
-    "now": "current"
+    "now": "current",
+    "overrun_label": "Overrun"
   },
   "accounts": {
     "title": "Accounts",
@@ -1063,7 +1064,7 @@
     "passwords_do_not_match": "The new passwords do not match.",
     "current_password_required": "Enter your current password to set a new one.",
     "page": {
-      "title": "My Profile",
+      "title": "My profile",
       "subtitle": "Your personal financial hub and achievements."
     },
     "card": {
