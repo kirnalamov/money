@@ -185,8 +185,8 @@ export default function OverviewPage() {
     });
     const groups = Array.from(days.entries()).map(([key, list]) => {
       const dayAll = sorted.filter((tx) => format(new Date(tx.date), "yyyy-MM-dd") === key);
-      const inc = dayAll.filter((x) => x.type === "income").reduce((s, x) => s + conv(x.amount, x.currency), 0);
-      const exp = dayAll.filter((x) => x.type === "expense").reduce((s, x) => s + conv(x.amount, x.currency), 0);
+      const inc = dayAll.filter((x) => x.type === "income" && !isBalanceAdjustment(x)).reduce((s, x) => s + conv(x.amount, x.currency), 0);
+      const exp = dayAll.filter((x) => x.type === "expense" && !isBalanceAdjustment(x)).reduce((s, x) => s + conv(x.amount, x.currency), 0);
       const net = [inc > 0 ? `+${fmtMoney(inc, defaultCurrency)}` : "", exp > 0 ? `${MINUS}${fmtMoney(exp, defaultCurrency)}` : ""].filter(Boolean).join(" · ");
       return { key, date: new Date(key), list, net };
     });

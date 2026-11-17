@@ -191,6 +191,7 @@ export default function TransactionsPage() {
     });
     return Array.from(byDay.entries()).map(([key, rows]) => {
       const total = rows.reduce((s, tx) => {
+        if (isBalanceAdjustment(tx)) return s;
         if (tx.type === "income") return s + txUsd(tx);
         if (tx.type === "expense") return s - txUsd(tx);
         return s;

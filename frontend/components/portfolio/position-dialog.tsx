@@ -116,7 +116,7 @@ export function PositionDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader className="pr-10">
           <DialogTitle>{editing ? t("portfolio.edit_position") : t("portfolio.add_position")}</DialogTitle>
-          <DialogDescription>{t("dialogs.pos_desc", "Бумага уже у вас в портфеле? Введите тикер, остальное подтянется")}</DialogDescription>
+          <DialogDescription>{editing ? t("portfolio.edit_position_desc") : t("dialogs.pos_desc", "Бумага уже у вас в портфеле? Введите тикер, остальное подтянется")}</DialogDescription>
         </DialogHeader>
 
         {done ? (

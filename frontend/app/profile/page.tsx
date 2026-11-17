@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { isBalanceAdjustment } from "@/lib/capital";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { differenceInCalendarMonths, format, startOfMonth, subMonths } from "date-fns";
@@ -96,7 +97,7 @@ export default function ProfilePage() {
     const byCat = new Map<string, number>();
     transactions.forEach((tx) => {
       const d = new Date(tx.date);
-      if (Number.isNaN(d.getTime())) return;
+      if (Number.isNaN(d.getTime()) || isBalanceAdjustment(tx)) return;
       const v = conv(tx.amount, tx.currency);
       if (d >= cur) {
         if (tx.type === "income") income += v;
