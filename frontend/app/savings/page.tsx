@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import ProtectedRoute from "@/components/auth/protected-route";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { cn, convertCurrency, getCurrencySymbol, getExchangeRate } from "@/lib/utils";
@@ -26,7 +27,7 @@ const NBSP = " ";
 
 export default function SavingsPage() {
   const { t } = useTranslation();
-  const { goals, addGoal, updateGoal, deleteGoal, defaultCurrency } = useStore();
+  const { goals, accounts, addGoal, updateGoal, deleteGoal, defaultCurrency } = useStore();
 
   // ---- create / edit dialog (logic preserved from the previous page)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -83,6 +84,16 @@ export default function SavingsPage() {
   }, [goals]);
 
   const toUsd = (v: number, cur: string) => convertCurrency(v, cur, defaultCurrency);
+
+  // накопительные счета со ставкой: ожидаемый доход
+  const interest = useMemo(() => {
+    const rows = accounts
+      .filter((a) => a.type === "savings" && a.interest_rate && a.interest_rate > 0)
+      .map((a) => ({ a, month: (Math.max(a.balance, 0) * (a.interest_rate as number)) / 1200 }));
+    const month = rows.reduce((s, r) => s + toUsd(r.month, r.a.currency), 0);
+    return { rows, month, year: month * 12 };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accounts, defaultCurrency]);
 
   const summary = useMemo(() => {
     const saved = gv.reduce((s, x) => s + toUsd(x.g.currentAmount, x.g.currency), 0);
@@ -443,12 +454,43 @@ export default function SavingsPage() {
             </div>
             {summary.hasForeign && (
               <p className="mt-2 text-[12.5px] text-[#8D9388]">
-                {t("savings.fx_note_1", "Суммы в разных валютах приведены к доллару по курсу")}{" "}
-                {fmtNum(getExchangeRate("USD", "RUB"), 2)}
-                {NBSP}₽ {t("savings.fx_note_2", "за")} 1{NBSP}$.
+                {t("savings.fx_note_1", "Суммы в разных валютах приведены к")} {defaultCurrency} {t("savings.fx_note_3", "по текущему курсу")}: 1{NBSP}{getCurrencySymbol(defaultCurrency)} = {fmtNum(getExchangeRate(defaultCurrency, defaultCurrency === "RUB" ? "USD" : "RUB"), 2)}{NBSP}{getCurrencySymbol(defaultCurrency === "RUB" ? "USD" : "RUB")}.
               </p>
             )}
           </div>
+        </section>
+
+        {/* SAVINGS ACCOUNTS WITH INTEREST */}
+        <section className="flex flex-col gap-4 rounded-[20px] border border-[#232721] bg-[#151714] px-7 py-6" aria-label={t("savings.interest_title", "Проценты по накопительным счетам")}>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <div>
+              <h2 className="text-xl font-semibold">{t("savings.interest_title", "Проценты по накопительным счетам")}</h2>
+              <p className="mt-1 text-[13.5px] text-[#8D9388]">{t("savings.interest_sub", "Ожидаемый доход от ставок по вашим накопительным счетам")}</p>
+            </div>
+            {interest.rows.length > 0 && (
+              <div className="text-right">
+                <div className="text-[22px] font-bold text-[#6EE7A0]">+{fmtMoney(interest.month, defaultCurrency)} <span className="text-[13px] font-medium text-[#8D9388]">{t("accounts.per_month", "в месяц")}</span></div>
+                <div className="text-[12.5px] text-[#8D9388]">≈ {fmtMoney(interest.year, defaultCurrency)} {t("savings.per_year_total", "в год")}</div>
+              </div>
+            )}
+          </div>
+          {interest.rows.length === 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-dashed border-[#2A2E27] px-5 py-4 text-[13.5px] text-[#A2A89C]">
+              <span>{t("savings.interest_empty", "Укажите процентную ставку в накопительном счёте — посчитаем доход.")}</span>
+              <Link href="/accounts" className="font-semibold text-[#C6F24E] no-underline hover:text-[#E2FF92]">{t("savings.interest_goto", "К счетам")} →</Link>
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {interest.rows.map((r) => (
+                <div key={r.a.id} className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-[#1E211C] py-3 first:border-t-0">
+                  <span className="min-w-[160px] flex-1 font-semibold">{r.a.name}</span>
+                  <span className="rounded-full bg-[#6EE7A0]/10 px-2.5 py-0.5 text-[12.5px] font-bold text-[#6EE7A0]">{String(r.a.interest_rate).replace(".", ",")}%</span>
+                  <span className="text-[13.5px] text-[#A2A89C]">{fmtMoney(r.a.balance, r.a.currency)}</span>
+                  <span className="min-w-[130px] text-right text-[13.5px] font-semibold">+{fmtMoney(r.month, r.a.currency)} {t("accounts.per_month", "в месяц")}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* GOALS */}

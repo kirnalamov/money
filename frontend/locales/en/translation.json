@@ -605,7 +605,18 @@
     "growth_income": "Growth income",
     "payments_one": "payout",
     "payments_few": "payouts",
-    "payments_many": "payouts"
+    "payments_many": "payouts",
+    "sell": "Sell",
+    "period": "Period",
+    "period_change": "Price change",
+    "period_partial": "for {{n}} of {{m}} securities",
+    "show_cash": "Free cash",
+    "without_cash": "Without cash",
+    "nkd": "ACI",
+    "period_day": "Day",
+    "period_week": "Week",
+    "period_month": "Month",
+    "period_all": "All time"
   },
   "savings": {
     "title": "Savings & Goals",
@@ -725,7 +736,13 @@
       "takes": "It will take",
       "later": "which is",
       "later_suffix": "past the deadline"
-    }
+    },
+    "fx_note_3": "at the current rate",
+    "interest_title": "Interest on savings accounts",
+    "interest_sub": "Expected income from the rates on your savings accounts",
+    "per_year_total": "per year",
+    "interest_empty": "Set an interest rate on a savings account and we will calculate the income.",
+    "interest_goto": "To accounts"
   },
   "limits": {
     "title": "Spending Limits",
@@ -887,7 +904,9 @@
     "top_up": "Top up",
     "share_of_total": "Share of all funds",
     "negative_badge": "Negative balance",
-    "transfer": "Transfer"
+    "transfer": "Transfer",
+    "per_month": "per month",
+    "per_year": "per year"
   },
   "settings": {
     "description": "Appearance, language, currency, categories and tags",
@@ -1464,7 +1483,16 @@
     "pos_add_btn": "Add position",
     "ticker_no_price": "Could not get this security's price. Pick another one.",
     "ticker_results": "Matching securities",
-    "ticker_pick": "Pick the security you need"
+    "ticker_pick": "Pick the security you need",
+    "acc_rate": "Interest rate",
+    "acc_rate_unit": "% per year",
+    "acc_rate_income": "Income ≈ {{month}} per month, {{year}} per year",
+    "acc_broker_settings": "Broker tax and commission",
+    "acc_tax": "Tax on income",
+    "acc_commission": "Trade commission",
+    "acc_broker_hint": "Tax is used for dividend and coupon payouts and the sale estimate, commission is applied automatically in the Trade window.",
+    "trade_commission_rate": "Commission {{pct}}%",
+    "trade_tax_est": "Tax on profit (estimate)"
   },
   "notifications": {
     "limit_over": "Limit «{{category}}» exceeded",

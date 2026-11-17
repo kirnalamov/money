@@ -27,7 +27,12 @@ export interface TaxSettings {
   commissionPct: number;
 }
 
-export const DEFAULT_TAX: TaxSettings = { taxPct: 13, commissionPct: 0.3 };
+export const DEFAULT_TAX: TaxSettings = { taxPct: 13, commissionPct: 0.05 };
+
+/** Налог и комиссия: одни на всех или свои для каждого брокерского счёта. */
+export type TaxSource = TaxSettings | ((accountId: number) => TaxSettings);
+export const resolveTax = (tax: TaxSource, accountId: number): TaxSettings =>
+  typeof tax === "function" ? tax(accountId) : tax;
 
 export interface PayoutEvent {
   key: string;
@@ -70,13 +75,13 @@ const isPayingClass = (p: Position) => {
 function makeEvent(
   p: Position,
   pay: MoexPayout,
-  tax: TaxSettings,
+  tax: TaxSource,
   dc: Currency,
   extra: Partial<PayoutEvent> = {}
 ): PayoutEvent {
   const cur = normCur(pay.currency);
   const gross = convertCurrency(pay.value * p.quantity, cur, dc);
-  const t = (gross * tax.taxPct) / 100;
+  const t = (gross * resolveTax(tax, p.accountId).taxPct) / 100;
   return {
     key: `${p.accountId}:${p.symbol}:${pay.date}`,
     symbol: p.symbol.toUpperCase(),
@@ -97,7 +102,7 @@ function makeEvent(
 export function buildReceived(
   positions: Position[],
   data: PayoutData,
-  tax: TaxSettings,
+  tax: TaxSource,
   dc: Currency,
   now: Date = new Date()
 ) {
@@ -134,7 +139,7 @@ export function buildReceived(
 export function buildForecast(
   positions: Position[],
   data: PayoutData,
-  tax: TaxSettings,
+  tax: TaxSource,
   dc: Currency,
   loading: boolean,
   now: Date = new Date()
@@ -182,7 +187,7 @@ export function buildForecast(
     const per = (valueDc * y) / idx.length;
     idx.forEach((i) => {
       const date = iso(addMonths(monthStart, i));
-      const t = (per * tax.taxPct) / 100;
+      const t = (per * resolveTax(tax, p.accountId).taxPct) / 100;
       events.push({
         key: `${p.accountId}:${p.symbol}:est:${i}`,
         symbol: p.symbol.toUpperCase(),

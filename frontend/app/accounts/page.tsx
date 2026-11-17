@@ -385,6 +385,15 @@ export default function AccountsPage() {
                       )}
                     </div>
 
+                    {account.type === "savings" && account.interest_rate ? (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-[#6EE7A0]/[0.08] px-3.5 py-2.5 text-[13px]">
+                        <span className="font-bold text-[#6EE7A0]">{String(account.interest_rate).replace(".", ",")}% {t("accounts.per_year", "годовых")}</span>
+                        <span className="text-[#A2A89C]">
+                          ≈ {fmtMoney((Math.max(account.balance, 0) * account.interest_rate) / 1200, account.currency)} {t("accounts.per_month", "в месяц")}
+                        </span>
+                      </div>
+                    ) : null}
+
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#232721] pt-4">
                       <span className="text-[12.5px] text-[#8D9388]">
                         {changed

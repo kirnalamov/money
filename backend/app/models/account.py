@@ -11,6 +11,8 @@ class Account(Base):
     type = Column(String, nullable=False)  # bank, savings, cash, investment, etc.
     balance = Column(Numeric, default=0)
     currency = Column(String, default="USD", nullable=False)
+    provider = Column(String, nullable=True)  # банк или брокер
+    interest_rate = Column(Numeric, nullable=True)  # ставка по накопительному счёту, % годовых
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="accounts")

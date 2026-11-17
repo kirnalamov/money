@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBrokerSettings } from "@/lib/broker-settings";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
@@ -43,6 +44,10 @@ export function AccountDialog({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const { settingsFor, save: saveBroker } = useBrokerSettings();
+  const [rate, setRate] = useState("");
+  const [taxPct, setTaxPct] = useState("13");
+  const [commissionPct, setCommissionPct] = useState("0,05");
 
   useEffect(() => {
     if (!open) return;
@@ -55,6 +60,10 @@ export function AccountDialog({
     setProvider(account?.provider ?? "");
     setCustomProvider(false);
     setName(account?.name ?? "");
+    setRate(account?.interest_rate ? String(account.interest_rate).replace(".", ",") : "");
+    const bs = settingsFor(account?.id);
+    setTaxPct(String(bs.taxPct).replace(".", ","));
+    setCommissionPct(String(bs.commissionPct).replace(".", ","));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, account]);
 
@@ -88,13 +97,29 @@ export function AccountDialog({
     setSaving(true);
     setError(null);
     try {
-      const details = { name: finalName, type, currency, provider: provider || undefined };
+      const rateNum = Math.min(Math.max(Number(rate.replace(",", ".")) || 0, 0), 100);
+      const details = {
+        name: finalName,
+        type,
+        currency,
+        provider: provider || "",
+        interest_rate: type === "savings" && rateNum > 0 ? rateNum : null,
+      };
+      const broker = {
+        taxPct: Math.min(Math.max(Number(taxPct.replace(",", ".")) || 0, 0), 100),
+        commissionPct: Math.min(Math.max(Number(commissionPct.replace(",", ".")) || 0, 0), 100),
+      };
       if (account) {
         await updateAccount(account.id, balanceNum === account.balance ? details : { ...details, balance: balanceNum, expected_balance: account.balance });
+        if (type === "brokerage") saveBroker(account.id, broker);
         onError?.(null);
         onOpenChange(false);
       } else {
         await addAccount({ ...details, balance: balanceNum });
+        if (type === "brokerage") {
+          const created = useStore.getState().accounts.filter((a) => a.name === finalName && a.type === type).sort((a, b) => b.id - a.id)[0];
+          if (created) saveBroker(created.id, broker);
+        }
         onError?.(null);
         setDone(finalName);
       }
@@ -204,6 +229,39 @@ export function AccountDialog({
                 </Fld>
               )}
             </div>
+
+            {type === "savings" && (
+              <div>
+                <Lbl htmlFor="account-rate" hint={t("dialogs.optional", "необязательно")}>{t("dialogs.acc_rate", "Процентная ставка")}</Lbl>
+                <Fld suffix={<Suffix>{t("dialogs.acc_rate_unit", "% годовых")}</Suffix>}>
+                  <input id="account-rate" inputMode="decimal" autoComplete="off" className={fldInput} placeholder="0" value={rate} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setRate(e.target.value); }} />
+                </Fld>
+                {Number(rate.replace(",", ".")) > 0 && Number.isFinite(balanceNum) && balanceNum > 0 && (
+                  <Hint>{t("dialogs.acc_rate_income", "Доход ≈ {{month}} в месяц, {{year}} в год", { month: fmtMoney((balanceNum * Number(rate.replace(",", "."))) / 1200, currency), year: fmtMoney((balanceNum * Number(rate.replace(",", "."))) / 100, currency) })}</Hint>
+                )}
+              </div>
+            )}
+
+            {type === "brokerage" && (
+              <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4">
+                <div className="mb-3 text-[13px] font-semibold text-[#C9CEC3]">{t("dialogs.acc_broker_settings", "Налог и комиссия брокера")}</div>
+                <div className="flex gap-3">
+                  <div className="min-w-0 flex-1">
+                    <Lbl htmlFor="account-tax" className="mb-1.5">{t("dialogs.acc_tax", "Налог с дохода")}</Lbl>
+                    <Fld suffix={<Suffix>%</Suffix>}>
+                      <input id="account-tax" inputMode="decimal" autoComplete="off" className={fldInput} value={taxPct} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setTaxPct(e.target.value); }} />
+                    </Fld>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Lbl htmlFor="account-commission" className="mb-1.5">{t("dialogs.acc_commission", "Комиссия за сделку")}</Lbl>
+                    <Fld suffix={<Suffix>%</Suffix>}>
+                      <input id="account-commission" inputMode="decimal" autoComplete="off" className={fldInput} value={commissionPct} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setCommissionPct(e.target.value); }} />
+                    </Fld>
+                  </div>
+                </div>
+                <div className="mt-2.5 text-[12.5px] text-[#8D9388]">{t("dialogs.acc_broker_hint", "Налог учитывается в выплатах дивидендов и купонов и в оценке продажи, комиссия — автоматически в окне «Сделка».")}</div>
+              </div>
+            )}
 
             <div>
               <Lbl htmlFor="account-name" hint={t("dialogs.can_skip", "можно пропустить")}>{t("dialogs.acc_name", "Название")}</Lbl>

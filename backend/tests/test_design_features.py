@@ -58,6 +58,15 @@ async def check_features():
             updated = await client.put(f"/api/v1/transactions/{plain.json()['id']}", headers=headers, json={"isRecurring": True})
             assert updated.json()["isRecurring"] is True
 
+            # накопительный счёт: ставка и банк сохраняются
+            made = await client.post("/api/v1/accounts/", headers=headers, json={"name": "Vault", "type": "savings", "balance": 1000, "provider": "Tinkoff", "interest_rate": 12.5})
+            assert made.status_code == 201 or made.status_code == 200, made.text
+            assert made.json()["interest_rate"] == 12.5 and made.json()["provider"] == "Tinkoff"
+            bad = await client.post("/api/v1/accounts/", headers=headers, json={"name": "Bad", "type": "savings", "interest_rate": 500})
+            assert bad.status_code == 422
+            changed = await client.put(f"/api/v1/accounts/{made.json()['id']}", headers=headers, json={"interest_rate": None, "provider": ""})
+            assert changed.json()["interest_rate"] is None
+
             # настройки интерфейса
             assert (await client.get("/api/v1/user-items/preferences", headers=headers)).json() == {}
             prefs = {"plutus-tax-settings": {"tax": 15, "commission": 0.1}, "plutus-category-kinds": {"food": "out"}, "plutus-notifications": {"lim-over-1": "read"}}

@@ -9,6 +9,8 @@ class AccountBase(BaseModel):
     type: str
     balance: Money = 0
     currency: Currency = Currency.USD
+    provider: Optional[str] = Field(None, max_length=100)
+    interest_rate: Optional[float] = Field(None, ge=0, le=100, allow_inf_nan=False)
 
 class AccountCreate(AccountBase):
     pass
@@ -19,6 +21,8 @@ class AccountUpdate(BaseModel):
     balance: Optional[Money] = None
     expected_balance: Optional[Money] = None
     currency: Optional[Currency] = None
+    provider: Optional[str] = Field(None, max_length=100)
+    interest_rate: Optional[float] = Field(None, ge=0, le=100, allow_inf_nan=False)
 
 class AccountInDBBase(AccountBase):
     id: int

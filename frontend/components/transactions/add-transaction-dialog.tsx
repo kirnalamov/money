@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TradeForm } from "@/components/trading/trade-form";
+import { TradeForm, type TradePreset } from "@/components/trading/trade-form";
 import { TransactionType } from "@/types";
 
 export type DialogType = TransactionType | "trade";
@@ -28,12 +28,14 @@ interface AddTransactionDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  /** для вкладки «Сделка»: сторона и бумага, выбранные заранее */
+  tradePreset?: TradePreset;
 }
 
 const TYPES: DialogType[] = ["expense", "income", "transfer", "trade"];
 const SIGN: Record<TransactionType, string> = { expense: "−", income: "+", transfer: "" };
 
-function AddTransactionForm({ defaultType, onClose }: { defaultType: DialogType; onClose: () => void }) {
+function AddTransactionForm({ defaultType, onClose, tradePreset }: { defaultType: DialogType; onClose: () => void; tradePreset?: TradePreset }) {
   const { t, i18n } = useTranslation();
   const language = i18n.language;
   const dateLocale = language === "ru" ? ru : enUS;
@@ -216,7 +218,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: DialogType;
     return (
       <div className="grid min-w-0 grid-cols-1 gap-[18px]">
         {typeTabs}
-        <TradeForm onClose={onClose} />
+        <TradeForm onClose={onClose} preset={tradePreset} />
       </div>
     );
   }
@@ -421,6 +423,7 @@ export function AddTransactionDialog({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   trigger,
+  tradePreset,
 }: AddTransactionDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -465,7 +468,7 @@ export function AddTransactionDialog({
         className="left-0 top-0 grid-cols-1 overflow-x-hidden h-[100dvh] max-h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-4 data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[520px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[20px] sm:border sm:p-6 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]"
       >
         <DialogTitle className="pr-10">{t("transactions.dialog.title")}</DialogTitle>
-        <AddTransactionForm defaultType={defaultType} onClose={() => setOpen(false)} />
+        <AddTransactionForm defaultType={defaultType} onClose={() => setOpen(false)} tradePreset={tradePreset} />
       </DialogContent>
     </Dialog>
   );

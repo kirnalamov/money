@@ -25,6 +25,7 @@ export interface Account {
   balance: number;
   currency: Currency;
   provider?: string; // e.g., 'Chase', 'Binance'
+  interest_rate?: number | null; // ставка накопительного счёта, % годовых
   lastSync?: string; // ISO date
   created_at?: string;
   updated_at?: string;

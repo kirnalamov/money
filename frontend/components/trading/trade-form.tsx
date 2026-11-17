@@ -1,25 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useBrokerSettings } from "@/lib/broker-settings";
 import { useTranslation } from "react-i18next";
 import { format, isSameDay, subDays } from "date-fns";
 import { useStore } from "@/lib/store";
 import { fmtMoney, fmtNum, hashColor } from "@/lib/plutus-format";
 import { evalAmount, Card, Chip, CURRENCY_SYMBOL, Dot, DoneScreen, Fld, fldInput, GhostBtn, Hint, Lbl, LinkBtn, ModalActions, parseRuDate, Pick, PrimaryBtn, Seg, Suffix, Warn, TONE } from "@/components/ui/modal-kit";
 import { TickerField } from "@/components/trading/ticker-field";
-import type { TickerInfo } from "@/lib/ticker";
+import { resolveHit, type TickerInfo } from "@/lib/ticker";
+import type { PriceHint } from "@/lib/moex";
 import type { Position } from "@/types";
 
 export const COMMISSION = 0.0005; // 0,05%
 
 type Side = "buy" | "sell";
+
 type Mode = "qty" | "sum";
 
-export function TradeForm({ onClose }: { onClose: () => void }) {
+export interface TradePreset {
+  side: Side;
+  /** заранее выбранная бумага (например, при продаже из таблицы позиций) */
+  symbol?: string;
+  hint?: PriceHint;
+  asset_class?: "stock" | "etf" | "bond" | "crypto" | "cash";
+}
+
+export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: TradePreset }) {
   const { t } = useTranslation();
   const { accounts, positions, addPosition, deletePosition, updateAccount } = useStore();
+  const { settingsFor } = useBrokerSettings();
 
-  const [side, setSide] = useState<Side>("buy");
+  const [side, setSide] = useState<Side>(preset?.side ?? "buy");
   const [ticker, setTicker] = useState<TickerInfo | null>(null);
   const [mode, setMode] = useState<Mode>("qty");
   const [qtyText, setQtyText] = useState("");
@@ -33,6 +45,15 @@ export function TradeForm({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string[] | null>(null);
   const savingRef = useRef(false);
+  const presetRef = useRef(preset);
+
+  useEffect(() => {
+    const p = presetRef.current;
+    if (!p?.symbol || !p.hint) return;
+    let alive = true;
+    void resolveHit({ symbol: p.symbol, hint: p.hint, asset_class: p.asset_class ?? "stock" }).then((info) => { if (alive && info) setTicker(info); });
+    return () => { alive = false; };
+  }, []);
 
   const brokerages = ticker ? accounts.filter((a) => a.type === "brokerage" && a.currency === ticker.currency) : [];
   const account = brokerages.find((a) => a.id === brokerageId) ?? brokerages[0];
@@ -48,9 +69,11 @@ export function TradeForm({ onClose }: { onClose: () => void }) {
   const rawQty = mode === "qty" ? evalAmount(qtyText) : price > 0 ? evalAmount(sumText) / price : NaN;
   const qty = Number.isFinite(rawQty) && rawQty > 0 ? (mode === "sum" && !isCrypto ? Math.floor(rawQty) : Math.round(rawQty * 1e8) / 1e8) : 0;
   const deal = qty * price;
-  const commission = deal * COMMISSION;
+  const nkd = qty * (ticker?.accrued ?? 0);
+  const broker = settingsFor(account?.id);
+  const commission = ((deal + nkd) * broker.commissionPct) / 100;
   const cash = account?.balance ?? 0;
-  const delta = side === "buy" ? -(deal + commission) : deal - commission;
+  const delta = side === "buy" ? -(deal + nkd + commission) : deal + nkd - commission;
   const cashAfter = cash + delta;
   const qtyAfter = side === "buy" ? held + qty : held - qty;
 
@@ -128,8 +151,12 @@ export function TradeForm({ onClose }: { onClose: () => void }) {
 
   const rows: { k: string; v: string; strong?: boolean; tone?: string }[] = ticker && qty > 0 ? [
     { k: t("dialogs.trade_deal_sum", "Сумма сделки"), v: fmtMoney(deal, ticker.currency) },
-    { k: t("dialogs.trade_commission_pct", "Комиссия 0,05%"), v: fmtMoney(commission, ticker.currency) },
+    ...(nkd > 0 ? [{ k: t("portfolio.nkd", "НКД"), v: fmtMoney(nkd, ticker.currency) }] : []),
+    { k: t("dialogs.trade_commission_rate", "Комиссия {{pct}}%", { pct: String(broker.commissionPct).replace(".", ",") }), v: fmtMoney(commission, ticker.currency) },
     { k: side === "buy" ? t("dialogs.trade_total_buy", "Спишется") : t("dialogs.trade_total_sell", "Зачислится"), v: fmtMoney(Math.abs(delta), ticker.currency), strong: true },
+    ...(side === "sell" && existing && broker.taxPct > 0
+      ? [{ k: t("dialogs.trade_tax_est", "Налог с прибыли (оценка)"), v: fmtMoney(Math.max(0, (price - existing.avgPrice) * qty - commission) * broker.taxPct / 100, ticker.currency) }]
+      : []),
     { k: t("dialogs.trade_cash_after", "Свободно после"), v: fmtMoney(cashAfter, ticker.currency), tone: cashAfter < 0 ? TONE.expense : undefined },
     { k: t("dialogs.trade_pos_after", "В портфеле после"), v: `${fmtNum(Math.max(qtyAfter, 0), 4)} ${t("dialogs.pcs", "шт")}` },
   ] : [];

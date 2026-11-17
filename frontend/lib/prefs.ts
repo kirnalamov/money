@@ -8,7 +8,7 @@ import { getPreferences, savePreferences, type Preferences } from "@/lib/api/use
  * хранятся на сервере и кэшируются в localStorage: страницы читают их мгновенно,
  * а изменения уходят на сервер с небольшой задержкой.
  */
-export const PREF_KEYS = ["plutus-tax-settings", "plutus-category-kinds", "plutus-mandatory-categories", "plutus-limit-toggles", "plutus-notifications", "plutus-ui"] as const;
+export const PREF_KEYS = ["plutus-tax-settings", "plutus-category-kinds", "plutus-mandatory-categories", "plutus-limit-toggles", "plutus-notifications", "plutus-ui", "plutus-broker-settings"] as const;
 type PrefKey = (typeof PREF_KEYS)[number];
 
 let serverPrefs: Preferences | null = null;

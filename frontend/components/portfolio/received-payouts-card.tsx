@@ -21,6 +21,8 @@ interface Props {
   loading: boolean;
   currency: Currency;
   tax: TaxSettings;
+  /** налог/комиссия по брокерским счетам (если заданы свои) */
+  taxFor?: (accountId: number) => TaxSettings;
   onTaxChange: (patch: Partial<TaxSettings>) => void;
   totalValue: number;
   totalCost: number;
@@ -40,6 +42,7 @@ export function ReceivedPayoutsCard({
   loading,
   currency,
   tax,
+  taxFor,
   onTaxChange,
   totalValue,
   totalCost,
@@ -52,8 +55,8 @@ export function ReceivedPayoutsCard({
   const [showAll, setShowAll] = useState(false);
 
   const received = useMemo(
-    () => buildReceived(positions, data, tax, currency),
-    [positions, data, tax, currency]
+    () => buildReceived(positions, data, taxFor ?? tax, currency),
+    [positions, data, tax, taxFor, currency]
   );
 
   const symbols = useMemo(

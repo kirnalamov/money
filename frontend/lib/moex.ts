@@ -177,3 +177,58 @@ export async function fetchUsDividends(symbol: string): Promise<MoexPayout[]> {
     return [];
   }
 }
+
+export interface BondInfo {
+  secid: string;
+  name: string;
+  currency: string;
+  face_value: number;
+  price_pct: number;
+  /** цена одной облигации в валюте (без НКД) */
+  price: number;
+  /** накопленный купонный доход на одну облигацию */
+  accrued_interest: number;
+  coupon_value: number | null;
+  coupon_period: number | null;
+  next_coupon: string | null;
+  maturity: string | null;
+}
+
+/** Облигация МосБиржи: цена, НКД, ближайший купон. */
+export async function fetchBondInfo(secid: string): Promise<BondInfo | null> {
+  try {
+    const r = await fetch(`${API_URL}/moex/bond/${encodeURIComponent(secid.trim().toUpperCase())}`);
+    return r.ok ? ((await r.json()) as BondInfo) : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface DailyClose {
+  date: string;
+  close: number;
+}
+
+/** Дневные цены закрытия (~3 месяца) для расчёта изменения за день, неделю, месяц. */
+export async function fetchHistory(items: { symbol: string; hint: PriceHint }[]): Promise<Record<string, DailyClose[]>> {
+  if (!items.length) return {};
+  const q = items.map((i) => `${i.symbol.trim().toUpperCase()}:${i.hint}`).join(",");
+  try {
+    const r = await fetch(`${API_URL}/moex/history?q=${encodeURIComponent(q)}`);
+    if (!r.ok) return {};
+    return ((await r.json()) as { history?: Record<string, DailyClose[]> }).history || {};
+  } catch {
+    return {};
+  }
+}
+
+/** Последняя цена закрытия не позже указанной даты (YYYY-MM-DD). */
+export function closeOnOrBefore(rows: DailyClose[] | undefined, isoDate: string): number | null {
+  if (!rows?.length) return null;
+  let found: number | null = null;
+  for (const row of rows) {
+    if (row.date <= isoDate) found = row.close;
+    else break;
+  }
+  return found;
+}

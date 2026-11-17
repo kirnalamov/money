@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useMarketExtras } from "@/components/portfolio/use-market-extras";
+import { usePref } from "@/lib/prefs";
+import { useBrokerSettings } from "@/lib/broker-settings";
+import { closeOnOrBefore } from "@/lib/moex";
+import { hintFor } from "@/lib/ticker";
+import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
+import type { TradePreset } from "@/components/trading/trade-form";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
@@ -55,9 +62,10 @@ import {
   usePayouts,
   useLivePrices,
   useTaxSettings,
+  type LivePosition,
 } from "@/components/portfolio/use-payouts";
 import { buildForecast } from "@/lib/payouts";
-import { RefreshCw } from "lucide-react";
+import { Eye, EyeOff, HandCoins, RefreshCw } from "lucide-react";
 
 type AssetClass = NonNullable<Position["assetClass"]>;
 
@@ -104,13 +112,27 @@ export default function PortfolioPage() {
   } = useStore();
 
   const {
-    livePositions: positions,
+    livePositions: pricedPositions,
     updatedAt,
     status: liveStatus,
     refresh: refreshPrices,
   } = useLivePrices(storePositions);
+  const { bonds, history } = useMarketExtras(pricedPositions);
+  // облигации: цена в валюте и НКД с МосБиржи
+  const positions = useMemo<LivePosition[]>(
+    () =>
+      pricedPositions.map((p) => {
+        const info = p.assetClass === "bond" ? bonds[p.symbol.toUpperCase()] : undefined;
+        return info && info.currency === p.currency ? { ...p, currentPrice: info.price, accrued: info.accrued_interest, isLive: true } : p;
+      }),
+    [pricedPositions, bonds]
+  );
+  const [ui, updateUi] = usePref<{ currency?: string; hideCash?: boolean }>("plutus-ui", {});
+  const [period, setPeriod] = useState<"all" | "month" | "week" | "day">("all");
+  const [tradePreset, setTradePreset] = useState<TradePreset | null>(null);
   const { data: payData, loading: payLoading } = usePayouts(positions);
   const [tax, setTax] = useTaxSettings();
+  const { settingsFor } = useBrokerSettings();
   const [fcHover, setFcHover] = useState<number | null>(null);
 
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
@@ -155,20 +177,46 @@ export default function PortfolioPage() {
     return { totalValue, totalCost, totalPnL, pct };
   }, [positions, defaultCurrency]);
 
+  // изменение стоимости за выбранный период: цена на начало периода берётся из дневной истории
+  const periodChange = useMemo(() => {
+    if (period === "all") return null;
+    const days = period === "day" ? 1 : period === "week" ? 7 : 30;
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    const iso = format(start, "yyyy-MM-dd");
+    let delta = 0;
+    let base = 0;
+    let covered = 0;
+    positions.forEach((p) => {
+      const bought = p.purchaseDate ? p.purchaseDate.slice(0, 10) : "";
+      let startPrice: number | null;
+      if (bought && bought > iso) startPrice = p.avgPrice; // куплено внутри периода — считаем от цены покупки
+      else if (p.assetClass === "bond") startPrice = null;
+      else startPrice = closeOnOrBefore(history[p.symbol.toUpperCase()], iso);
+      if (startPrice === null || startPrice <= 0) return;
+      covered++;
+      delta += convertCurrency(p.quantity * (p.currentPrice - startPrice), p.currency, defaultCurrency);
+      base += convertCurrency(p.quantity * startPrice, p.currency, defaultCurrency);
+    });
+    return { delta, pct: base > 0 ? (delta / base) * 100 : 0, covered, total: positions.length };
+  }, [period, positions, history, defaultCurrency]);
+
   const investedShare =
     metrics.totalValue > 0 ? Math.max(0, Math.min(100, (metrics.totalCost / metrics.totalValue) * 100)) : 100;
 
   // ---------- Allocation (with cash from accounts) ----------
   const allocation = useMemo(() => {
-    const cash = accounts.reduce(
-      (s, a) => s + convertCurrency(a.balance, a.currency, defaultCurrency),
-      0
-    );
+    // свободные деньги — только на брокерских счетах; можно скрыть из распределения
+    const cash = ui.hideCash
+      ? 0
+      : accounts
+          .filter((a) => a.type === "brokerage")
+          .reduce((s, a) => s + convertCurrency(Math.max(a.balance, 0), a.currency, defaultCurrency), 0);
     const byClass = new Map<string, number>();
     positions.forEach((p) => {
       const cls = p.assetClass || "stock";
       const v = convertCurrency(p.quantity * p.currentPrice, p.currency, defaultCurrency);
-      if (cls === "cash") byClass.set("cash", (byClass.get("cash") || 0) + v);
+      if (cls === "cash") { if (!ui.hideCash) byClass.set("cash", (byClass.get("cash") || 0) + v); }
       else byClass.set(cls, (byClass.get(cls) || 0) + v);
     });
     const items: { key: string; name: string; value: number; color: string }[] = [];
@@ -194,7 +242,7 @@ export default function PortfolioPage() {
     const total = items.reduce((s, x) => s + x.value, 0);
     return { items, total };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accounts, positions, defaultCurrency, i18n.language]);
+  }, [accounts, positions, defaultCurrency, i18n.language, ui.hideCash]);
 
   const allocDonut = donutSegments(allocation.items, allocation.total);
 
@@ -211,13 +259,14 @@ export default function PortfolioPage() {
         0
       );
       const pl = value - cost;
-      return { cls, items, value, pl, plPct: cost > 0 ? (pl / cost) * 100 : 0 };
+      const accrued = items.reduce((s, p) => s + convertCurrency(p.quantity * ((p as LivePosition).accrued || 0), p.currency, defaultCurrency), 0);
+      return { cls, items, value, pl, accrued, plPct: cost > 0 ? (pl / cost) * 100 : 0 };
     }).filter((g) => g.items.length > 0 || g.cls === "bond");
   }, [positions, ptab, defaultCurrency]);
 
   // ---------- Dividend / coupon forecast (real payout history) ----------
   const payoutForecast = useMemo(() => {
-    const fc = buildForecast(positions, payData, tax, defaultCurrency, payLoading);
+    const fc = buildForecast(positions, payData, settingsFor, defaultCurrency, payLoading);
     const months = Array.from({ length: 12 }, (_, i) => {
       const d = addMonths(fc.monthStart, i);
       const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
@@ -228,7 +277,7 @@ export default function PortfolioPage() {
     });
     return { ...fc, months };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positions, payData, tax, defaultCurrency, payLoading, i18n.language]);
+  }, [positions, payData, tax, settingsFor, defaultCurrency, payLoading, i18n.language]);
 
   // ---------- Growth forecast ----------
   const forecast = useMemo(() => {
@@ -382,14 +431,34 @@ export default function PortfolioPage() {
               </button>
             </div>
           </div>
-          <button
-            onClick={() => handleOpenDialog()}
-            disabled={brokerageAccounts.length === 0}
-            className="flex h-[42px] items-center gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-[18px] text-sm font-semibold text-[#10170A] disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.2} />
-            {t("portfolio.add_position")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => setTradePreset({ side: "sell" })}
+              disabled={brokerageAccounts.length === 0 || positions.length === 0}
+              className="flex h-[42px] items-center gap-2 rounded-xl border border-[#2A2E27] bg-transparent px-4 text-sm font-semibold text-[#F1F3EE] transition-colors hover:border-[#F87171] hover:text-[#F87171] disabled:opacity-50"
+            >
+              <HandCoins className="h-4 w-4" strokeWidth={2} />
+              {t("portfolio.sell", "Продать")}
+            </button>
+            <button
+              onClick={() => handleOpenDialog()}
+              disabled={brokerageAccounts.length === 0}
+              className="flex h-[42px] items-center gap-2 rounded-xl bg-[#C6F24E] pl-4 pr-[18px] text-sm font-semibold text-[#10170A] disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.2} />
+              {t("portfolio.add_position")}
+            </button>
+          </div>
+          {tradePreset && (
+            <AddTransactionDialog
+              key={`${tradePreset.symbol ?? "any"}-${tradePreset.side}`}
+              open
+              onOpenChange={(open) => !open && setTradePreset(null)}
+              defaultType="trade"
+              tradePreset={tradePreset}
+              trigger={null}
+            />
+          )}
           <PositionDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} editing={editingPosition} />
         </header>
 
@@ -414,11 +483,35 @@ export default function PortfolioPage() {
                   )}
                 >
                   <ArrowUpRight
-                    className={cn("h-3.5 w-3.5", metrics.totalPnL < 0 && "rotate-90")}
+                    className={cn("h-3.5 w-3.5", (periodChange ? periodChange.delta : metrics.totalPnL) < 0 && "rotate-90")}
                     strokeWidth={2.4}
                   />
-                  {signedPct(metrics.pct)}
+                  {signedPct(periodChange ? periodChange.pct : metrics.pct)}
                 </span>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                <div role="group" aria-label={t("portfolio.period", "Период")} className="flex h-9 gap-0.5 rounded-xl border border-[#232721] bg-[#0E0F0E] p-1">
+                  {(["day", "week", "month", "all"] as const).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={period === key}
+                      onClick={() => setPeriod(key)}
+                      className={cn("rounded-lg px-3 text-[12.5px] font-semibold transition-colors", period === key ? "bg-[#2A2F27] text-[#F1F3EE]" : "text-[#A2A89C] hover:text-[#F1F3EE]")}
+                    >
+                      {t(`portfolio.period_${key}`, key === "day" ? "День" : key === "week" ? "Неделя" : key === "month" ? "Месяц" : "Всё время")}
+                    </button>
+                  ))}
+                </div>
+                {periodChange && (
+                  <span className="text-[13px] text-[#8D9388]">
+                    {t("portfolio.period_change", "Изменение цены")}:{" "}
+                    <b className="font-semibold" style={{ color: periodChange.delta >= 0 ? "#6EE7A0" : "#F87171" }}>
+                      {signedMoney(periodChange.delta, defaultCurrency)}
+                    </b>
+                    {periodChange.covered < periodChange.total && ` · ${t("portfolio.period_partial", "по {{n}} из {{m}} бумаг", { n: periodChange.covered, m: periodChange.total })}`}
+                  </span>
+                )}
               </div>
             </div>
             <div>
@@ -460,9 +553,18 @@ export default function PortfolioPage() {
 
           {/* Allocation */}
           <section className="min-w-0 flex-[1_1_440px] rounded-[20px] border border-[#232721] bg-[#151714] p-7">
-            <h2 className="mb-5 text-xl font-semibold">
-              {t("portfolio.allocation_title")}
-            </h2>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold">{t("portfolio.allocation_title")}</h2>
+              <button
+                type="button"
+                aria-pressed={!ui.hideCash}
+                onClick={() => updateUi((prev) => ({ ...prev, hideCash: !prev.hideCash }))}
+                className={cn("inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[12.5px] font-semibold transition-colors", ui.hideCash ? "border-[#2A2E27] text-[#8D9388] hover:text-[#F1F3EE]" : "border-[#C6F24E] bg-[#C6F24E]/10 text-[#F1F3EE]")}
+              >
+                {ui.hideCash ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
+                {t("portfolio.show_cash", "Свободные деньги")}
+              </button>
+            </div>
             <div className="flex flex-wrap items-center gap-x-9 gap-y-6">
               <div className="relative h-[168px] w-[168px] flex-none">
                 <svg width="168" height="168" viewBox="0 0 140 140" role="img">
@@ -487,7 +589,7 @@ export default function PortfolioPage() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-xs text-[#8D9388]">
-                    {t("portfolio.with_cash", "С наличными")}
+                    {ui.hideCash ? t("portfolio.without_cash", "Без наличных") : t("portfolio.with_cash", "С наличными")}
                   </span>
                   <span className="text-[15px] font-bold">
                     {fmtMoney(allocation.total, defaultCurrency)}
@@ -558,7 +660,7 @@ export default function PortfolioPage() {
 
           <div className="overflow-x-auto">
             <div className="min-w-[920px]">
-              <div className="grid grid-cols-[minmax(220px,2.2fr)_70px_110px_110px_130px_150px_72px] gap-4 border-t border-[#232721] px-7 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8D9388]">
+              <div className="grid grid-cols-[minmax(220px,2.2fr)_70px_110px_110px_130px_150px_108px] gap-4 border-t border-[#232721] px-7 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8D9388]">
                 <span>{t("portfolio.col_position", "Позиция")}</span>
                 <span className="text-right">{t("portfolio.col_qty", "Кол-во")}</span>
                 <span className="text-right">{t("portfolio.col_avg", "Ср. цена")}</span>
@@ -580,6 +682,11 @@ export default function PortfolioPage() {
                     {g.items.length > 0 && (
                       <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px]">
                         <span className="font-semibold">{fmtMoney(g.value, defaultCurrency)}</span>
+                        {g.cls === "bond" && g.accrued > 0 && (
+                          <span className="text-[#8D9388]">
+                            {t("portfolio.nkd", "НКД")} {fmtMoney(g.accrued, defaultCurrency)}
+                          </span>
+                        )}
                         <span className="text-[#8D9388]">
                           {metrics.totalValue > 0
                             ? Math.round((g.value / metrics.totalValue) * 100)
@@ -647,7 +754,7 @@ export default function PortfolioPage() {
                     return (
                       <div
                         key={`${p.symbol}-${p.accountId}`}
-                        className="grid grid-cols-[minmax(220px,2.2fr)_70px_110px_110px_130px_150px_72px] items-center gap-4 border-t border-[#1E211C] px-7 py-3.5 transition-colors hover:bg-[#1A1D19]"
+                        className="grid grid-cols-[minmax(220px,2.2fr)_70px_110px_110px_130px_150px_108px] items-center gap-4 border-t border-[#1E211C] px-7 py-3.5 transition-colors hover:bg-[#1A1D19]"
                       >
                         <div className="flex min-w-0 items-center gap-3.5">
                           <SecurityLogo
@@ -694,6 +801,11 @@ export default function PortfolioPage() {
                               {fmtMoney(valueNative, p.currency)}
                             </span>
                           )}
+                          {p.assetClass === "bond" && (p as LivePosition).accrued ? (
+                            <span className="text-xs text-[#FBBF24]">
+                              {t("portfolio.nkd", "НКД")} {fmtMoney(p.quantity * ((p as LivePosition).accrued || 0), p.currency)}
+                            </span>
+                          ) : null}
                         </span>
                         <span className="flex flex-col items-end gap-0.5">
                           <span
@@ -710,6 +822,14 @@ export default function PortfolioPage() {
                           </span>
                         </span>
                         <span className="flex justify-end gap-1">
+                          <button
+                            aria-label={`${t("portfolio.sell", "Продать")} ${p.symbol}`}
+                            title={t("portfolio.sell", "Продать")}
+                            onClick={() => setTradePreset({ side: "sell", symbol: p.symbol, hint: hintFor(p), asset_class: (p.assetClass as TradePreset["asset_class"]) || "stock" })}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8D9388] transition-colors hover:bg-[#232721] hover:text-[#F87171]"
+                          >
+                            <HandCoins className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                          </button>
                           <button
                             aria-label={`${t("common.edit", "Изменить")} ${p.symbol}`}
                             onClick={() => handleOpenDialog(p)}
@@ -752,6 +872,7 @@ export default function PortfolioPage() {
           loading={payLoading}
           currency={defaultCurrency}
           tax={tax}
+          taxFor={settingsFor}
           onTaxChange={setTax}
           totalValue={metrics.totalValue}
           totalCost={metrics.totalCost}

@@ -1,4 +1,4 @@
-import { API_URL, fetchLivePrices, type PriceHint } from "@/lib/moex";
+import { API_URL, fetchBondInfo, fetchLivePrices, type PriceHint } from "@/lib/moex";
 import type { Currency, Position } from "@/types";
 
 export type AssetClass = NonNullable<Position["assetClass"]>;
@@ -9,6 +9,8 @@ export interface TickerInfo {
   price: number;
   currency: Currency;
   assetClass: AssetClass;
+  /** НКД на одну облигацию (только для облигаций) */
+  accrued?: number;
 }
 
 const ETFS = new Set(["VOO", "VTI", "SPY", "QQQ", "IVV", "VEA", "VWO", "BND", "AGG", "GLD", "SLV", "VNQ", "SCHD", "ARKK", "FXRL", "FXUS", "TMOS", "SBMX", "VTBB", "TGLD"]);
@@ -70,8 +72,17 @@ const toInfo = (hit: Pick<SecurityHit, "symbol" | "hint" | "asset_class">, q: { 
   };
 };
 
-/** Цена выбранной бумаги из её источника. */
+/** Цена выбранной бумаги из её источника (для облигаций — цена в валюте и НКД). */
 export async function resolveHit(hit: Pick<SecurityHit, "symbol" | "hint" | "asset_class">): Promise<TickerInfo | null> {
+  if (hit.asset_class === "bond") {
+    const bond = await fetchBondInfo(hit.symbol);
+    if (!bond) return null;
+    return {
+      ...toInfo(hit, { price: bond.price, currency: bond.currency === "SUR" ? "RUB" : bond.currency }),
+      assetClass: "bond",
+      accrued: bond.accrued_interest,
+    };
+  }
   const quotes = await fetchLivePrices([{ symbol: hit.symbol, hint: hit.hint }]);
   const q = quotes[hit.symbol.toUpperCase()];
   return q && q.price > 0 ? toInfo(hit, q) : null;

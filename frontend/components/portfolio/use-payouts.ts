@@ -68,7 +68,7 @@ export function usePayouts(positions: Position[]) {
   return { data, loading };
 }
 
-export type LivePosition = Position & { isLive?: boolean };
+export type LivePosition = Position & { isLive?: boolean; accrued?: number };
 
 /** Живые цены позиций (обновляются раз в минуту через наш бэкенд) */
 export function useLivePrices(positions: Position[]) {
