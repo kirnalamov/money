@@ -29,22 +29,27 @@ export function hintFor(position: Pick<Position, "assetClass" | "currency" | "sy
 
 const KNOWN: Currency[] = ["USD", "EUR", "GBP", "RUB"];
 
-/** Ищет тикер в MOEX → крипто → мировые рынки; возвращает первую найденную котировку. */
+/** Ищет тикер: MOEX (при отсутствии бэкенд сам идёт в Yahoo) и крипто-биржа. */
 export async function lookupTicker(raw: string): Promise<TickerInfo | null> {
   const symbol = raw.trim().toUpperCase();
   if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return null;
-  const hints: PriceHint[] = ["moex", "crypto", "global"];
-  const results = await Promise.all(
-    hints.map((hint) => fetchLivePrices([{ symbol, hint }]).then((r) => ({ hint, q: r[symbol] })))
-  );
-  const hit = results.find((r) => r.q && r.q.price > 0);
-  if (!hit || !hit.q) return null;
-  const cur = (hit.q.currency || "").toUpperCase() as Currency;
+  const [general, crypto] = await Promise.all([
+    fetchLivePrices([{ symbol, hint: "moex" }]).then((r) => r[symbol]),
+    fetchLivePrices([{ symbol, hint: "crypto" }]).then((r) => r[symbol]),
+  ]);
+  let hint: PriceHint;
+  let q = general;
+  if (general && general.price > 0 && general.source === "moex") hint = "moex";
+  else if (crypto && crypto.price > 0) { hint = "crypto"; q = crypto; }
+  else if (general && general.price > 0) hint = "global";
+  else return null;
+  if (!q) return null;
+  const cur = (q.currency || "").toUpperCase() as Currency;
   return {
     symbol,
-    hint: hit.hint,
-    price: hit.q.price,
-    currency: KNOWN.includes(cur) ? cur : hit.hint === "moex" ? "RUB" : "USD",
-    assetClass: classFor(symbol, hit.hint),
+    hint,
+    price: q.price,
+    currency: KNOWN.includes(cur) ? cur : hint === "moex" ? "RUB" : "USD",
+    assetClass: classFor(symbol, hint),
   };
 }

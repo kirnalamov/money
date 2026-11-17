@@ -297,7 +297,7 @@ function AddTransactionForm({ defaultType, onClose }: { defaultType: DialogType;
           <div>
             <Lbl hint={t("transactions.dialog.category_hint")}>{t("transactions.dialog.category")}</Lbl>
             <div role="group" aria-label={t("transactions.dialog.category")} className="flex flex-wrap gap-2">
-              {categories.map((item) => (
+              {categories.filter((item) => !accounts.some((a) => a.name === item.name)).map((item) => (
                 <Chip key={item.id} active={category === item.name} className="min-h-11" onClick={() => setCategory(category === item.name ? "" : item.name)}>
                   <Dot color={item.color || hashColor(item.name)} className="h-2 w-2" />
                   <span className="truncate">{item.name}</span>

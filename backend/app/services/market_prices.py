@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple, TypedDict
 import httpx
 
 CACHE_TTL = 5 * 60
-_CACHE: Dict[str, Tuple[float, "Quote"]] = {}
+_CACHE: Dict[Tuple[str, str], Tuple[float, "Quote"]] = {}
 _CACHE_MAX = 300
 
 _UA = (
@@ -195,7 +195,7 @@ async def get_quotes(items: List[Tuple[str, str]]) -> Dict[str, Quote]:
         symbol = symbol.strip().upper()
         if not _SYM_RE.match(symbol):
             continue
-        cached = _CACHE.get(symbol)
+        cached = _CACHE.get((symbol, hint))
         if cached and now - cached[0] < CACHE_TTL:
             out[symbol] = cached[1]
         else:
@@ -208,10 +208,10 @@ async def get_quotes(items: List[Tuple[str, str]]) -> Dict[str, Quote]:
             results = await asyncio.gather(
                 *(_resolve(client, s, h) for s, h in todo), return_exceptions=True
             )
-        for (symbol, _), q in zip(todo, results):
+        for (symbol, hint), q in zip(todo, results):
             if isinstance(q, dict) and q:
                 while len(_CACHE) >= _CACHE_MAX:
                     _CACHE.pop(next(iter(_CACHE)))
-                _CACHE[symbol.strip().upper()] = (now, q)
+                _CACHE[(symbol.strip().upper(), hint)] = (now, q)
                 out[symbol.strip().upper()] = q
     return out
