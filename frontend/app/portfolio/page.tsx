@@ -199,6 +199,12 @@ export default function PortfolioPage() {
     return { delta, pct: base > 0 ? (delta / base) * 100 : 0, covered, total: positions.length };
   }, [period, positions, history, defaultCurrency]);
 
+  // портфель = сумма на брокерских счетах: свободные деньги + бумаги
+  const brokerCash = useMemo(
+    () => accounts.filter((a) => a.type === "brokerage").reduce((sum, a) => sum + convertCurrency(a.balance, a.currency, defaultCurrency), 0),
+    [accounts, defaultCurrency]
+  );
+
   const investedShare =
     metrics.totalValue > 0 ? Math.max(0, Math.min(100, (metrics.totalCost / metrics.totalValue) * 100)) : 100;
 
@@ -470,7 +476,7 @@ export default function PortfolioPage() {
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-3">
                 <span className="text-[48px] font-bold leading-[1.1] tracking-[-0.03em]">
-                  {fmtMoney(metrics.totalValue, defaultCurrency)}
+                  {fmtMoney(metrics.totalValue + brokerCash, defaultCurrency)}
                 </span>
                 <span
                   className={cn(
@@ -486,6 +492,10 @@ export default function PortfolioPage() {
                   />
                   {signedPct(periodChange ? periodChange.pct : metrics.pct)}
                 </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-[#A2A89C]">
+                <span>{t("portfolio.in_securities", "В бумагах")}: <b className="font-semibold text-[#F1F3EE]">{fmtMoney(metrics.totalValue, defaultCurrency)}</b></span>
+                <span>{t("portfolio.free_cash", "Свободные деньги")}: <b className="font-semibold text-[#F1F3EE]">{fmtMoney(brokerCash, defaultCurrency)}</b></span>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
                 <div role="group" aria-label={t("portfolio.period", "Период")} className="flex h-9 gap-0.5 rounded-xl border border-[#232721] bg-[#0E0F0E] p-1">

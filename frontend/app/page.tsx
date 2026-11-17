@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { changeTone, TONE_COLOR } from "@/lib/tone";
 import type { DateRange } from "react-day-picker";
 import { PeriodBar, RangePicker, rangeLabel } from "@/components/ui/period-bar";
 import { useLivePortfolioValue } from "@/lib/live-portfolio";
@@ -11,7 +12,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { differenceInCalendarDays, endOfDay, format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
-import { ArrowDownLeft, ArrowUpRight, Bell, Calendar, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Bell, Calendar, Minus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { DashboardDataSourceStatus } from "@/components/dashboard/data-source-status";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -56,17 +57,19 @@ export default function OverviewPage() {
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   // ---------- capital ----------
-  const { value: positionsValue } = useLivePortfolioValue();
+  const { value: positionsValue, valueAt } = useLivePortfolioValue();
   const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency, positionsValue), [accounts, defaultCurrency, positionsValue]);
   const histStart = useMemo(() => earliestTransactionDate(transactions) || subDays(startOfDay(now), 30), [transactions, now]);
 
   const monthSeries = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, subDays(startOfDay(now), 30), now, positionsValue),
-    [accounts, transactions, defaultCurrency, now, positionsValue]
+    () => capitalSeries(accounts, transactions, defaultCurrency, subDays(startOfDay(now), 30), now, valueAt),
+    [accounts, transactions, defaultCurrency, now, valueAt]
   );
   const monthBase = monthSeries[0]?.value ?? breakdown.total;
   const monthChange = breakdown.total - monthBase;
   const monthPct = monthBase !== 0 ? (monthChange / Math.abs(monthBase)) * 100 : 0;
+  const monthTone = changeTone(monthPct, 30);
+  const monthColor = TONE_COLOR[monthTone];
 
   const wanted = useMemo(() => {
     const today = startOfDay(now);
@@ -88,8 +91,8 @@ export default function OverviewPage() {
   const effStart = wanted.getTime() < histStart.getTime() ? histStart : wanted;
   const truncated = (!!chartRange?.from || (per !== "7D" && per !== "30D")) && wanted.getTime() < histStart.getTime();
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, chartEnd, positionsValue),
-    [accounts, transactions, defaultCurrency, effStart, chartEnd, positionsValue]
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, chartEnd, valueAt),
+    [accounts, transactions, defaultCurrency, effStart, chartEnd, valueAt]
   );
 
   const accountsOf = (type: string) => accounts.filter((a) => a.type === type);
@@ -289,9 +292,10 @@ export default function OverviewPage() {
               <span className="text-sm font-semibold text-[#C9CEC3]">{t("dashboard.net_worth_total")}</span>
               {Math.abs(monthPct) > 0.005 && (
                 <span
-                  className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[12.5px] font-bold", monthChange >= 0 ? "bg-[#6EE7A0]/[0.14] text-[#6EE7A0]" : "bg-[#F87171]/[0.14] text-[#F87171]")}
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[12.5px] font-bold"
+                  style={{ background: `${monthColor}24`, color: monthColor }}
                 >
-                  {monthChange >= 0 ? <TrendingUp className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" /> : <TrendingDown className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />}
+                  {monthTone === "up" ? <TrendingUp className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" /> : monthTone === "down" ? <TrendingDown className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" /> : <Minus className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />}
                   <span>
                     {monthChange >= 0 ? "+" : MINUS}
                     {Math.abs(monthPct).toFixed(1).replace(".", ",")}% {t("overview.per_month", "за месяц")}
@@ -302,7 +306,7 @@ export default function OverviewPage() {
             <div className="text-[46px] font-bold leading-[1.1] tracking-[-0.03em]">{fmtMoney(breakdown.total, defaultCurrency)}</div>
             <div className="text-[13.5px] text-[#A2A89C]">
               {t("overview.month_change", "За месяц")}:{" "}
-              <b style={{ color: monthChange >= 0 ? MINT : RED }}>{signedMoney(monthChange, defaultCurrency)}</b> · {t("overview.on_date", "на")} {format(now, "d MMMM yyyy", { locale: dateLocale })}
+              <b style={{ color: monthColor }}>{signedMoney(monthChange, defaultCurrency)}</b> · {t("overview.on_date", "на")} {format(now, "d MMMM yyyy", { locale: dateLocale })}
             </div>
             <div className="mt-3.5 flex h-2 overflow-hidden rounded-[4px]" role="img" aria-label={t("overview.capital_parts", "Из чего состоит капитал")}>
               {comp.filter((c) => c.v > 0).map((c) => (

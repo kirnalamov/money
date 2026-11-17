@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { Account, AccountType, Currency } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useLivePortfolioValue } from "@/lib/live-portfolio";
+import { accountResult } from "@/lib/capital";
 import { AccountDialog } from "@/components/accounts/account-dialog";
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog";
 import { format } from "date-fns";
@@ -46,7 +48,7 @@ const TYPE_ICON: Record<AccountType, typeof Landmark> = {
 
 export default function AccountsPage() {
   const { t, i18n } = useTranslation();
-  const { accounts, defaultCurrency, isLoading, dataError, dataErrors, fetchAllData, addAccount, updateAccount, deleteAccount } = useStore();
+  const { accounts: rawAccounts, transactions, defaultCurrency, isLoading, dataError, dataErrors, fetchAllData, addAccount, updateAccount, deleteAccount } = useStore();
   const dateLocale = i18n.language === "ru" ? ru : enUS;
   const opener = useRef<HTMLElement | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -59,7 +61,7 @@ export default function AccountsPage() {
   const handleOpenDialog = (account?: Account, trigger?: HTMLElement) => {
     opener.current = trigger ?? null;
     setError(null);
-    setEditingAccount(account ?? null);
+    setEditingAccount(account ? rawAccounts.find((a) => a.id === account.id) ?? null : null);
     setIsDialogOpen(true);
   };
 
@@ -74,6 +76,20 @@ export default function AccountsPage() {
     }
   };
 
+  // брокерский счёт = свободные деньги + бумаги на этом счёте (по живым ценам)
+  const { positions: heldPositions } = useLivePortfolioValue();
+  type AccountView = Account & { cash?: number; held?: number };
+  const accounts = useMemo<AccountView[]>(
+    () =>
+      rawAccounts.map((a) => {
+        if (a.type !== "brokerage") return a;
+        const held = heldPositions
+          .filter((p) => p.accountId === a.id)
+          .reduce((s, p) => s + convertCurrency(p.quantity * p.currentPrice, p.currency, a.currency), 0);
+        return { ...a, balance: a.balance + held, cash: a.balance, held };
+      }),
+    [rawAccounts, heldPositions]
+  );
   const toDefault = (a: Account) => convertCurrency(a.balance, a.currency, defaultCurrency);
   const money = (v: number, cur: Currency | string) =>
     hide ? `${MASK}${NBSP}${getCurrencySymbol(cur)}` : `${v < 0 ? MINUS : ""}${fmtMoney(Math.abs(v), cur)}`;
@@ -353,7 +369,7 @@ export default function AccountsPage() {
                     </div>
 
                     <div>
-                      <div className="text-[12.5px] text-[#8D9388]">{t("accounts.balance")}</div>
+                      <div className="text-[12.5px] text-[#8D9388]">{account.type === "brokerage" ? t("accounts.account_value", "Стоимость счёта") : t("accounts.balance")}</div>
                       <div
                         className="mt-0.5 text-[34px] font-bold leading-[1.15] tracking-[-0.02em]"
                         style={{ color: neg ? "#F87171" : "#F1F3EE" }}
@@ -363,6 +379,12 @@ export default function AccountsPage() {
                       {foreign && (
                         <div className="mt-0.5 text-[13px] text-[#8D9388]">
                           ≈ {money(converted, defaultCurrency)}
+                        </div>
+                      )}
+                      {account.type === "brokerage" && (
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[#A2A89C]">
+                          <span>{t("accounts.free_cash", "Свободно")}: <b className="font-semibold text-[#F1F3EE]">{money(account.cash ?? 0, account.currency)}</b></span>
+                          <span>{t("accounts.in_securities", "В бумагах")}: <b className="font-semibold text-[#F1F3EE]">{money(account.held ?? 0, account.currency)}</b></span>
                         </div>
                       )}
                     </div>
@@ -385,6 +407,18 @@ export default function AccountsPage() {
                       )}
                     </div>
 
+                    {(account.type === "savings" || account.type === "cash") && (() => {
+                      const res = accountResult(transactions, account.id, 30);
+                      return (
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-[#121411] px-3.5 py-2.5 text-[13px]">
+                          <span className="text-[#8D9388]">{t("accounts.result_30", "Результат за 30 дней")}</span>
+                          <span className="font-bold tabular-nums" style={{ color: res > 0 ? "#6EE7A0" : res < 0 ? "#F87171" : "#8D9388" }}>
+                            {res === 0 ? money(0, account.currency) : `${res > 0 ? "+" : MINUS}${money(Math.abs(res), account.currency)}`}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
                     {account.type === "savings" && account.interest_rate ? (
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-[#6EE7A0]/[0.08] px-3.5 py-2.5 text-[13px]">
                         <span className="font-bold text-[#6EE7A0]">{String(account.interest_rate).replace(".", ",")}% {t("accounts.per_year", "годовых")}</span>
@@ -401,12 +435,21 @@ export default function AccountsPage() {
                           : account.provider || ""}
                       </span>
                       <span className="flex gap-2">
-                        <Link
-                          href="/transactions"
-                          className="flex h-[34px] items-center rounded-[10px] border border-[#2A2E27] px-3.5 text-[13px] font-semibold text-[#C9CEC3] no-underline transition-colors hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"
-                        >
-                          {t("common.transactions")}
-                        </Link>
+                        {account.type === "brokerage" ? (
+                          <Link
+                            href={`/accounts/${account.id}`}
+                            className="flex h-[34px] items-center rounded-[10px] border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-3.5 text-[13px] font-semibold text-[#E2FF92] no-underline transition-colors hover:bg-[#C6F24E]/20"
+                          >
+                            {t("accounts.composition", "Состав и график")}
+                          </Link>
+                        ) : (
+                          <Link
+                            href="/transactions"
+                            className="flex h-[34px] items-center rounded-[10px] border border-[#2A2E27] px-3.5 text-[13px] font-semibold text-[#C9CEC3] no-underline transition-colors hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"
+                          >
+                            {t("common.transactions")}
+                          </Link>
+                        )}
                         <button
                           onClick={() => openTx("transfer")}
                           className="h-[34px] rounded-[10px] border border-[#2A2E27] bg-transparent px-3.5 text-[13px] font-semibold text-[#C9CEC3] transition-colors hover:bg-[#1B1E1A] hover:text-[#F1F3EE]"

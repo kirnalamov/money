@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { useBrokerSettings } from "@/lib/broker-settings";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
+import { useLivePortfolioValue } from "@/lib/live-portfolio";
+import { accountResult } from "@/lib/capital";
 import { convertCurrency } from "@/lib/utils";
 import { fmtMoney, hashColor } from "@/lib/plutus-format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,6 +22,61 @@ const BANKS: Record<string, string[]> = {
   RUB: ["Тинькофф", "Сбер", "Альфа-Банк", "ВТБ"],
   default: ["Chase", "Revolut", "Wise", "N26"],
 };
+
+/** Состав брокерского счёта: свободные деньги и бумаги с рыночной стоимостью. */
+function BrokerComposition({ account }: { account: Account }) {
+  const { t } = useTranslation();
+  const { positions } = useLivePortfolioValue(account.id);
+  const rows = positions.map((p) => ({ p, value: convertCurrency(p.quantity * p.currentPrice, p.currency, account.currency) }));
+  const held = rows.reduce((sum, r) => sum + r.value, 0);
+  return (
+    <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <span className="text-[13px] font-semibold text-[#C9CEC3]">{t("accounts.composition_title", "Состав счёта")}</span>
+        <span className="text-[15px] font-bold tabular-nums">{fmtMoney(account.balance + held, account.currency)}</span>
+      </div>
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between gap-3 border-b border-[#1E211C] py-2 text-[13.5px]">
+          <span className="flex items-center gap-2"><Dot color="#C6F24E" />{t("accounts.free_cash", "Свободно")}</span>
+          <span className="font-semibold tabular-nums">{fmtMoney(account.balance, account.currency)}</span>
+        </div>
+        {rows.length === 0 && <div className="py-2 text-[12.5px] text-[#8D9388]">{t("accounts.no_securities", "Бумаг на этом счёте пока нет")}</div>}
+        {rows.map(({ p, value }) => (
+          <div key={p.symbol} className="flex items-center justify-between gap-3 border-b border-[#1E211C] py-2 text-[13.5px] last:border-b-0">
+            <span className="flex min-w-0 items-center gap-2"><Dot color={hashColor(p.symbol)} /><b className="font-semibold">{p.symbol}</b><span className="text-[#8D9388]">× {p.quantity % 1 ? p.quantity.toFixed(2) : p.quantity}</span></span>
+            <span className="font-semibold tabular-nums">{fmtMoney(value, account.currency)}</span>
+          </div>
+        ))}
+      </div>
+      <Link href={`/accounts/${account.id}`} className="mt-3 inline-flex text-[12.5px] font-semibold text-[#C6F24E] no-underline hover:text-[#E2FF92]">
+        {t("accounts.composition", "Состав и график")} →
+      </Link>
+    </div>
+  );
+}
+
+/** Результат по накопительному или наличному счёту за 30 дней. */
+function AccountProfit({ account }: { account: Account }) {
+  const { t } = useTranslation();
+  const { transactions } = useStore();
+  const res = accountResult(transactions, account.id, 30);
+  const interest = account.type === "savings" && account.interest_rate ? (Math.max(account.balance, 0) * account.interest_rate) / 1200 : 0;
+  return (
+    <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4 text-[13.5px]">
+      <div className="mb-2 text-[13px] font-semibold text-[#C9CEC3]">{t("accounts.profit_title", "Прибыль")}</div>
+      <div className="flex items-center justify-between gap-3 py-1">
+        <span className="text-[#8D9388]">{t("accounts.result_30", "Результат за 30 дней")}</span>
+        <span className="font-bold tabular-nums" style={{ color: res > 0 ? "#6EE7A0" : res < 0 ? "#F87171" : "#8D9388" }}>{res === 0 ? fmtMoney(0, account.currency) : `${res > 0 ? "+" : "−"}${fmtMoney(Math.abs(res), account.currency)}`}</span>
+      </div>
+      {account.type === "savings" && (
+        <div className="flex items-center justify-between gap-3 py-1">
+          <span className="text-[#8D9388]">{t("accounts.interest_month", "Проценты в месяц (по ставке)")}</span>
+          <span className="font-bold tabular-nums text-[#6EE7A0]">{interest > 0 ? `+${fmtMoney(interest, account.currency)}` : "—"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AccountDialog({
   open,
@@ -172,6 +230,9 @@ export function AccountDialog({
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {account?.type === "brokerage" && <BrokerComposition account={account} />}
+            {account && (account.type === "savings" || account.type === "cash") && <AccountProfit account={account} />}
+
             <div>
               <Lbl>{t("accounts.account_type")}</Lbl>
               <div role="group" aria-label={t("accounts.account_type")} className="grid grid-cols-2 gap-2">

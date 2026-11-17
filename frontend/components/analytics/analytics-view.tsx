@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { changeTone, TONE_COLOR } from "@/lib/tone";
 import type { DateRange } from "react-day-picker";
 import { PeriodBar } from "@/components/ui/period-bar";
 import { useLivePortfolioValue } from "@/lib/live-portfolio";
@@ -111,18 +112,21 @@ export function AnalyticsView() {
   );
 
   // ---------- capital tab ----------
-  const { value: positionsValue } = useLivePortfolioValue();
+  const { value: positionsValue, valueAt } = useLivePortfolioValue();
   const breakdown = useMemo(() => capitalBreakdown(accounts, defaultCurrency, positionsValue), [accounts, defaultCurrency, positionsValue]);
   const histStart = useMemo(() => earliestTransactionDate(transactions) || subDays(today, 30), [transactions, today]);
   const effStart = rangeStart.getTime() < histStart.getTime() ? histStart : rangeStart;
   const truncated = rangeStart.getTime() < histStart.getTime() && (!!range?.from || (per !== "7D" && per !== "1M"));
   const points = useMemo(
-    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, rangeEnd, positionsValue),
-    [accounts, transactions, defaultCurrency, effStart, rangeEnd, positionsValue]
+    () => capitalSeries(accounts, transactions, defaultCurrency, effStart, rangeEnd, valueAt),
+    [accounts, transactions, defaultCurrency, effStart, rangeEnd, valueAt]
   );
   const firstV = points[0]?.value ?? breakdown.total;
-  const chg = breakdown.total - firstV;
+  const lastV = points[points.length - 1]?.value ?? breakdown.total;
+  const chg = lastV - firstV;
   const chgPct = firstV !== 0 ? (chg / Math.abs(firstV)) * 100 : 0;
+  const chgTone = changeTone(chgPct, Math.max(1, differenceInCalendarDays(rangeEnd, rangeStart) + 1));
+  const chgColor = TONE_COLOR[chgTone];
 
   const thirty = useMemo(() => {
     const from = subDays(today, 29);
@@ -336,7 +340,7 @@ export function AnalyticsView() {
             </div>
             <div className={card}>
               <div className={cn(cap, "font-semibold")}>{t("analytics.change", "Изменение за период")}</div>
-              <div className="mt-1.5 text-[30px] font-bold tracking-[-0.02em]" style={{ color: chg < 0 ? RED : MINT }}>{signedMoney(chg, defaultCurrency)}</div>
+              <div className="mt-1.5 text-[30px] font-bold tracking-[-0.02em]" style={{ color: chgColor }}>{signedMoney(chg, defaultCurrency)}</div>
               <div className={cn(cap, "mt-1")}>{chg < 0 ? MINUS : "+"}{Math.abs(chgPct).toFixed(1).replace(".", ",")}% {t("analytics.since", "с")} {points[0] ? format(points[0].date, "dd.MM.yyyy") : "—"}</div>
             </div>
             <div className={card}>

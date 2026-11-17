@@ -636,7 +636,9 @@
     "period_week": "Week",
     "period_month": "Month",
     "period_all": "All time",
-    "no_div_year": "No dividends in a year"
+    "no_div_year": "No dividends in a year",
+    "in_securities": "In securities",
+    "free_cash": "Free cash"
   },
   "savings": {
     "title": "Savings & Goals",
@@ -926,7 +928,21 @@
     "negative_badge": "Negative balance",
     "transfer": "Transfer",
     "per_month": "per month",
-    "per_year": "per year"
+    "per_year": "per year",
+    "not_found": "Account not found",
+    "only_brokerage": "The detail page is only available for brokerage accounts.",
+    "account_value": "Account value",
+    "free_cash": "Free cash",
+    "of_account": "of the account",
+    "in_securities": "In securities",
+    "positions_word": "pos.",
+    "composition_title": "Account composition",
+    "cash_hint": "Money on the brokerage account",
+    "no_securities": "No securities on this account yet",
+    "result_30": "30-day result",
+    "composition": "Composition and chart",
+    "profit_title": "Profit",
+    "interest_month": "Interest per month (at the rate)"
   },
   "settings": {
     "description": "Appearance, language, currency, categories and tags",
@@ -1497,9 +1513,9 @@
     "pos_date_hint": "if you do not remember, keep today",
     "pos_date": "Purchase date",
     "pos_charge": "Charge from the brokerage account",
-    "pos_charge_cur": "Account currency differs from the security's currency",
+    "pos_charge_cur": "No suitable account",
     "pos_charge_after": "Free cash: {{a}} → {{b}}",
-    "pos_charge_off": "Already bought: cash is not moved",
+    "pos_charge_off": "Money is not taken from the account: the security was already held",
     "pos_trade_note": "Want to buy or sell right now? Use New transaction → Trade: the account balance and position update automatically.",
     "pos_add_btn": "Add position",
     "ticker_no_price": "Could not get this security's price. Pick another one.",

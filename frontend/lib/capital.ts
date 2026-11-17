@@ -18,7 +18,8 @@ export function capitalSeries(
   currency: Currency,
   from: Date,
   to: Date = new Date(),
-  offset = 0
+  /** добавка к капиталу: число или функция от даты (например, стоимость бумаг на этот день) */
+  offset: number | ((date: Date) => number) = 0
 ): CapitalPoint[] {
   const first = startOfDay(from);
   const last = startOfDay(to);
@@ -62,7 +63,7 @@ export function capitalSeries(
       undo(sorted[ptr]);
       ptr++;
     }
-    out.push({ date: day, value: total() + offset });
+    out.push({ date: day, value: total() + (typeof offset === "function" ? offset(day) : offset) });
   }
   return out.reverse();
 }
@@ -104,3 +105,17 @@ export function capitalBreakdown(accounts: Account[], currency: Currency, positi
 
 /** Служебная операция бэкенда при ручной правке баланса счёта — не доход и не расход. */
 export const isBalanceAdjustment = (tx: { description?: string | null }) => tx.description === "Корректировка баланса";
+
+/** Результат по счёту за период: доходы минус расходы по этому счёту (переводы и служебные корректировки не считаются). В валюте счёта. */
+export function accountResult(transactions: Transaction[], accountId: number, days = 30, now: Date = new Date()): number {
+  const from = startOfDay(addDays(now, -(days - 1))).getTime();
+  let sum = 0;
+  for (const tx of transactions) {
+    if (tx.accountId !== accountId || isBalanceAdjustment(tx)) continue;
+    const at = new Date(tx.date).getTime();
+    if (Number.isNaN(at) || at < from || at > now.getTime()) continue;
+    if (tx.type === "income") sum += tx.amount;
+    else if (tx.type === "expense") sum -= tx.amount;
+  }
+  return sum;
+}

@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import type { Currency } from "@/types";
 import type { CapitalPoint } from "@/lib/capital";
 import { fmtMoney, fmtNum, MINUS } from "@/lib/plutus-format";
+import { seriesTone, TONE_COLOR, type Tone } from "@/lib/tone";
+import { differenceInCalendarDays } from "date-fns";
 
 interface Props {
   points: CapitalPoint[];
@@ -14,16 +16,29 @@ interface Props {
   /** градиентная линия и свечение, как на «Обзоре» */
   glow?: boolean;
   gridInset?: number;
+  /** цвет графика; по умолчанию определяется по изменению за период */
+  tone?: Tone;
 }
 
 const kLabel = (v: number, thousands: string) =>
   Math.abs(v) >= 1000 ? `${fmtNum(v / 1000, 1)} ${thousands}` : fmtNum(v, 0);
 
-export function CapitalChart({ points, currency, height, glow = false, gridInset = 52 }: Props) {
+const GRADIENTS: Record<Tone, [string, string, string]> = {
+  up: ["#38BDF8", "#6EE7A0", "#C6F24E"],
+  flat: ["#F59E0B", "#FBBF24", "#FDE68A"],
+  down: ["#FB7185", "#F87171", "#FDBA74"],
+};
+
+export function CapitalChart({ points, currency, height, glow = false, gridInset = 52, tone: toneProp }: Props) {
   const { t } = useTranslation();
   const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
   const thousands = t("common.thousands_short", "тыс.");
+  const first = points[0];
+  const last = points[points.length - 1];
+  const tone: Tone = toneProp ?? (first && last ? seriesTone(first.value, last.value, differenceInCalendarDays(last.date, first.date) + 1) : "up");
+  const main = TONE_COLOR[tone];
+  const [g0, g1, g2] = GRADIENTS[tone];
 
   const view = useMemo(() => {
     const pts = points.length === 1 ? [points[0], points[0]] : points;
@@ -76,38 +91,38 @@ export function CapitalChart({ points, currency, height, glow = false, gridInset
         {glow && (
           <defs>
             <linearGradient id={`fill${uid}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6EE7A0" stopOpacity="0.55" />
-              <stop offset="55%" stopColor="#6EE7A0" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#6EE7A0" stopOpacity="0" />
+              <stop offset="0%" stopColor={main} stopOpacity="0.55" />
+              <stop offset="55%" stopColor={main} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={main} stopOpacity="0" />
             </linearGradient>
             <linearGradient id={`stroke${uid}`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#38BDF8" />
-              <stop offset="55%" stopColor="#6EE7A0" />
-              <stop offset="100%" stopColor="#C6F24E" />
+              <stop offset="0%" stopColor={g0} />
+              <stop offset="55%" stopColor={g1} />
+              <stop offset="100%" stopColor={g2} />
             </linearGradient>
           </defs>
         )}
         <polygon
           points={`0,100 ${view.line} 100,100`}
-          fill={glow ? `url(#fill${uid})` : "rgba(110,231,160,0.14)"}
+          fill={glow ? `url(#fill${uid})` : `${main}24`}
         />
         <polyline
           points={view.line}
           fill="none"
-          stroke={glow ? `url(#stroke${uid})` : "#6EE7A0"}
+          stroke={glow ? `url(#stroke${uid})` : main}
           strokeWidth={glow ? 3 : 2.5}
           strokeLinejoin="round"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
-          style={glow ? { filter: "drop-shadow(0 0 6px rgba(110,231,160,0.45))" } : undefined}
+          style={glow ? { filter: `drop-shadow(0 0 6px ${main}73)` } : undefined}
         />
       </svg>
       {active && (
         <>
-          <div className="pointer-events-none absolute bottom-0 top-0 border-l border-dashed border-[#3F7A5C]" style={{ left: `${hx}%` }} />
+          <div className="pointer-events-none absolute bottom-0 top-0 border-l border-dashed" style={{ left: `${hx}%`, borderColor: `${main}80` }} />
           <div
-            className="pointer-events-none absolute h-3 w-3 rounded-full border-2 border-[#151714] bg-[#6EE7A0]"
-            style={{ left: `${hx}%`, top: `${hy}%`, margin: "-6px 0 0 -6px" }}
+            className="pointer-events-none absolute h-3 w-3 rounded-full border-2 border-[#151714]"
+            style={{ left: `${hx}%`, top: `${hy}%`, margin: "-6px 0 0 -6px", background: main }}
           />
           <div
             className="pointer-events-none absolute top-2 min-w-[150px] rounded-xl border border-[#2A2E27] bg-[#0E0F0E] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"

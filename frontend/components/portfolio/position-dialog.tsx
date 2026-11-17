@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
+import { convertCurrency } from "@/lib/utils";
 import { fmtMoney, fmtNum, signedMoney, hashColor } from "@/lib/plutus-format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,10 +17,13 @@ export function PositionDialog({
   open,
   onOpenChange,
   editing,
+  defaultAccountId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Position | null;
+  /** брокерский счёт по умолчанию для новой позиции */
+  defaultAccountId?: number;
 }) {
   const { t } = useTranslation();
   const { accounts, positions, addPosition, updatePosition, updateAccount } = useStore();
@@ -30,14 +34,14 @@ export function PositionDialog({
   const [price, setPrice] = useState("");
   const [dateText, setDateText] = useState("");
   const [accountId, setAccountId] = useState<number | null>(null);
-  const [charge, setCharge] = useState(false);
+  const [charge, setCharge] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setError(null); setDone(null); setSaving(false); setCharge(false);
+    setError(null); setDone(null); setSaving(false); setCharge(!editing);
     if (editing) {
       setTicker({ symbol: editing.symbol, hint: hintFor(editing), price: editing.currentPrice, currency: editing.currency, assetClass: editing.assetClass ?? "stock" });
       setQty(String(editing.quantity));
@@ -45,7 +49,7 @@ export function PositionDialog({
       setDateText(editing.purchaseDate ? format(new Date(editing.purchaseDate), "dd.MM.yyyy") : "");
       setAccountId(editing.accountId);
     } else {
-      setTicker(null); setQty(""); setPrice(""); setDateText(format(new Date(), "dd.MM.yyyy")); setAccountId(null);
+      setTicker(null); setQty(""); setPrice(""); setDateText(format(new Date(), "dd.MM.yyyy")); setAccountId(defaultAccountId ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing]);
@@ -61,8 +65,10 @@ export function PositionDialog({
   const cost = validQty && validPrice ? qtyNum * priceNum : 0;
   const value = validQty && ticker ? qtyNum * ticker.price : 0;
   const pnl = value - cost;
-  const canCharge = !!account && !!ticker && account.currency === ticker.currency && !editing;
-  const cashAfter = account ? account.balance - cost : 0;
+  // стоимость покупки списывается с брокерского счёта (если валюта другая — по курсу)
+  const canCharge = !!account && !!ticker && !editing;
+  const costInAccount = account && ticker ? convertCurrency(cost, ticker.currency, account.currency) : 0;
+  const cashAfter = account ? account.balance - costInAccount : 0;
   const short = charge && canCharge && cost > 0 && cashAfter < 0;
   const date = parseRuDate(dateText);
   const invalid = !ticker || !account || !validQty || !validPrice || short;
@@ -144,7 +150,7 @@ export function PositionDialog({
                 </span>
               </Card>
             ) : (
-              <TickerField idPrefix="pos" value={ticker} onChange={(v) => { setTicker(v); setPrice(""); setAccountId(null); }} />
+              <TickerField idPrefix="pos" value={ticker} onChange={(v) => { setTicker(v); setPrice(""); setAccountId(defaultAccountId ?? null); }} />
             )}
 
             {ticker && (
@@ -190,7 +196,7 @@ export function PositionDialog({
                     <SwitchRow
                       id="pos-charge"
                       title={t("dialogs.pos_charge", "Списать с брокерского счёта")}
-                      sub={!canCharge ? t("dialogs.pos_charge_cur", "Валюта счёта не совпадает с валютой бумаги") : charge && cost > 0 ? t("dialogs.pos_charge_after", "Свободно: {{a}} → {{b}}", { a: fmtMoney(account?.balance ?? 0, account?.currency), b: fmtMoney(cashAfter, account?.currency) }) : t("dialogs.pos_charge_off", "Бумага уже куплена — деньги не двигаем")}
+                      sub={!canCharge ? t("dialogs.pos_charge_cur", "Нет подходящего счёта") : charge && cost > 0 ? t("dialogs.pos_charge_after", "Свободно: {{a}} → {{b}}", { a: fmtMoney(account?.balance ?? 0, account?.currency), b: fmtMoney(cashAfter, account?.currency) }) : t("dialogs.pos_charge_off", "Деньги со счёта не списываются: бумага уже была в портфеле")}
                       checked={charge && canCharge}
                       onChange={(v) => canCharge && setCharge(v)}
                     />

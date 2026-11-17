@@ -21,6 +21,8 @@ type Mode = "qty" | "sum";
 
 export interface TradePreset {
   side: Side;
+  /** брокерский счёт, с которым идёт сделка */
+  accountId?: number;
   /** заранее выбранная бумага (например, при продаже из таблицы позиций) */
   symbol?: string;
   hint?: PriceHint;
@@ -38,7 +40,7 @@ export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: T
   const [qtyText, setQtyText] = useState("");
   const [sumText, setSumText] = useState("");
   const [priceText, setPriceText] = useState("");
-  const [brokerageId, setBrokerageId] = useState<number | null>(null);
+  const [brokerageId, setBrokerageId] = useState<number | null>(preset?.accountId ?? null);
   const [day, setDay] = useState(() => new Date());
   const [otherDate, setOtherDate] = useState(false);
   const [dateText, setDateText] = useState("");
@@ -182,7 +184,7 @@ export function TradeForm({ onClose, preset }: { onClose: () => void; preset?: T
       <TickerField
         idPrefix="trade"
         value={ticker}
-        onChange={(v) => { setTicker(v); setBrokerageId(null); setPriceText(""); }}
+        onChange={(v) => { setTicker(v); setBrokerageId(preset?.accountId ?? null); setPriceText(""); }}
         holdingText={ticker && account ? (held > 0 ? t("dialogs.trade_holding", "В портфеле: {{qty}} шт", { qty: fmtNum(held, 4) }) : t("dialogs.trade_not_held", "Этой бумаги в портфеле пока нет")) : undefined}
       />
 
