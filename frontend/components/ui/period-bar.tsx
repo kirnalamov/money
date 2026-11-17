@@ -20,7 +20,8 @@ export function rangeLabel(range: DateRange | undefined, language: string): stri
   if (!range?.from) return "";
   const locale = language.startsWith("ru") ? ru : enUS;
   if (!range.to || isSameDay(range.from, range.to)) return format(range.from, "d MMM yyyy", { locale });
-  return `${format(range.from, "d MMM", { locale })} — ${format(range.to, "d MMM yyyy", { locale })}`;
+  const sameYear = range.from.getFullYear() === range.to.getFullYear();
+  return `${format(range.from, sameYear ? "d MMM" : "d MMM yyyy", { locale })} — ${format(range.to, "d MMM yyyy", { locale })}`;
 }
 
 /**
