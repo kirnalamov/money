@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,79 +25,130 @@ import { Transaction, TransactionType } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { CreatableCombobox } from '@/components/ui/creatable-combobox';
 import { MultiSelectCreatable } from '@/components/ui/multi-select-creatable';
-import { Trash2, Calendar, Wallet, Tag as TagIcon, FileText } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
+import { getCategoryLabel } from './transaction-list';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: (transaction: Transaction) => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
-export function TransactionDetailsDialog({ transaction, open, onOpenChange }: TransactionDetailsDialogProps) {
-  const { t } = useTranslation();
-  const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction, defaultCurrency } = useStore();
+interface TransactionDetailsFormProps extends Omit<TransactionDetailsDialogProps, 'transaction'> {
+  transaction: Transaction;
+}
 
-  const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [date, setDate] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
+export function TransactionDetailsDialog(props: TransactionDetailsDialogProps) {
+  if (!props.transaction) return null;
 
-  useEffect(() => {
-    if (transaction) {
-      setType(transaction.type);
-      setAmount(transaction.amount.toString());
-      setDescription(transaction.description || '');
-      setAccountId(transaction.accountId.toString());
-      setToAccountId(transaction.toAccountId?.toString() || '');
-      setCategory(transaction.category);
-      setTags(transaction.tags || []);
-      setDate(format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
-      setIsRecurring(!!transaction.isRecurring);
-    }
-  }, [transaction, open]);
+  return <TransactionDetailsForm key={props.transaction.id} {...props} transaction={props.transaction} />;
+}
+
+function TransactionDetailsForm({ transaction, open, onOpenChange, onDeleted, onCloseAutoFocus }: TransactionDetailsFormProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'ru' ? ru : enUS;
+  const { accounts, categories, tags: tagsList, updateTransaction, deleteTransaction } = useStore();
+
+  const [type, setType] = useState<TransactionType>(transaction.type);
+  const [amount, setAmount] = useState(transaction.amount.toString());
+  const [description, setDescription] = useState(transaction.description || '');
+  const [accountId, setAccountId] = useState(transaction.accountId.toString());
+  const [toAccountId, setToAccountId] = useState(transaction.toAccountId?.toString() || '');
+  const [category, setCategory] = useState(transaction.category);
+  const [tags, setTags] = useState<string[]>(transaction.tags || []);
+  const [initialDate] = useState(() => format(new Date(transaction.date), "yyyy-MM-dd'T'HH:mm"));
+  const [date, setDate] = useState(initialDate);
+  const [isRecurring, setIsRecurring] = useState(!!transaction.isRecurring);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedAccount = accounts.find((account) => account.id === Number(accountId));
+  const destinationAccounts = accounts.filter((account) => (
+    account.id !== Number(accountId) &&
+    (!selectedAccount || account.currency === selectedAccount.currency)
+  ));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transaction || !amount || !accountId) return;
+    setError(null);
+    const parsedAmount = Number(amount);
+    const parsedDate = new Date(date);
+    const destinationAccount = accounts.find((account) => account.id === Number(toAccountId));
 
-    await updateTransaction(transaction.id, {
-      type,
-      amount: parseFloat(amount),
-      accountId: parseInt(accountId),
-      toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
-      category,
-      description,
-      tags,
-      isRecurring,
-      date: new Date(date).toISOString(),
-    });
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setError(t('transactions.validation.amount'));
+      return;
+    }
+    if (!selectedAccount) {
+      setError(t('transactions.validation.account'));
+      return;
+    }
+    if (type === 'transfer' && !destinationAccount) {
+      setError(t('transactions.validation.destination'));
+      return;
+    }
+    if (type === 'transfer' && destinationAccount?.currency !== selectedAccount.currency) {
+      setError(t('transactions.validation.transfer_currency'));
+      return;
+    }
+    if (!category.trim()) {
+      setError(t('transactions.validation.category'));
+      return;
+    }
+    if (Number.isNaN(parsedDate.getTime())) {
+      setError(t('transactions.validation.date'));
+      return;
+    }
 
-    onOpenChange(false);
+    setIsSubmitting(true);
+    try {
+      await updateTransaction(transaction.id, {
+        type,
+        amount: parsedAmount,
+        currency: selectedAccount.currency,
+        accountId: parseInt(accountId),
+        toAccountId: type === 'transfer' && toAccountId ? parseInt(toAccountId) : undefined,
+        category: category.trim(),
+        description,
+        tags,
+        isRecurring,
+        // Поле даты без секунд: если не менялось, сохраняем исходный ISO.
+        date: date === initialDate ? transaction.date : parsedDate.toISOString(),
+      });
+
+      onOpenChange(false);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t('common.error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!transaction) return;
     if (confirm(t('common.confirm_delete') || 'Are you sure you want to delete this transaction?')) {
-      await deleteTransaction(transaction.id);
-      onOpenChange(false);
+      setError(null);
+      try {
+        await deleteTransaction(transaction.id);
+        onDeleted?.(transaction);
+        onOpenChange(false);
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t('common.error'));
+      }
     }
   };
 
-  if (!transaction) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{t('transactions.edit_dialog_title') || 'Transaction Details'}</DialogTitle>
-            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleDelete}>
+            <Button type="button" variant="ghost" size="icon" aria-label={t('transactions.delete_button')} className="h-11 w-11 text-expense hover:text-expense hover:bg-expense/10" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -105,10 +156,18 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
             {t('transactions.edit_dialog_desc') || 'View or update your transaction information.'}
           </DialogDescription>
         </DialogHeader>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">{t('transactions.type')}</Label>
-            <Select value={type} onValueChange={(value: TransactionType) => setType(value)}>
+            <Select value={type} onValueChange={(value: TransactionType) => {
+              setType(value);
+              if (value !== 'transfer') setToAccountId('');
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_type')} />
               </SelectTrigger>
@@ -129,8 +188,9 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                min="0.01"
                 required
-                className="pl-8"
+                className="pl-14"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
                 {transaction.currency}
@@ -147,13 +207,25 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
               onChange={(e) => setDate(e.target.value)}
               required
             />
+            {!Number.isNaN(new Date(date).getTime()) && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {format(new Date(date), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="account">
               {type === 'transfer' ? t('transactions.from_account') : t('transactions.account')}
             </Label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={(value) => {
+              setAccountId(value);
+              const nextAccount = accounts.find((account) => account.id === Number(value));
+              const currentDestination = accounts.find((account) => account.id === Number(toAccountId));
+              if (!nextAccount || !currentDestination || currentDestination.id === nextAccount.id || currentDestination.currency !== nextAccount.currency) {
+                setToAccountId('');
+              }
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={t('transactions.placeholders.select_account')} />
               </SelectTrigger>
@@ -175,22 +247,30 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
                   <SelectValue placeholder={t('transactions.placeholders.destination_account')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts
-                    .filter(acc => acc.id !== parseInt(accountId))
-                    .map((acc) => (
+                {destinationAccounts.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id.toString()}>
                         {acc.name} ({acc.currency})
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
+                {destinationAccounts.length === 0 && (
+                  <SelectItem value="no-destination" disabled>
+                    {t('transactions.validation.no_destination')}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            {selectedAccount && (
+              <p className="text-xs text-muted-foreground">
+                {t('transactions.transfer_currency_hint', { currency: selectedAccount.currency })}
+              </p>
+            )}
             </div>
           )}
 
           <div className="grid gap-2">
             <Label htmlFor="category">{t('transactions.category')}</Label>
             <CreatableCombobox
-              options={categories.map(c => ({ label: c.name, value: c.name }))}
+              options={categories.map(c => ({ label: getCategoryLabel(t, c.name), value: c.name }))}
               value={category}
               onChange={setCategory}
               placeholder={t('transactions.placeholders.category')}
@@ -235,7 +315,9 @@ export function TransactionDetailsDialog({ transaction, open, onOpenChange }: Tr
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button type="submit">{t('common.save') || 'Save Changes'}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('common.loading') : t('common.save')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

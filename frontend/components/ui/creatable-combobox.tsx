@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Plus } from "lucide-react"
+import { Check, ChevronDown, Plus } from "lucide-react"
 
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,7 @@ export interface CreatableComboboxProps {
   placeholder?: string
   emptyText?: string
   onCreate?: (value: string) => void
+  'aria-labelledby'?: string
 }
 
 export function CreatableCombobox({
@@ -28,6 +29,7 @@ export function CreatableCombobox({
   placeholder = "Select an option...",
   emptyText = "No results found.",
   onCreate,
+  'aria-labelledby': labelledBy,
 }: CreatableComboboxProps) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
@@ -62,10 +64,11 @@ export function CreatableCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal text-left truncate"
+          aria-labelledby={labelledBy}
+          className="h-11 w-full justify-between font-normal text-left truncate"
         >
           {displayLabel ? displayLabel : <span className="text-muted-foreground">{placeholder}</span>}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">

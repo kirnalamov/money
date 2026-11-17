@@ -1,11 +1,15 @@
 from typing import Annotated, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, require_role
+from app.core.security import validate_password_strength, verify_password
 from app.crud.crud_user import user as crud_user
 from app.db.session import get_db
 from app.models.user import User as UserModel
+from app.models.refresh_token import RefreshToken
 from app.schemas.user import User, UserUpdate
 
 router = APIRouter()
@@ -30,7 +34,43 @@ async def update_current_user(
     Update current user profile.
     """
     # Users can only update their own profile
-    user = await crud_user.update(db, db_obj=current_user, obj_in=user_in)
+    if user_in.email is not None:
+        existing_user = await crud_user.get_by_email(db, email=user_in.email)
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists",
+            )
+
+    if user_in.password is not None:
+        if not user_in.current_password or not verify_password(user_in.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+        is_valid, error_msg = validate_password_strength(user_in.password)
+        if not is_valid:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
+    try:
+        update_data = user_in.model_dump(exclude_unset=True, exclude={"current_password"})
+        password_changed = user_in.password is not None
+        user = await crud_user.update(
+            db,
+            db_obj=current_user,
+            obj_in=update_data,
+            commit=not password_changed,
+        )
+        if password_changed:
+            await db.execute(
+                update(RefreshToken)
+                .where(RefreshToken.user_id == current_user.id)
+                .values(revoked=True)
+            )
+            await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists",
+        )
     return user
 
 @router.get("/", response_model=List[User])
@@ -38,8 +78,8 @@ async def read_users(
     *,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[UserModel, Depends(require_role("admin"))],
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> Any:
     """
     List all users (admin only).

@@ -15,8 +15,9 @@ logger = structlog.get_logger()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url=f"{settings.API_V1_STR}/docs",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS else None,
+    docs_url=f"{settings.API_V1_STR}/docs" if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS else None,
+    redoc_url=None,
 )
 
 # CORS Options
@@ -35,8 +36,8 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    if not settings.DEV_MODE:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 # Middleware for response time header and logging
@@ -48,7 +49,8 @@ async def add_process_time_header(request: Request, call_next):
     response = await call_next(request)
     
     process_time = time.perf_counter() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
+    if settings.DEV_MODE:
+        response.headers["X-Process-Time"] = str(process_time)
     
     # Log request details (simplified)
     logger.info(
@@ -68,13 +70,20 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.warning(
         "validation_error",
         path=request.url.path,
-        errors=exc.errors(),
+        errors=[{"loc": error["loc"], "type": error["type"]} for error in exc.errors()],
     )
+    safe_errors = [
+        {
+            key: value
+            for key, value in error.items()
+            if key not in {"input", "ctx"}
+        }
+        for error in exc.errors()
+    ]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "detail": exc.errors(),
-            "body": exc.body,
+            "detail": safe_errors,
         },
     )
 
@@ -89,7 +98,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "detail": f"Database error: {str(exc)}"
+            "detail": "Database error. Please try again later."
         },
     )
 
@@ -110,7 +119,9 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # Prometheus setup
-instrumentator = Instrumentator().instrument(app).expose(app)
+instrumentator = Instrumentator().instrument(app)
+if settings.DEV_MODE or settings.EXPOSE_INTERNAL_ENDPOINTS:
+    instrumentator.expose(app)
 
 @app.get("/health")
 async def health_check():

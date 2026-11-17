@@ -1,20 +1,24 @@
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from enum import Enum
+from app.schemas.money import Money
 
 # Shared properties
 class CategoryBase(BaseModel):
     name: str
     icon: Optional[str] = None
     color: Optional[str] = None
-    limit: Optional[float] = 0.0
+    limit: Optional[Money] = 0
 
 class CategoryCreate(CategoryBase):
     pass
 
-class CategoryUpdate(CategoryBase):
-    pass
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    limit: Optional[Money] = None
 
 class CategoryInDBBase(CategoryBase):
     id: int
@@ -34,8 +38,9 @@ class TagBase(BaseModel):
 class TagCreate(TagBase):
     pass
 
-class TagUpdate(TagBase):
-    pass
+class TagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
 
 class TagInDBBase(TagBase):
     id: int
@@ -52,30 +57,51 @@ class Tag(TagInDBBase):
 class TransactionType(str, Enum):
     INCOME = "income"
     EXPENSE = "expense"
+    TRANSFER = "transfer"
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+class Currency(str, Enum):
+    USD = "USD"
+    EUR = "EUR"
+    GBP = "GBP"
+    RUB = "RUB"
+
+from pydantic import field_validator
 
 class TransactionBase(BaseModel):
-    amount: float
+    amount: Money = Field(gt=0)
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType = TransactionType.EXPENSE
-    currency: str = "USD"
+    currency: Currency = Currency.USD
     category_id: Optional[int] = Field(None, alias="categoryId")
     # Frontend sends 'accountId' and 'category' (string)
     account_id: int = Field(alias="accountId")
     
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
+    is_recurring: bool = Field(False, alias="isRecurring")
 
     model_config = ConfigDict(populate_by_name=True)
 
 class TransactionCreate(TransactionBase):
+    currency: Optional[Currency] = None
     category_name: Optional[str] = Field(None, alias="category")
     tags: Optional[list[str]] = None
 
-class TransactionUpdate(TransactionBase):
+class TransactionUpdate(BaseModel):
+    amount: Optional[Money] = Field(None, gt=0)
+    description: Optional[str] = None
+    date: Optional[datetime] = None
+    type: Optional[TransactionType] = None
+    currency: Optional[Currency] = None
+    category_id: Optional[int] = Field(None, alias="categoryId")
+    account_id: Optional[int] = Field(None, alias="accountId")
+    to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category_name: Optional[str] = Field(None, alias="category")
     tags: Optional[list[str]] = None
+    is_recurring: Optional[bool] = Field(None, alias="isRecurring")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 class TransactionInDBBase(TransactionBase):
     id: int
@@ -111,11 +137,12 @@ class TransactionOut(BaseModel):
     description: Optional[str] = None
     date: Optional[datetime] = None
     type: TransactionType
-    currency: str
+    currency: Currency
     account_id: int = Field(alias="accountId")
     to_account_id: Optional[int] = Field(None, alias="toAccountId")
     category: Optional[str] = None
     tags: Optional[list[str]] = None
+    is_recurring: bool = Field(False, alias="isRecurring")
     created_at: datetime
     updated_at: datetime
     

@@ -1,11 +1,11 @@
 from typing import Any
-from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
+from app.core.time import utcnow
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     async def get_by_email(self, db: AsyncSession, *, email: str) -> User | None:
@@ -18,7 +18,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         result = await db.execute(select(User).filter(User.username == username))
         return result.scalar_one_or_none()
     
-    async def create(self, db: AsyncSession, *, obj_in: UserCreate) -> User:
+    async def create(self, db: AsyncSession, *, obj_in: UserCreate, commit: bool = True) -> User:
         """Create new user with hashed password"""
         db_obj = User(
             email=obj_in.email,
@@ -28,12 +28,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             is_active=obj_in.is_active,
             role=obj_in.role,
             is_superuser=False,  # Never allow creating superuser via API
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=utcnow(),
+            updated_at=utcnow()
         )
         db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
+        if commit:
+            await db.commit()
+            await db.refresh(db_obj)
+        else:
+            await db.flush()
         return db_obj
     
     async def create_superuser(
@@ -55,7 +58,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         return db_obj
     
     async def update(
-        self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any]
+        self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any], commit: bool = True
     ) -> User:
         """Update user, hashing password if provided"""
         if isinstance(obj_in, dict):
@@ -68,7 +71,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
         
-        return await super().update(db, db_obj=db_obj, obj_in=update_data)
+        return await super().update(db, db_obj=db_obj, obj_in=update_data, commit=commit)
     
     async def authenticate(
         self, db: AsyncSession, *, username: str, password: str

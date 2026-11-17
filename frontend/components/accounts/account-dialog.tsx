@@ -1,0 +1,355 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useBrokerSettings } from "@/lib/broker-settings";
+import axios from "axios";
+import { useTranslation } from "react-i18next";
+import Link from "next/link";
+import { useStore } from "@/lib/store";
+import { useLivePortfolioValue } from "@/lib/live-portfolio";
+import { accountResult } from "@/lib/capital";
+import { convertCurrency } from "@/lib/utils";
+import { fmtMoney, hashColor } from "@/lib/plutus-format";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, Chip, CURRENCY_SYMBOL, Dot, evalAmount, Fld, fldInput, fldInputBig, GhostBtn, Hint, Lbl, ModalActions, Mono, Pick, PrimaryBtn, Suffix, DoneScreen } from "@/components/ui/modal-kit";
+import type { Account, AccountType, Currency } from "@/types";
+
+const TYPES: AccountType[] = ["bank", "cash", "savings", "brokerage"];
+const CURRENCIES: Currency[] = ["USD", "EUR", "GBP", "RUB"];
+const TYPE_COLOR: Record<AccountType, string> = { bank: "#C4B5FD", savings: "#7DD3FC", brokerage: "#C6F24E", cash: "#FBBF24" };
+const BANKS: Record<string, string[]> = {
+  RUB: ["Тинькофф", "Сбер", "Альфа-Банк", "ВТБ"],
+  default: ["Chase", "Revolut", "Wise", "N26"],
+};
+
+/** Состав брокерского счёта: свободные деньги и бумаги с рыночной стоимостью. */
+function BrokerComposition({ account }: { account: Account }) {
+  const { t } = useTranslation();
+  const { positions } = useLivePortfolioValue(account.id);
+  const rows = positions.map((p) => ({ p, value: convertCurrency(p.quantity * p.currentPrice, p.currency, account.currency) }));
+  const held = rows.reduce((sum, r) => sum + r.value, 0);
+  return (
+    <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <span className="text-[13px] font-semibold text-[#C9CEC3]">{t("accounts.composition_title", "Состав счёта")}</span>
+        <span className="text-[15px] font-bold tabular-nums">{fmtMoney(account.balance + held, account.currency)}</span>
+      </div>
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between gap-3 border-b border-[#1E211C] py-2 text-[13.5px]">
+          <span className="flex items-center gap-2"><Dot color="#C6F24E" />{t("accounts.free_cash", "Свободно")}</span>
+          <span className="font-semibold tabular-nums">{fmtMoney(account.balance, account.currency)}</span>
+        </div>
+        {rows.length === 0 && <div className="py-2 text-[12.5px] text-[#8D9388]">{t("accounts.no_securities", "Бумаг на этом счёте пока нет")}</div>}
+        {rows.map(({ p, value }) => (
+          <div key={p.symbol} className="flex items-center justify-between gap-3 border-b border-[#1E211C] py-2 text-[13.5px] last:border-b-0">
+            <span className="flex min-w-0 items-center gap-2"><Dot color={hashColor(p.symbol)} /><b className="font-semibold">{p.symbol}</b><span className="text-[#8D9388]">× {p.quantity % 1 ? p.quantity.toFixed(2) : p.quantity}</span></span>
+            <span className="font-semibold tabular-nums">{fmtMoney(value, account.currency)}</span>
+          </div>
+        ))}
+      </div>
+      <Link href={`/accounts/${account.id}`} className="mt-3 inline-flex text-[12.5px] font-semibold text-[#C6F24E] no-underline hover:text-[#E2FF92]">
+        {t("accounts.composition", "Состав и график")} →
+      </Link>
+    </div>
+  );
+}
+
+/** Результат по накопительному или наличному счёту за 30 дней. */
+function AccountProfit({ account }: { account: Account }) {
+  const { t } = useTranslation();
+  const { transactions } = useStore();
+  const res = accountResult(transactions, account.id, 30);
+  const interest = account.type === "savings" && account.interest_rate ? (Math.max(account.balance, 0) * account.interest_rate) / 1200 : 0;
+  return (
+    <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4 text-[13.5px]">
+      <div className="mb-2 text-[13px] font-semibold text-[#C9CEC3]">{t("accounts.profit_title", "Прибыль")}</div>
+      <div className="flex items-center justify-between gap-3 py-1">
+        <span className="text-[#8D9388]">{t("accounts.result_30", "Результат за 30 дней")}</span>
+        <span className="font-bold tabular-nums" style={{ color: res > 0 ? "#6EE7A0" : res < 0 ? "#F87171" : "#8D9388" }}>{res === 0 ? fmtMoney(0, account.currency) : `${res > 0 ? "+" : "−"}${fmtMoney(Math.abs(res), account.currency)}`}</span>
+      </div>
+      {account.type === "savings" && (
+        <div className="flex items-center justify-between gap-3 py-1">
+          <span className="text-[#8D9388]">{t("accounts.interest_month", "Проценты в месяц (по ставке)")}</span>
+          <span className="font-bold tabular-nums text-[#6EE7A0]">{interest > 0 ? `+${fmtMoney(interest, account.currency)}` : "—"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AccountDialog({
+  open,
+  onOpenChange,
+  account,
+  openerRef,
+  onError,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  account: Account | null;
+  openerRef?: React.MutableRefObject<HTMLElement | null>;
+  onError?: (message: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const { defaultCurrency, addAccount, updateAccount } = useStore();
+  const [type, setType] = useState<AccountType>("bank");
+  const [currency, setCurrency] = useState<Currency>(defaultCurrency);
+  const [balance, setBalance] = useState("");
+  const [provider, setProvider] = useState("");
+  const [customProvider, setCustomProvider] = useState(false);
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const { settingsFor, save: saveBroker } = useBrokerSettings();
+  const [rate, setRate] = useState("");
+  const [taxPct, setTaxPct] = useState("13");
+  const [commissionPct, setCommissionPct] = useState("0,05");
+
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    setDone(null);
+    setSaving(false);
+    setType(account?.type ?? "bank");
+    setCurrency(account?.currency ?? defaultCurrency);
+    setBalance(account ? String(account.balance) : "");
+    setProvider(account?.provider ?? "");
+    setCustomProvider(false);
+    setName(account?.name ?? "");
+    setRate(account?.interest_rate ? String(account.interest_rate).replace(".", ",") : "");
+    const bs = settingsFor(account?.id);
+    setTaxPct(String(bs.taxPct).replace(".", ","));
+    setCommissionPct(String(bs.commissionPct).replace(".", ","));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, account]);
+
+  const sym = CURRENCY_SYMBOL[currency] ?? currency;
+  const typeLabel = t(`accounts.types.${type}`);
+  const autoName = `${provider || typeLabel} · ${sym}`;
+  const finalName = name.trim() || autoName;
+  const amount = evalAmount(balance);
+  const balanceNum = balance.trim() === "" ? 0 : amount;
+  const banks = BANKS[currency] ?? BANKS.default;
+  const subs: Record<AccountType, string> = {
+    bank: t("dialogs.acc_sub_bank", "Карта, вклад"),
+    cash: t("dialogs.acc_sub_cash", "Наличные на руках"),
+    savings: t("dialogs.acc_sub_savings", "Накопительный счёт"),
+    brokerage: t("dialogs.acc_sub_brokerage", "Акции, ETF, крипта"),
+  };
+  const curTitle: Record<Currency, string> = {
+    USD: t("dialogs.cur_USD", "Доллар"),
+    EUR: t("dialogs.cur_EUR", "Евро"),
+    GBP: t("dialogs.cur_GBP", "Фунт"),
+    RUB: t("dialogs.cur_RUB", "Рубль"),
+  };
+
+  const save = async () => {
+    if (saving) return;
+    if (!Number.isFinite(balanceNum) || (balanceNum < 0 && balanceNum !== account?.balance)) {
+      setError(t("accounts.validation.balance"));
+      return;
+    }
+    if (account && balanceNum !== account.balance && !window.confirm(t("accounts.balance_change_warning"))) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const rateNum = Math.min(Math.max(Number(rate.replace(",", ".")) || 0, 0), 100);
+      const details = {
+        name: finalName,
+        type,
+        currency,
+        provider: provider || "",
+        interest_rate: type === "savings" && rateNum > 0 ? rateNum : null,
+      };
+      const broker = {
+        taxPct: Math.min(Math.max(Number(taxPct.replace(",", ".")) || 0, 0), 100),
+        commissionPct: Math.min(Math.max(Number(commissionPct.replace(",", ".")) || 0, 0), 100),
+      };
+      if (account) {
+        await updateAccount(account.id, balanceNum === account.balance ? details : { ...details, balance: balanceNum, expected_balance: account.balance });
+        if (type === "brokerage") saveBroker(account.id, broker);
+        onError?.(null);
+        onOpenChange(false);
+      } else {
+        await addAccount({ ...details, balance: balanceNum });
+        if (type === "brokerage") {
+          const created = useStore.getState().accounts.filter((a) => a.name === finalName && a.type === type).sort((a, b) => b.id - a.id)[0];
+          if (created) saveBroker(created.id, broker);
+        }
+        onError?.(null);
+        setDone(finalName);
+      }
+    } catch (saveError) {
+      setError(axios.isAxiosError(saveError) && saveError.response?.status === 409
+        ? t("accounts.edit_conflict")
+        : saveError instanceof Error ? saveError.message : t("common.error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const again = () => {
+    setDone(null); setBalance(""); setName(""); setProvider(""); setCustomProvider(false);
+  };
+
+  const converted = convertCurrency(Number.isFinite(balanceNum) ? balanceNum : 0, currency, defaultCurrency);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]"
+        onCloseAutoFocus={(e) => {
+          if (openerRef?.current?.isConnected) {
+            e.preventDefault();
+            openerRef.current.focus();
+          }
+        }}
+      >
+        <DialogHeader className="pr-10">
+          <DialogTitle>{account ? t("accounts.edit_account") : t("accounts.add_account")}</DialogTitle>
+          <DialogDescription>{t("dialogs.acc_desc", "Выберите тип и валюту, остальное можно не заполнять")}</DialogDescription>
+        </DialogHeader>
+
+        {done ? (
+          <DoneScreen
+            title={t("dialogs.acc_done", "Счёт добавлен")}
+            lines={[done]}
+            actions={
+              <>
+                <GhostBtn className="min-h-11" onClick={again}>{t("dialogs.add_more", "Добавить ещё")}</GhostBtn>
+                <PrimaryBtn className="min-h-11" onClick={() => onOpenChange(false)}>{t("transactions.dialog.done")}</PrimaryBtn>
+              </>
+            }
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {account?.type === "brokerage" && <BrokerComposition account={account} />}
+            {account && (account.type === "savings" || account.type === "cash") && <AccountProfit account={account} />}
+
+            <div>
+              <Lbl>{t("accounts.account_type")}</Lbl>
+              <div role="group" aria-label={t("accounts.account_type")} className="grid grid-cols-2 gap-2">
+                {TYPES.map((item) => (
+                  <Pick key={item} active={type === item} className="min-h-11" onClick={() => setType(item)}>
+                    <Dot color={TYPE_COLOR[item]} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-semibold">{t(`accounts.types.${item}`)}</span>
+                      <span className="block truncate text-xs text-[#8D9388]">{subs[item]}</span>
+                    </span>
+                  </Pick>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Lbl>{t("accounts.currency")}</Lbl>
+              <div role="group" aria-label={t("accounts.currency")} className="flex gap-2">
+                {CURRENCIES.map((cur) => (
+                  <Pick key={cur} active={currency === cur} title={cur} className="min-h-11 flex-col justify-center gap-0.5 px-1.5 py-2.5" onClick={() => setCurrency(cur)}>
+                    <span className="text-xl font-bold" style={currency === cur ? { color: "#C6F24E" } : undefined}>{CURRENCY_SYMBOL[cur]}</span>
+                    <span className="text-[11.5px] text-[#8D9388]">{curTitle[cur]}</span>
+                  </Pick>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Lbl htmlFor="account-balance">{account ? t("accounts.balance") : t("dialogs.acc_start_balance", "Начальный баланс")}</Lbl>
+              <Fld big suffix={<Suffix big>{sym}</Suffix>}>
+                <input
+                  id="account-balance"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  className={fldInputBig}
+                  placeholder="0"
+                  value={balance}
+                  onChange={(e) => { if (/^[\d\s.,+\-−]*$/.test(e.target.value)) setBalance(e.target.value); }}
+                />
+              </Fld>
+              {type === "brokerage" && <Hint>{t("dialogs.acc_brokerage_hint", "Это свободные деньги на брокерском счёте. Бумаги добавляются отдельно.")}</Hint>}
+            </div>
+
+            <div>
+              <Lbl hint={t("dialogs.optional", "необязательно")}>{type === "brokerage" ? t("dialogs.acc_broker", "Брокер") : t("dialogs.acc_bank", "Банк")}</Lbl>
+              <div role="group" aria-label={t("accounts.provider")} className="flex flex-wrap gap-2">
+                {banks.map((bank) => (
+                  <Chip key={bank} active={provider === bank && !customProvider} className="min-h-11" onClick={() => { setProvider(provider === bank ? "" : bank); setCustomProvider(false); }}>{bank}</Chip>
+                ))}
+                <Chip dashed active={customProvider} className="min-h-11" onClick={() => setCustomProvider((v) => !v)}>{t("dialogs.acc_other", "+ Другой")}</Chip>
+              </div>
+              {customProvider && (
+                <Fld className="mt-2.5">
+                  <input className={fldInput} autoComplete="organization" aria-label={t("accounts.provider")} placeholder={t("accounts.provider_placeholder")} value={provider} onChange={(e) => setProvider(e.target.value)} />
+                </Fld>
+              )}
+            </div>
+
+            {type === "savings" && (
+              <div>
+                <Lbl htmlFor="account-rate" hint={t("dialogs.optional", "необязательно")}>{t("dialogs.acc_rate", "Процентная ставка")}</Lbl>
+                <Fld suffix={<Suffix>{t("dialogs.acc_rate_unit", "% годовых")}</Suffix>}>
+                  <input id="account-rate" inputMode="decimal" autoComplete="off" className={fldInput} placeholder="0" value={rate} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setRate(e.target.value); }} />
+                </Fld>
+                {Number(rate.replace(",", ".")) > 0 && Number.isFinite(balanceNum) && balanceNum > 0 && (
+                  <Hint>{t("dialogs.acc_rate_income", "Доход ≈ {{month}} в месяц, {{year}} в год", { month: fmtMoney((balanceNum * Number(rate.replace(",", "."))) / 1200, currency), year: fmtMoney((balanceNum * Number(rate.replace(",", "."))) / 100, currency) })}</Hint>
+                )}
+              </div>
+            )}
+
+            {type === "brokerage" && (
+              <div className="rounded-[14px] border border-[#2A2E27] bg-[#121411] p-4">
+                <div className="mb-3 text-[13px] font-semibold text-[#C9CEC3]">{t("dialogs.acc_broker_settings", "Налог и комиссия брокера")}</div>
+                <div className="flex gap-3">
+                  <div className="min-w-0 flex-1">
+                    <Lbl htmlFor="account-tax" className="mb-1.5">{t("dialogs.acc_tax", "Налог с дохода")}</Lbl>
+                    <Fld suffix={<Suffix>%</Suffix>}>
+                      <input id="account-tax" inputMode="decimal" autoComplete="off" className={fldInput} value={taxPct} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setTaxPct(e.target.value); }} />
+                    </Fld>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Lbl htmlFor="account-commission" className="mb-1.5">{t("dialogs.acc_commission", "Комиссия за сделку")}</Lbl>
+                    <Fld suffix={<Suffix>%</Suffix>}>
+                      <input id="account-commission" inputMode="decimal" autoComplete="off" className={fldInput} value={commissionPct} onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setCommissionPct(e.target.value); }} />
+                    </Fld>
+                  </div>
+                </div>
+                <div className="mt-2.5 text-[12.5px] text-[#8D9388]">{t("dialogs.acc_broker_hint", "Налог учитывается в выплатах дивидендов и купонов и в оценке продажи, комиссия — автоматически в окне «Сделка».")}</div>
+              </div>
+            )}
+
+            <div>
+              <Lbl htmlFor="account-name" hint={t("dialogs.can_skip", "можно пропустить")}>{t("dialogs.acc_name", "Название")}</Lbl>
+              <Fld>
+                <input id="account-name" className={fldInput} autoComplete="off" placeholder={autoName} value={name} onChange={(e) => setName(e.target.value)} />
+              </Fld>
+            </div>
+
+            <Card className="flex items-center gap-3">
+              <Mono color={hashColor(String(account?.id ?? finalName))}>{finalName.slice(0, 2).toUpperCase()}</Mono>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-bold">{finalName}</span>
+                <span className="block text-[12.5px] text-[#8D9388]">{typeLabel}{provider ? ` · ${provider}` : ""}</span>
+              </span>
+              <span className="text-right">
+                <span className="block font-bold tabular-nums" style={balanceNum < 0 ? { color: "#F87171" } : undefined}>{fmtMoney(Number.isFinite(balanceNum) ? balanceNum : 0, currency)}</span>
+                {currency !== defaultCurrency && <span className="block text-xs text-[#8D9388] tabular-nums">≈ {fmtMoney(converted, defaultCurrency)}</span>}
+              </span>
+            </Card>
+
+            <ModalActions>
+              <GhostBtn className="min-h-11" onClick={() => onOpenChange(false)}>{t("common.cancel")}</GhostBtn>
+              <PrimaryBtn className="min-h-11" disabled={saving} onClick={save}>{account ? t("common.save") : t("dialogs.acc_add_btn", "Добавить счёт")}</PrimaryBtn>
+            </ModalActions>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

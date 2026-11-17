@@ -2,8 +2,15 @@ import apiClient from './client';
 import { Transaction } from '@/types';
 
 export const getTransactions = async (): Promise<Transaction[]> => {
-    const response = await apiClient.get<Transaction[]>('/transactions/');
-    return response.data;
+    const transactions: Transaction[] = [];
+    let page: Transaction[];
+    do {
+        const response = await apiClient.get<Transaction[]>('/transactions/', { params: { skip: transactions.length, limit: 100 } });
+        page = response.data;
+        // служебные операции (корректировка баланса) приходят без категории
+        transactions.push(...page.map((item) => ({ ...item, category: item.category ?? '' })));
+    } while (page.length === 100);
+    return transactions;
 };
 
 export const createTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction> => {
@@ -12,32 +19,15 @@ export const createTransaction = async (transaction: Omit<Transaction, 'id'>): P
         description: transaction.description,
         date: transaction.date,
         type: transaction.type,
+        currency: transaction.currency,
         account_id: transaction.accountId,
-        category_id: transaction.category ? undefined : undefined, // TODO: handle category ID lookup or creation if needed. For now sending None if not ID.
-        // Actually, store sends category name in 'category' field. Backend 'TransactionCreate' might need logic or we just send it as is if backend handles it?
-        // Checking backend schema: expect 'category_id'. If we only have name, we might need a different approach or backend fix.
-        // For now, let's map standard fields.
+        category: transaction.category,
         to_account_id: transaction.toAccountId,
-        tags: transaction.tags
-    };
-    // Fix: The store passes 'category' as string name. If backend requires ID, we have a problem.
-    // However, let's assuming we just need to fix the case for now.
-    // Re-reading backend schema: 'category_id' alias='categoryId'.
-    // If we send 'categoryId', pydantic handles it.
-    // The issue is likely 'accountId' -> 'account_id' mismatch if aliases aren't working or if we want to be explicit.
-    // Let's be explicit to be safe.
-
-    // Improved payload construction:
-    const safePayload = {
-        ...transaction,
-        account_id: transaction.accountId,
-        to_account_id: transaction.toAccountId,
-        // Remove camelCase versions to avoid confusion/errors if strict
-        accountId: undefined,
-        toAccountId: undefined
+        tags: transaction.tags,
+        isRecurring: transaction.isRecurring,
     };
 
-    const response = await apiClient.post<Transaction>('/transactions/', safePayload);
+    const response = await apiClient.post<Transaction>('/transactions/', payload);
     return response.data;
 };
 

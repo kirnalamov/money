@@ -2,8 +2,14 @@ import apiClient from './client';
 import { Category } from '@/types';
 
 export const getCategories = async (): Promise<Category[]> => {
-    const response = await apiClient.get<Category[]>('/categories/');
-    return response.data;
+    const categories: Category[] = [];
+    let page: Category[];
+    do {
+        const response = await apiClient.get<Category[]>('/categories/', { params: { skip: categories.length, limit: 100 } });
+        page = response.data;
+        categories.push(...page);
+    } while (page.length === 100);
+    return categories;
 };
 
 export const createCategory = async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category> => {

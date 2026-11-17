@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.db.base_class import Base
+from app.core.time import utcnow
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
@@ -12,7 +12,7 @@ class RefreshToken(Base):
     
     expires_at = Column(DateTime, nullable=False)
     revoked = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
     
     # Relationships
     user = relationship("User", back_populates="refresh_tokens")

@@ -1,6 +1,11 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from decimal import Decimal
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, delete
+from app.models.transaction import Transaction
+from app.models.account import Account as AccountModel
+from app.models.user_item import UserItem
 from app.schemas.account import Account, AccountCreate, AccountUpdate
 from app.crud.crud_account import account as crud_account
 from app.api.api_v1.endpoints import auth
@@ -13,8 +18,8 @@ router = APIRouter()
 @router.get("/", response_model=List[Account])
 async def read_accounts(
     db: AsyncSession = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -49,12 +54,26 @@ async def update_account(
     """
     Update an account.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(
+        select(AccountModel)
+        .where(AccountModel.id == id, AccountModel.user_id == current_user.id)
+        .with_for_update()
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    return await crud_account.update(db=db, db_obj=account, obj_in=item_in)
+    if item_in.balance is not None:
+        if item_in.expected_balance is None or item_in.expected_balance != account.balance:
+            raise HTTPException(status_code=409, detail="Account balance has changed; reload before editing")
+    if item_in.currency is not None and item_in.currency != account.currency:
+        if item_in.balance is not None and Decimal(str(item_in.balance)) != account.balance:
+            raise HTTPException(status_code=409, detail="Change balance and currency separately")
+        if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
+            raise HTTPException(status_code=409, detail="Cannot change currency of an account with transactions")
+    if item_in.balance is not None:
+        difference = Decimal(str(item_in.balance)) - account.balance
+        if difference:
+            db.add(Transaction(account_id=id, amount=abs(difference), type="income" if difference > 0 else "expense", currency=account.currency, description="Корректировка баланса"))
+    return await crud_account.update(db=db, db_obj=account, obj_in=item_in.model_dump(exclude_unset=True, exclude={"expected_balance"}))
 
 @router.get("/{id}", response_model=Account)
 async def read_account(
@@ -66,11 +85,14 @@ async def read_account(
     """
     Get account by ID.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(
+        select(AccountModel).where(
+            AccountModel.id == id,
+            AccountModel.user_id == current_user.id,
+        )
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     return account
 
 @router.delete("/{id}", response_model=Account)
@@ -83,9 +105,14 @@ async def delete_account(
     """
     Delete an account.
     """
-    account = await crud_account.get(db=db, id=id)
+    account = (await db.execute(
+        select(AccountModel)
+        .where(AccountModel.id == id, AccountModel.user_id == current_user.id)
+        .with_for_update()
+    )).scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if (await db.execute(select(Transaction.id).where(or_(Transaction.account_id == id, Transaction.to_account_id == id)).limit(1))).first():
+        raise HTTPException(status_code=409, detail="Cannot delete an account with transactions")
+    await db.execute(delete(UserItem).where(UserItem.user_id == current_user.id, UserItem.kind == "positions", UserItem.key.like(f"{id}:%")))
     return await crud_account.remove(db=db, id=id)
