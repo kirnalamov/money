@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { format, startOfMonth, startOfDay, subDays, subMonths } from "date-fns";
 import { ru, enUS } from "date-fns/locale";
-import { Bell, Calendar, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Bell, Calendar, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { DashboardDataSourceStatus } from "@/components/dashboard/data-source-status";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -223,8 +223,8 @@ export default function OverviewPage() {
   const kShort = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(".", ",")} ${t("common.thousands_short", "тыс.")} ${defaultCurrency === "USD" ? "$" : defaultCurrency === "EUR" ? "€" : defaultCurrency === "RUB" ? "₽" : "£"}` : fmtMoney(v, defaultCurrency, 0));
 
   const quick = [
-    { label: t("overview.q_expense", "Расход"), sub: t("overview.q_expense_sub", "записать трату"), icon: "↗", color: RED, bg: "bg-[#F87171]/[0.12]", onClick: () => setActiveType("expense") },
-    { label: t("overview.q_income", "Доход"), sub: t("overview.q_income_sub", "зарплата, подработка"), icon: "↙", color: MINT, bg: "bg-[#6EE7A0]/[0.12]", onClick: () => setActiveType("income") },
+    { label: t("overview.q_expense", "Расход"), sub: t("overview.q_expense_sub", "записать трату"), icon: <ArrowUpRight className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />, color: RED, bg: "bg-[#F87171]/[0.12]", onClick: () => setActiveType("expense") },
+    { label: t("overview.q_income", "Доход"), sub: t("overview.q_income_sub", "зарплата, подработка"), icon: <ArrowDownLeft className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />, color: MINT, bg: "bg-[#6EE7A0]/[0.12]", onClick: () => setActiveType("income") },
     { label: t("overview.q_transfer", "Перевод"), sub: t("overview.q_transfer_sub", "между счетами"), icon: "⇄", color: "#7DD3FC", bg: "bg-[#7DD3FC]/[0.12]", onClick: () => setActiveType("transfer") },
     { label: t("overview.q_trade", "Сделка"), sub: t("overview.q_trade_sub", "купить или продать"), icon: "$", color: "#C6F24E", bg: "bg-[#C6F24E]/[0.12]", onClick: () => setActiveType("trade") },
     { label: t("overview.q_save", "Отложить"), sub: t("overview.q_save_sub", "на цель"), icon: "+", color: "#C4B5FD", bg: "bg-[#C4B5FD]/[0.12]", href: "/savings" },
@@ -451,12 +451,12 @@ export default function OverviewPage() {
                   {g.list.map((tx) => {
                     const inc = tx.type === "income";
                     const exp = tx.type === "expense";
-                    const emoji = tx.type === "transfer" ? "⇄" : catEmoji(tx.category) || (inc ? "↙" : "↗");
+                    const emoji = tx.type === "transfer" ? "⇄" : catEmoji(tx.category) || (inc ? <ArrowDownLeft className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" /> : <ArrowUpRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />);
                     const accCur = accounts.find((a) => a.id === tx.accountId)?.currency || tx.currency;
                     const sign = inc ? "+" : exp ? MINUS : "";
                     return (
                       <Link key={tx.id} href="/transactions" className="flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-[#F1F3EE] no-underline transition-colors hover:bg-[#1A1D19]">
-                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl text-lg leading-none" style={{ background: tx.type === "transfer" ? "#1E211C" : withAlpha(catColor(tx.category), 0.14) }}>{emoji}</span>
+                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl text-lg leading-none" style={{ background: tx.type === "transfer" ? "#1E211C" : withAlpha(catColor(tx.category), 0.14), color: tx.type === "transfer" ? "#7DD3FC" : catColor(tx.category) }}>{emoji}</span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold">{tx.description || tx.category}</span>
                           <span className="block text-[12.5px] text-[#8D9388]">{tx.category}</span>
