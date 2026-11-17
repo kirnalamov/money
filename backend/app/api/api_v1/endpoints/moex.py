@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from app.services.logos import get_logo
-from app.services.market_prices import get_quotes, get_us_dividends
+from app.services.market_prices import get_bond_info, get_history, get_quotes, get_us_dividends
 from app.services.moex_dividends import get_dividends
 from app.services.security_search import search_securities
 
@@ -111,3 +111,50 @@ class SearchResponse(BaseModel):
 async def search(q: str = Query(..., min_length=1, max_length=40, description="Тикер или название бумаги")) -> SearchResponse:
     """Подходящие бумаги (МосБиржа, мировые рынки, крипто) для выбора пользователем."""
     return SearchResponse(results=[FoundOut(**item) for item in await search_securities(q)])
+
+
+class BondOut(BaseModel):
+    secid: str
+    name: str
+    currency: str
+    face_value: float
+    price_pct: float
+    price: float
+    accrued_interest: float
+    coupon_value: float | None = None
+    coupon_period: int | None = None
+    next_coupon: str | None = None
+    maturity: str | None = None
+
+
+@router.get("/bond/{secid}", response_model=BondOut)
+async def read_bond(secid: str) -> BondOut:
+    """Облигация: цена в валюте, НКД, купон и ближайшая выплата."""
+    info = await get_bond_info(secid)
+    if not info:
+        raise HTTPException(status_code=404, detail="Bond not found")
+    return BondOut(**info)
+
+
+class CloseOut(BaseModel):
+    date: str
+    close: float
+
+
+class HistoryResponse(BaseModel):
+    history: Dict[str, List[CloseOut]]
+
+
+@router.get("/history", response_model=HistoryResponse)
+async def read_history(
+    q: str = Query(..., max_length=600, description="Список вида SBER:moex,VOO:global,BTC:crypto"),
+) -> HistoryResponse:
+    """Дневные цены закрытия за ~3 месяца для расчёта изменения за день/неделю/месяц."""
+    items: List[Tuple[str, str]] = []
+    for part in q.split(",")[:30]:
+        bits = part.strip().split(":")
+        if not bits or not bits[0]:
+            continue
+        hint = bits[1].strip().lower() if len(bits) > 1 else "global"
+        items.append((bits[0], hint if hint in ("moex", "global", "crypto") else "global"))
+    return HistoryResponse(history=await get_history(items))

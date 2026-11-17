@@ -215,3 +215,166 @@ async def get_quotes(items: List[Tuple[str, str]]) -> Dict[str, Quote]:
                 _CACHE[(symbol.strip().upper(), hint)] = (now, q)
                 out[symbol.strip().upper()] = q
     return out
+
+
+_BOND_CACHE: Dict[str, Tuple[float, dict]] = {}
+_BOND_TTL = 15 * 60
+_FACE_UNITS = {"SUR": "RUB", "RUB": "RUB", "USD": "USD", "EUR": "EUR", "CNY": "CNY"}
+
+
+async def get_bond_info(secid: str) -> Optional[dict]:
+    """Облигация МосБиржи: цена (в валюте), НКД, купон, даты. Цена торгуется в % от номинала."""
+    secid = secid.strip().upper()
+    if not _SYM_RE.match(secid):
+        return None
+    now = time.monotonic()
+    cached = _BOND_CACHE.get(secid)
+    if cached and now - cached[0] < _BOND_TTL:
+        return cached[1]
+    try:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers={"User-Agent": _UA}) as client:
+            r = await client.get(
+                f"https://iss.moex.com/iss/engines/stock/markets/bonds/securities/{secid}.json",
+                params={
+                    "iss.meta": "off",
+                    "iss.only": "securities,marketdata",
+                    "securities.columns": "SECID,SHORTNAME,FACEVALUE,FACEUNIT,ACCRUEDINT,COUPONVALUE,COUPONPERIOD,NEXTCOUPON,MATDATE,PREVPRICE",
+                    "marketdata.columns": "SECID,BOARDID,LAST,MARKETPRICE,WAPRICE",
+                },
+            )
+        if r.status_code != 200:
+            return None
+        body = r.json()
+        sec_cols = body["securities"]["columns"]
+        sec_rows = body["securities"]["data"]
+        if not sec_rows:
+            return None
+        sec = dict(zip(sec_cols, sec_rows[0]))
+        md_cols = body["marketdata"]["columns"]
+        md = None
+        for row in body["marketdata"]["data"]:
+            candidate = dict(zip(md_cols, row))
+            if candidate.get("BOARDID") in ("TQCB", "TQOB", "TQOD", "TQIR", "TQOE"):
+                md = candidate
+                break
+        md = md or (dict(zip(md_cols, body["marketdata"]["data"][0])) if body["marketdata"]["data"] else {})
+        pct = next((md.get(k) for k in ("LAST", "MARKETPRICE", "WAPRICE") if md.get(k)), None) or sec.get("PREVPRICE")
+        face = float(sec.get("FACEVALUE") or 1000)
+        if not pct:
+            return None
+        info = {
+            "secid": secid,
+            "name": sec.get("SHORTNAME") or secid,
+            "currency": _FACE_UNITS.get(str(sec.get("FACEUNIT") or "SUR"), "RUB"),
+            "face_value": face,
+            "price_pct": float(pct),
+            "price": round(float(pct) * face / 100, 4),
+            "accrued_interest": float(sec.get("ACCRUEDINT") or 0),
+            "coupon_value": float(sec["COUPONVALUE"]) if sec.get("COUPONVALUE") is not None else None,
+            "coupon_period": int(sec["COUPONPERIOD"]) if sec.get("COUPONPERIOD") is not None else None,
+            "next_coupon": sec.get("NEXTCOUPON"),
+            "maturity": sec.get("MATDATE"),
+        }
+    except Exception:
+        return None
+    while len(_BOND_CACHE) >= 200:
+        _BOND_CACHE.pop(next(iter(_BOND_CACHE)))
+    _BOND_CACHE[secid] = (now, info)
+    return info
+
+
+_HIST_CACHE: Dict[Tuple[str, str], Tuple[float, List[dict]]] = {}
+_HIST_TTL = 30 * 60
+
+
+async def _hist_moex(client: httpx.AsyncClient, secid: str, since: str) -> List[dict]:
+    for market, boards in (("shares", ("TQBR", "TQTF", "TQTD", "TQIF")), ("bonds", ("TQCB", "TQOB"))):
+        for board in boards:
+            try:
+                r = await client.get(
+                    f"https://iss.moex.com/iss/engines/stock/markets/{market}/boards/{board}/securities/{secid}/candles.json",
+                    params={"interval": 24, "from": since, "iss.meta": "off"},
+                )
+                if r.status_code != 200:
+                    continue
+                candles = r.json().get("candles") or {}
+                cols, rows = candles.get("columns") or [], candles.get("data") or []
+                if not rows:
+                    continue
+                idx_close, idx_begin = cols.index("close"), cols.index("begin")
+                return [{"date": str(row[idx_begin])[:10], "close": float(row[idx_close])} for row in rows if row[idx_close]]
+            except (httpx.HTTPError, ValueError, KeyError):
+                continue
+    return []
+
+
+async def _hist_yahoo(client: httpx.AsyncClient, symbol: str) -> List[dict]:
+    try:
+        r = await client.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+            params={"interval": "1d", "range": "3mo"},
+        )
+        if r.status_code != 200:
+            return []
+        results = (r.json().get("chart") or {}).get("result") or []
+        if not results:
+            return []
+        stamps = results[0].get("timestamp") or []
+        closes = ((results[0].get("indicators") or {}).get("quote") or [{}])[0].get("close") or []
+        return [
+            {"date": time.strftime("%Y-%m-%d", time.gmtime(ts)), "close": float(c)}
+            for ts, c in zip(stamps, closes)
+            if c
+        ]
+    except (httpx.HTTPError, ValueError):
+        return []
+
+
+async def _hist_binance(client: httpx.AsyncClient, symbol: str) -> List[dict]:
+    try:
+        r = await client.get(
+            "https://api.binance.com/api/v3/klines",
+            params={"symbol": f"{symbol}USDT", "interval": "1d", "limit": 100},
+        )
+        if r.status_code != 200:
+            return []
+        return [
+            {"date": time.strftime("%Y-%m-%d", time.gmtime(int(k[0]) / 1000)), "close": float(k[4])}
+            for k in r.json()
+        ]
+    except (httpx.HTTPError, ValueError):
+        return []
+
+
+async def get_history(items: List[Tuple[str, str]]) -> Dict[str, List[dict]]:
+    """Дневные цены закрытия за ~3 месяца: {тикер: [{date, close}]}. Для расчёта изменения за день/неделю/месяц."""
+    now = time.monotonic()
+    since = time.strftime("%Y-%m-%d", time.gmtime(time.time() - 100 * 86400))
+    out: Dict[str, List[dict]] = {}
+    todo: List[Tuple[str, str]] = []
+    for symbol, hint in items:
+        symbol = symbol.strip().upper()
+        if not _SYM_RE.match(symbol):
+            continue
+        cached = _HIST_CACHE.get((symbol, hint))
+        if cached and now - cached[0] < _HIST_TTL:
+            out[symbol] = cached[1]
+        else:
+            todo.append((symbol, hint))
+    if todo:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, headers={"User-Agent": _UA}) as client:
+            async def one(symbol: str, hint: str) -> List[dict]:
+                if hint == "crypto":
+                    return await _hist_binance(client, symbol)
+                if hint == "moex":
+                    return await _hist_moex(client, symbol, since) or await _hist_yahoo(client, symbol)
+                return await _hist_yahoo(client, symbol)
+
+            results = await asyncio.gather(*(one(s, h) for s, h in todo), return_exceptions=True)
+        for (symbol, hint), rows in zip(todo, results):
+            if isinstance(rows, list) and rows:
+                while len(_HIST_CACHE) >= 300:
+                    _HIST_CACHE.pop(next(iter(_HIST_CACHE)))
+                _HIST_CACHE[(symbol, hint)] = (now, rows)
+                out[symbol] = rows
+    return out
